@@ -1,4 +1,4 @@
-# AutomateAI - Employee Development Platform
+# AutomateAI 
 
 A React frontend with Python backend featuring AI agents for different employee development areas.
 
