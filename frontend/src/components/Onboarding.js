@@ -5,11 +5,13 @@ import './Onboarding.css';
 function Onboarding() {
   const navigate = useNavigate();
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showLoading, setShowLoading] = useState(false);
   const [chatMessages, setChatMessages] = useState([]);
   const [userInput, setUserInput] = useState('');
   const [showVideoPopup, setShowVideoPopup] = useState(false);
   const [showPolicyPopup, setShowPolicyPopup] = useState(false);
   const [showQuizPopup, setShowQuizPopup] = useState(false);
+  const [showEmployeePerksPopup, setShowEmployeePerksPopup] = useState(false);
   const [showPersonalInfoFormPopup, setShowPersonalInfoFormPopup] = useState(false);
   const [personalInfoForm, setPersonalInfoForm] = useState({
     fullName: '',
@@ -25,12 +27,20 @@ function Onboarding() {
     taxWithholding: false
   });
   const [currentPolicyIndex, setCurrentPolicyIndex] = useState(0);
+  const [currentPerksIndex, setCurrentPerksIndex] = useState(0);
   
   const policies = [
     { name: 'Code of Conduct', icon: '📋', description: 'Ethical principles and standards of behavior expected of all SAP employees.' },
     { name: 'Data Protection', icon: '🔒', description: 'Guidelines for handling personal and sensitive data in compliance with regulations.' },
     { name: 'Workplace Safety', icon: '🛡️', description: 'Safety protocols and procedures to ensure a secure working environment.' },
     { name: 'Diversity & Inclusion', icon: '🤝', description: 'Commitment to creating an inclusive workplace that values diversity.' }
+  ];
+
+  const employeePerks = [
+    { name: 'Health & Wellness', icon: '🏥', description: 'Comprehensive health insurance, dental, vision, and wellness programs for you and your family.' },
+    { name: 'Learning & Development', icon: '📚', description: 'Access to training programs, conferences, certifications, and continuous learning opportunities.' },
+    { name: 'Work-Life Balance', icon: '⚖️', description: 'Flexible working arrangements, paid time off, and programs to support work-life integration.' },
+    { name: 'Career Growth', icon: '🚀', description: 'Mentorship programs, internal mobility, and clear career progression paths within SAP.' }
   ];
   
   const [currentNode, setCurrentNode] = useState('welcome_overview');
@@ -57,6 +67,41 @@ function Onboarding() {
   useEffect(() => {
     scrollToBottom();
   }, [chatMessages]);
+
+  // Auto-focus input field when component mounts
+  useEffect(() => {
+    const inputElement = document.querySelector('.chat-input input');
+    if (inputElement) {
+      inputElement.focus();
+    }
+  }, []);
+
+  // Auto-focus input after each message
+  useEffect(() => {
+    const inputElement = document.querySelector('.chat-input input');
+    if (inputElement && !isProcessing) {
+      inputElement.focus();
+    }
+  }, [chatMessages, isProcessing]);
+
+  // Delayed loading indicator
+  useEffect(() => {
+    let timeoutId;
+    if (isProcessing) {
+      // Show loading indicator after 1 second delay
+      timeoutId = setTimeout(() => {
+        setShowLoading(true);
+      }, 1000);
+    } else {
+      setShowLoading(false);
+    }
+    
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
+  }, [isProcessing]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -143,6 +188,18 @@ function Onboarding() {
     }
   };
 
+  const handleNextPerks = () => {
+    if (currentPerksIndex < employeePerks.length - 1) {
+      setCurrentPerksIndex(currentPerksIndex + 1);
+    }
+  };
+
+  const handlePrevPerks = () => {
+    if (currentPerksIndex > 0) {
+      setCurrentPerksIndex(currentPerksIndex - 1);
+    }
+  };
+
   // Handle quiz popup
   const handleShowQuiz = () => {
     setShowQuizPopup(true);
@@ -158,6 +215,17 @@ function Onboarding() {
     setShowQuizPopup(false);
     // Send a message indicating quiz was skipped
     handleUserMessage("I skipped the culture quiz");
+  };
+
+  // Handle employee perks popup
+  const handleShowEmployeePerks = () => {
+    setShowEmployeePerksPopup(true);
+  };
+
+  const handleCloseEmployeePerks = () => {
+    setShowEmployeePerksPopup(false);
+    // Send a message indicating perks were reviewed
+    handleUserMessage("I've reviewed the employee perks");
   };
 
   // Handle personal info form popup
@@ -204,6 +272,17 @@ function Onboarding() {
     if (!message.trim()) return;
     
     console.log('Sending message:', message);
+    
+    // Add user message immediately
+    const userMessage = {
+      id: Date.now(),
+      type: 'user',
+      text: message,
+      timestamp: new Date()
+    };
+    setChatMessages(prev => [...prev, userMessage]);
+    setUserInput('');
+    
     setIsProcessing(true);
     try {
       const response = await fetch(`http://localhost:8000/api/user/test_user/chat`, {
@@ -234,16 +313,6 @@ function Onboarding() {
         setIsProcessing(false);
         return;
       }
-      
-      // For non-restart messages, add user message first
-      const userMessage = {
-        id: Date.now(),
-        type: 'user',
-        text: message,
-        timestamp: new Date()
-      };
-      setChatMessages(prev => [...prev, userMessage]);
-      setUserInput('');
       
       // Update node information
       if (data.current_node) {
@@ -306,6 +375,19 @@ function Onboarding() {
           showPersonalInfoFormButton: true
         };
         setChatMessages(prev => [...prev, aiResponse]);
+      } else if (data.agent_response.includes('SHOW_EMPLOYEE_PERKS_BUTTON')) {
+        // Remove the trigger text and add employee perks button
+        const cleanResponse = data.agent_response.replace('SHOW_EMPLOYEE_PERKS_BUTTON', '');
+        const aiResponse = {
+          id: Date.now() + 1,
+          type: 'agent',
+          text: cleanResponse,
+          timestamp: new Date(),
+          current_node: data.current_node,
+          node_tasks: data.node_tasks,
+          showEmployeePerksButton: true
+        };
+        setChatMessages(prev => [...prev, aiResponse]);
       } else {
       // Add AI response
       const aiResponse = {
@@ -341,12 +423,12 @@ function Onboarding() {
           <div className="progress-info">
             <span className="progress-text">
               {currentNode === 'welcome_overview' ? 'Welcome & Company Overview' : 
-               currentNode === 'personal_info' ? 'Personal Information & Legal Forms' : 
+               currentNode === 'personal_info' ? 'SAP Onboarding' : 
                'Account Setup'}
             </span>
             <div className="node-indicator">
               <div className={`node ${currentNode === 'welcome_overview' ? 'active' : 'completed'}`}>
-                Node 1: Welcome & Overview
+                Node 1: Company Welcome
               </div>
               <div className={`node ${currentNode === 'personal_info' ? 'active' : currentNode === 'account_setup' ? 'completed' : ''}`}>
                 Node 2: Personal Information
@@ -359,10 +441,10 @@ function Onboarding() {
         </div>
         <div className="header-buttons">
           <button className="restart-btn" onClick={() => handleUserMessage('restart')}>
-            🔄 Restart
+            Restart
           </button>
         <button className="back-btn" onClick={() => navigate('/main')}>
-          ← Back to Main
+          Back to Main
         </button>
         </div>
       </div>
@@ -376,7 +458,10 @@ function Onboarding() {
                 <div className="message-avatar">🤖</div>
               )}
               <div className="message-content">
-                <div className="message-text">{message.text}</div>
+                <div className="message-text-wrapper">
+                  <div className="message-text">{message.text}</div>
+                  <div className="message-time">{message.timestamp.toLocaleTimeString()}</div>
+                </div>
                 {message.showVideoButton && (
                   <button 
                     className="video-button"
@@ -386,38 +471,37 @@ function Onboarding() {
                   </button>
                 )}
                 {message.showCompanyPoliciesButton && (
-                  <div className="single-policy-button">
-                    <button 
-                      className="policy-button"
-                      onClick={handleShowPolicy}
-                    >
-                      📋 Company Policies
-                    </button>
-                  </div>
+                  <button 
+                    className="video-button"
+                    onClick={handleShowPolicy}
+                  >
+                    📋 Company Policies
+                  </button>
                 )}
                 {message.showCultureQuizButton && (
-                  <div className="single-policy-button">
-                    <button 
-                      className="policy-button"
-                      onClick={handleShowQuiz}
-                    >
-                      🧠 Culture Quiz
-                    </button>
-                  </div>
+                  <button 
+                    className="video-button"
+                    onClick={handleShowQuiz}
+                  >
+                    🧠 Culture Quiz
+                  </button>
                 )}
                 {message.showPersonalInfoFormButton && (
-                  <div className="single-policy-button">
-                    <button 
-                      className="policy-button"
-                      onClick={handleShowPersonalInfoForm}
-                    >
-                      📝 Personal Information Form
-                    </button>
-                  </div>
+                  <button 
+                    className="video-button"
+                    onClick={handleShowPersonalInfoForm}
+                  >
+                    📝 Personal Information Form
+                  </button>
                 )}
-                <div className="message-time">
-                  {message.timestamp.toLocaleTimeString()}
-                </div>
+                {message.showEmployeePerksButton && (
+                  <button 
+                    className="video-button"
+                    onClick={handleShowEmployeePerks}
+                  >
+                    🎁 Employee Perks
+                  </button>
+                )}
               </div>
               {message.type === 'user' && (
                 <div className="message-avatar user-avatar">👤</div>
@@ -425,7 +509,7 @@ function Onboarding() {
             </div>
           ))}
           
-          {isProcessing && (
+          {showLoading && (
             <div className="message agent-message">
               <div className="message-avatar">🤖</div>
               <div className="message-content">
@@ -446,14 +530,30 @@ function Onboarding() {
             <input
               type="text"
               value={userInput}
-              onChange={(e) => setUserInput(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleUserMessage(userInput)}
-              placeholder="Type your message..."
+              onChange={(e) => {
+                setUserInput(e.target.value);
+                // Add typing indicator or update chat in real-time
+                if (e.target.value.trim()) {
+                  // You could add a typing indicator here if needed
+                }
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey && userInput.trim()) {
+                  e.preventDefault();
+                  handleUserMessage(userInput);
+                  setUserInput(''); // Clear input after sending
+                }
+              }}
+              placeholder="Type your message and press Enter..."
               disabled={isProcessing}
+              autoFocus
             />
             <button
               className="send-btn"
-              onClick={() => handleUserMessage(userInput)}
+              onClick={() => {
+                handleUserMessage(userInput);
+                setUserInput(''); // Clear input after sending
+              }}
               disabled={isProcessing || !userInput.trim()}
             >
               Send
@@ -559,6 +659,53 @@ function Onboarding() {
         </div>
       )}
       
+      {/* Employee Perks Popup */}
+      {showEmployeePerksPopup && (
+        <div className="video-popup-overlay">
+          <div className="video-popup perks-popup">
+            <div className="video-popup-header">
+              <h3>SAP Employee Perks</h3>
+              <button className="close-btn" onClick={handleCloseEmployeePerks}>×</button>
+            </div>
+            <div className="video-content">
+              <div className="policy-slider">
+                <div className="policy-slide">
+                  <div className="policy-icon">{employeePerks[currentPerksIndex].icon}</div>
+                  <h4>{employeePerks[currentPerksIndex].name}</h4>
+                  <p className="work-in-progress">Work in Progress</p>
+                  <p>{employeePerks[currentPerksIndex].description}</p>
+                </div>
+                
+                <div className="policy-navigation">
+                  <button 
+                    className="nav-btn prev-btn" 
+                    onClick={handlePrevPerks}
+                    disabled={currentPerksIndex === 0}
+                  >
+                    ← Previous
+                  </button>
+                  <span className="policy-counter">
+                    {currentPerksIndex + 1} of {employeePerks.length}
+                  </span>
+                  <button 
+                    className="nav-btn next-btn" 
+                    onClick={handleNextPerks}
+                    disabled={currentPerksIndex === employeePerks.length - 1}
+                  >
+                    Next →
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div className="video-popup-footer">
+              <button className="btn-primary" onClick={handleCloseEmployeePerks}>
+                I've Reviewed All Perks
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
       {/* Personal Information Form Popup */}
       {showPersonalInfoFormPopup && (
         <div className="video-popup-overlay">
@@ -570,7 +717,7 @@ function Onboarding() {
             <div className="video-content">
               <div className="personal-info-form">
                 <div className="form-section">
-                  <h4>Personal Information</h4>
+                  <h4>👤 Personal Information</h4>
                   <div className="form-group">
                     <label>Full Name:</label>
                     <input 
@@ -618,7 +765,7 @@ function Onboarding() {
                 </div>
                 
                 <div className="form-section">
-                  <h4>Emergency Contact</h4>
+                  <h4>🚨 Emergency Contact</h4>
                   <div className="form-group">
                     <label>Emergency Contact Name:</label>
                     <input 
@@ -649,7 +796,7 @@ function Onboarding() {
                 </div>
                 
                 <div className="form-section">
-                  <h4>Legal/Compliance Forms</h4>
+                  <h4>📋 Legal/Compliance Forms</h4>
                   <div className="form-group checkbox-group">
                     <label>
                       <input 
