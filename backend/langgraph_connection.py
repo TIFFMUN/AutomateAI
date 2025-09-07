@@ -113,8 +113,34 @@ class LangGraphConnection:
                 existing_chat_history = []
                 current_policy = 0
             
+            # If already completed, provide completion responses
+            if current_node == "onboarding_complete":
+                return {
+                    "agent_response": "Thank you! Your onboarding is complete. If you have any questions or need assistance, feel free to reach out. Welcome to the SAP team!",
+                    "current_node": "onboarding_complete",
+                    "current_policy": 0,
+                    "node_tasks": node_tasks,
+                    "chat_history": existing_chat_history,
+                    "restarted": False
+                }
+            
             # Handle LLM processing before graph execution
             ai_response = self._process_with_llm(clean_message, current_node, existing_chat_history)
+            
+            # Check for onboarding completion
+            onboarding_complete = "ONBOARDING_COMPLETE" in ai_response
+            if onboarding_complete:
+                # Clean up the completion signal from the response
+                ai_response = ai_response.replace("ONBOARDING_COMPLETE", "").strip()
+                # Return completion response directly without running the graph
+                return {
+                    "agent_response": ai_response,
+                    "current_node": "onboarding_complete",
+                    "current_policy": current_policy,
+                    "node_tasks": node_tasks,
+                    "chat_history": existing_chat_history,
+                    "restarted": False
+                }
             
             # Create initial state
             initial_state = OnboardingState(
@@ -159,8 +185,6 @@ class LangGraphConnection:
         try:
             from prompts import get_system_prompt, get_user_prompt, format_chat_history, get_welcome_overview_prompt, get_personal_info_prompt, get_account_setup_prompt
             
-            # Always use LLM processing to ensure proper question prompts are followed
-            
             # Get current node prompt
             if current_node == 'welcome_overview':
                 node_prompt = get_welcome_overview_prompt()
@@ -171,10 +195,13 @@ class LangGraphConnection:
             else:
                 node_prompt = ""
             
-            # Create full prompt
+            # Create full prompt with limited history (last 3 messages only)
             system_prompt = get_system_prompt()
             user_prompt = get_user_prompt(user_message)
-            history_context = format_chat_history(chat_history)
+            
+            # Only include recent history to avoid message combination
+            recent_history = chat_history[-3:] if len(chat_history) > 3 else chat_history
+            history_context = format_chat_history(recent_history)
             
             full_prompt = f"{system_prompt}\n\n{node_prompt}\n\nCurrent Node: {current_node}\n\n{history_context}{user_prompt}"
             

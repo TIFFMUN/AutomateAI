@@ -1,4 +1,4 @@
-/* Prevent horizontal scrolling */
+/* Global Styles */
 * {
   box-sizing: border-box;
 }
@@ -7,7 +7,7 @@ body {
   overflow-x: hidden;
 }
 
-/* Simple Chat Interface */
+/* Main Layout */
 .onboarding-page {
   min-height: 100vh;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -35,16 +35,25 @@ body {
   align-items: center;
 }
 
+/* Button Styles */
+.restart-btn,
+.back-btn,
+.send-btn,
+.nav-btn,
+.btn-primary,
+.video-button {
+  border: none;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  border-radius: 8px;
+}
+
 .restart-btn {
   background: #ff6b6b;
   color: white;
-  border: none;
   padding: 10px 20px;
-  border-radius: 8px;
-  cursor: pointer;
   font-size: 0.9rem;
-  font-weight: 500;
-  transition: all 0.3s ease;
 }
 
 .restart-btn:hover {
@@ -52,6 +61,75 @@ body {
   transform: translateY(-1px);
 }
 
+.back-btn,
+.send-btn {
+  background: #667eea;
+  color: white;
+  padding: 10px 20px;
+  font-size: 0.9rem;
+}
+
+.back-btn:hover,
+.send-btn:hover:not(:disabled) {
+  background: #5a6fd8;
+  transform: translateY(-1px);
+}
+
+.send-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.nav-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 10px 20px;
+  font-size: 0.9rem;
+}
+
+.nav-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.nav-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-primary,
+.video-button {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 15px 30px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.video-button {
+  padding: 15px 25px;
+  font-size: 1rem;
+  margin-top: 15px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+}
+
+.btn-primary:hover,
+.video-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.video-button:active {
+  transform: translateY(0);
+}
+
+/* Header Styles */
 .progress-container {
   flex: 1;
   max-width: 600px;
@@ -100,23 +178,6 @@ body {
 .node.completed {
   background: #4caf50;
   color: white;
-}
-
-.back-btn {
-  background: #667eea;
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  font-weight: 500;
-  transition: all 0.3s ease;
-}
-
-.back-btn:hover {
-  background: #5a6fd8;
-  transform: translateY(-1px);
 }
 
 /* Chat Container */
@@ -325,28 +386,6 @@ body {
   color: #999;
 }
 
-.send-btn {
-  background: #667eea;
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 20px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  font-weight: 500;
-  transition: all 0.3s ease;
-}
-
-.send-btn:hover:not(:disabled) {
-  background: #5a6fd8;
-  transform: translateY(-1px);
-}
-
-.send-btn:disabled {
-  background: #ccc;
-  cursor: not-allowed;
-  transform: none;
-}
 
 /* Popup Overlay */
 .video-popup-overlay {
@@ -501,23 +540,6 @@ body {
   letter-spacing: 1px;
 }
 
-.btn-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: none;
-  padding: 15px 30px;
-  border-radius: 12px;
-  font-size: 1.1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-}
-
-.btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-}
 
 /* Policy Slider */
 .policy-popup {
@@ -535,28 +557,6 @@ body {
   margin-top: 20px;
 }
 
-.nav-btn {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  font-weight: 500;
-  transition: all 0.3s ease;
-}
-
-.nav-btn:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-}
-
-.nav-btn:disabled {
-  background: #ccc;
-  cursor: not-allowed;
-  transform: none;
-}
 
 .policy-counter {
   font-size: 1rem;
