@@ -97,16 +97,12 @@ class SimpleHRAgent:
             response = self.llm.invoke([HumanMessage(content=full_prompt)])
             ai_response = response.content.strip()
             
-            # Debug logging
-            print(f"AI Response: {ai_response}")
-            print(f"User Message: {clean_message}")
             
-            # Handle policy acknowledgment FIRST (more specific condition)
+            # Handle policy acknowledgment
             if "reviewed" in clean_message.lower() and any(policy in clean_message.lower() for policy in ['company policies', 'policies']):
                 ai_response = "Excellent! You've reviewed all company policies. Let's move on to the Culture Quiz. Click the button below to start: SHOW_CULTURE_QUIZ_BUTTON"
-                print("Policy acknowledgment triggered")
             
-            # Handle policy review flow (only if not acknowledging)
+            # Handle policy review flow
             elif "company policies" in ai_response.lower() and "review" in ai_response.lower() and "button" in ai_response.lower():
                 ai_response = "Great! Let's review SAP's Company Policies. Click the button below to open the policy viewer: SHOW_COMPANY_POLICIES_BUTTON"
             

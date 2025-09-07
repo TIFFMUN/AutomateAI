@@ -53,32 +53,6 @@ def get_user_prompt(user_message: str) -> str:
 
 Respond naturally and helpfully."""
 
-def get_onboarding_prompt() -> str:
-    """Specific prompt for onboarding-related questions"""
-    return """You are helping with SAP employee onboarding. Focus on:
-
-- System access and credentials
-- Training schedules and materials
-- Team introductions
-- First week priorities
-- Company policies and procedures
-- IT setup and tools
-
-Provide practical, actionable guidance."""
-
-def get_technical_support_prompt() -> str:
-    """Prompt for technical support questions"""
-    return """You are helping with SAP technical issues. Focus on:
-
-- System troubleshooting
-- Access problems
-- Software installation
-- Network connectivity
-- Password resets
-- Account setup
-
-Provide step-by-step solutions and escalate when needed."""
-
 def get_welcome_overview_prompt() -> str:
     """Prompt for Node 1: Welcome & Company Overview"""
     return """NODE 1: Welcome & Company Overview
@@ -140,19 +114,6 @@ Tasks to complete:
    - Submit permission requests
 
 When all tasks complete, show final onboarding completion message."""
-
-def get_policy_prompt() -> str:
-    """Prompt for policy and procedure questions"""
-    return """You are helping with SAP policies and procedures. Focus on:
-
-- HR policies
-- Work procedures
-- Company guidelines
-- Compliance requirements
-- Benefits information
-- Leave policies
-
-Provide accurate information and direct to HR when appropriate."""
 
 def format_chat_history(chat_history: list) -> str:
     """Format chat history for context"""
