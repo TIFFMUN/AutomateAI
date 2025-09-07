@@ -25,5 +25,14 @@ class Settings:
     
     # CORS
     ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:3001").split(",")
+    
+    # OTP Configuration
+    SMTP_SERVER = os.getenv("SMTP_SERVER", "smtp.gmail.com")
+    SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
+    SMTP_USERNAME = os.getenv("SMTP_USERNAME", "")
+    SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
+    
+    SMS_API_KEY = os.getenv("SMS_API_KEY", "")
+    SMS_API_URL = os.getenv("SMS_API_URL", "")
 
 settings = Settings()

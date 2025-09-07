@@ -2,7 +2,7 @@ from typing import Dict, Any, List, TypedDict, Annotated
 from langchain_core.messages import HumanMessage, AIMessage, BaseMessage
 from datetime import datetime
 import uuid
-from prompts import get_system_prompt, get_user_prompt, format_chat_history, get_welcome_overview_prompt, get_personal_info_prompt
+from prompts import get_system_prompt, get_user_prompt, format_chat_history, get_welcome_overview_prompt, get_personal_info_prompt, get_account_setup_prompt
 
 class OnboardingState(TypedDict):
     """State definition for the onboarding workflow"""
@@ -37,6 +37,19 @@ def handle_triggers_node(state: OnboardingState) -> OnboardingState:
             "current_node": "personal_info"
         }
     
+    elif ("→ account_setup" in ai_response or 
+          (current_node == "personal_info" and 
+           ("account setup" in ai_response.lower() or "account set up" in ai_response.lower()) and 
+           any(word in ai_response.lower() for word in ['move on', 'next step', 'let\'s', 'now', 'ready to begin', 'personal information collection complete'])) or
+          (current_node == "personal_info" and "personal information collection complete" in ai_response.lower())):
+        # Clean up the response and update node
+        clean_response = ai_response.replace("→ account_setup", "").strip()
+        return {
+            **state,
+            "agent_response": clean_response,
+            "current_node": "account_setup"
+        }
+    
     # Frontend will detect button triggers and show appropriate buttons
     return state
 
@@ -44,9 +57,11 @@ def route_to_node(state: OnboardingState) -> str:
     """Route to the appropriate node based on current state"""
     current_node = state["current_node"]
     
-    # If we're transitioning to personal info, route there
+    # Route to appropriate node
     if current_node == "personal_info":
         return "personal_info"
+    elif current_node == "account_setup":
+        return "account_setup"
     
     # Otherwise, stay in welcome overview
     return "welcome_overview"
@@ -104,7 +119,7 @@ def personal_info_node(state: OnboardingState) -> OnboardingState:
     }
 
 def account_setup_node(state: OnboardingState) -> OnboardingState:
-    """Handle Node 2: Account Setup & Permissions"""
+    """Handle Node 3: Account Setup"""
     # Update chat history
     user_message = state["messages"][-2].content if len(state["messages"]) >= 2 else ""
     ai_response = state["agent_response"]
@@ -148,6 +163,8 @@ def get_current_node_prompt(current_node: str) -> str:
     """Get prompt for current node"""
     if current_node == 'welcome_overview':
         return get_welcome_overview_prompt()
+    elif current_node == 'personal_info':
+        return get_personal_info_prompt()
     elif current_node == 'account_setup':
         return get_account_setup_prompt()
     return ""
