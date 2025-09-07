@@ -10,6 +10,20 @@ function Onboarding() {
   const [showVideoPopup, setShowVideoPopup] = useState(false);
   const [showPolicyPopup, setShowPolicyPopup] = useState(false);
   const [showQuizPopup, setShowQuizPopup] = useState(false);
+  const [showPersonalInfoFormPopup, setShowPersonalInfoFormPopup] = useState(false);
+  const [personalInfoForm, setPersonalInfoForm] = useState({
+    fullName: '',
+    preferredName: '',
+    email: '',
+    phone: '',
+    address: '',
+    emergencyContactName: '',
+    emergencyContactPhone: '',
+    relationship: '',
+    employmentContract: false,
+    nda: false,
+    taxWithholding: false
+  });
   const [currentPolicyIndex, setCurrentPolicyIndex] = useState(0);
   
   const policies = [
@@ -136,6 +150,45 @@ function Onboarding() {
     handleUserMessage("I skipped the culture quiz");
   };
 
+  // Handle personal info form popup
+  const handleShowPersonalInfoForm = () => {
+    setShowPersonalInfoFormPopup(true);
+  };
+
+  const handleClosePersonalInfoForm = () => {
+    setShowPersonalInfoFormPopup(false);
+    // Send form data to agent for intelligent analysis
+    const formData = {
+      fullName: personalInfoForm.fullName,
+      preferredName: personalInfoForm.preferredName,
+      email: personalInfoForm.email,
+      phone: personalInfoForm.phone,
+      address: personalInfoForm.address,
+      emergencyContactName: personalInfoForm.emergencyContactName,
+      emergencyContactPhone: personalInfoForm.emergencyContactPhone,
+      relationship: personalInfoForm.relationship,
+      employmentContract: personalInfoForm.employmentContract,
+      nda: personalInfoForm.nda,
+      taxWithholding: personalInfoForm.taxWithholding
+    };
+    
+    // Send detailed form data to agent
+    handleUserMessage(`I've submitted the personal information form with the following details: ${JSON.stringify(formData)}`);
+  };
+
+  const handleFormInputChange = (field, value) => {
+    setPersonalInfoForm(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleSkipPersonalInfoForm = () => {
+    setShowPersonalInfoFormPopup(false);
+    // Send a message indicating form was skipped
+    handleUserMessage("I skipped the personal information form");
+  };
+
   // Handle user message
   const handleUserMessage = async (message) => {
     if (!message.trim()) return;
@@ -230,6 +283,19 @@ function Onboarding() {
           showCultureQuizButton: true
         };
         setChatMessages(prev => [...prev, aiResponse]);
+      } else if (data.agent_response.includes('SHOW_PERSONAL_INFO_FORM_BUTTON')) {
+        // Remove the trigger text and add personal info form button
+        const cleanResponse = data.agent_response.replace('SHOW_PERSONAL_INFO_FORM_BUTTON', '');
+        const aiResponse = {
+          id: Date.now() + 1,
+          type: 'agent',
+          text: cleanResponse,
+          timestamp: new Date(),
+          current_node: data.current_node,
+          node_tasks: data.node_tasks,
+          showPersonalInfoFormButton: true
+        };
+        setChatMessages(prev => [...prev, aiResponse]);
       } else {
       // Add AI response
       const aiResponse = {
@@ -321,6 +387,16 @@ function Onboarding() {
                       onClick={handleShowQuiz}
                     >
                       🧠 Culture Quiz
+                    </button>
+                  </div>
+                )}
+                {message.showPersonalInfoFormButton && (
+                  <div className="single-policy-button">
+                    <button 
+                      className="policy-button"
+                      onClick={handleShowPersonalInfoForm}
+                    >
+                      📝 Personal Information Form
                     </button>
                   </div>
                 )}
@@ -461,6 +537,139 @@ function Onboarding() {
             <div className="video-popup-footer">
               <button className="btn-primary" onClick={handleCloseQuiz}>
                 Finish Quiz
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Personal Information Form Popup */}
+      {showPersonalInfoFormPopup && (
+        <div className="video-popup-overlay">
+          <div className="video-popup personal-info-popup">
+            <div className="video-popup-header">
+              <h3>Personal Information Form</h3>
+              <button className="close-btn" onClick={handleSkipPersonalInfoForm}>×</button>
+            </div>
+            <div className="video-content">
+              <div className="personal-info-form">
+                <div className="form-section">
+                  <h4>Personal Information</h4>
+                  <div className="form-group">
+                    <label>Full Name:</label>
+                    <input 
+                      type="text" 
+                      placeholder="Enter your full name" 
+                      value={personalInfoForm.fullName}
+                      onChange={(e) => handleFormInputChange('fullName', e.target.value)}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Preferred Name:</label>
+                    <input 
+                      type="text" 
+                      placeholder="Enter your preferred name" 
+                      value={personalInfoForm.preferredName}
+                      onChange={(e) => handleFormInputChange('preferredName', e.target.value)}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Email Address:</label>
+                    <input 
+                      type="email" 
+                      placeholder="Enter your email address" 
+                      value={personalInfoForm.email}
+                      onChange={(e) => handleFormInputChange('email', e.target.value)}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Phone Number:</label>
+                    <input 
+                      type="tel" 
+                      placeholder="Enter your phone number" 
+                      value={personalInfoForm.phone}
+                      onChange={(e) => handleFormInputChange('phone', e.target.value)}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Home Address:</label>
+                    <textarea 
+                      placeholder="Enter your home address"
+                      value={personalInfoForm.address}
+                      onChange={(e) => handleFormInputChange('address', e.target.value)}
+                    ></textarea>
+                  </div>
+                </div>
+                
+                <div className="form-section">
+                  <h4>Emergency Contact</h4>
+                  <div className="form-group">
+                    <label>Emergency Contact Name:</label>
+                    <input 
+                      type="text" 
+                      placeholder="Enter emergency contact name" 
+                      value={personalInfoForm.emergencyContactName}
+                      onChange={(e) => handleFormInputChange('emergencyContactName', e.target.value)}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Emergency Contact Phone:</label>
+                    <input 
+                      type="tel" 
+                      placeholder="Enter emergency contact phone" 
+                      value={personalInfoForm.emergencyContactPhone}
+                      onChange={(e) => handleFormInputChange('emergencyContactPhone', e.target.value)}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Relationship:</label>
+                    <input 
+                      type="text" 
+                      placeholder="e.g., Spouse, Parent, Sibling" 
+                      value={personalInfoForm.relationship}
+                      onChange={(e) => handleFormInputChange('relationship', e.target.value)}
+                    />
+                  </div>
+                </div>
+                
+                <div className="form-section">
+                  <h4>Legal/Compliance Forms</h4>
+                  <div className="form-group checkbox-group">
+                    <label>
+                      <input 
+                        type="checkbox" 
+                        checked={personalInfoForm.employmentContract}
+                        onChange={(e) => handleFormInputChange('employmentContract', e.target.checked)}
+                      />
+                      I acknowledge the employment contract
+                    </label>
+                  </div>
+                  <div className="form-group checkbox-group">
+                    <label>
+                      <input 
+                        type="checkbox" 
+                        checked={personalInfoForm.nda}
+                        onChange={(e) => handleFormInputChange('nda', e.target.checked)}
+                      />
+                      I agree to the non-disclosure agreement
+                    </label>
+                  </div>
+                  <div className="form-group checkbox-group">
+                    <label>
+                      <input 
+                        type="checkbox" 
+                        checked={personalInfoForm.taxWithholding}
+                        onChange={(e) => handleFormInputChange('taxWithholding', e.target.checked)}
+                      />
+                      I understand the tax withholding requirements
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="video-popup-footer">
+              <button className="btn-primary" onClick={handleClosePersonalInfoForm}>
+                Submit Information
               </button>
             </div>
           </div>
