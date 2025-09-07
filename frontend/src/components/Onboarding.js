@@ -66,7 +66,7 @@ function Onboarding() {
         const welcomeMessage = {
           id: Date.now(),
           type: 'agent',
-          text: "🎉 Welcome to SAP! Let's start by introducing you to our culture and values.\n\n1️⃣ Watch the Welcome Video\n2️⃣ Review Company Policies\n3️⃣ Complete the Culture Quiz\n\nTake your time — I'll guide you step by step!",
+          text: "Welcome to SAP! Let's get you set up.\n\n1. Watch Welcome Video\n2. Review Company Policies\n3. Set up accounts\n\nI'll guide you step by step!\n\nAny questions about SAP or the onboarding process before we begin?",
           timestamp: new Date()
         };
         setChatMessages([welcomeMessage]);
@@ -74,12 +74,12 @@ function Onboarding() {
     } catch (error) {
       console.error('Error loading user state:', error);
       // Fallback to welcome message
-      const welcomeMessage = {
-        id: Date.now(),
-        type: 'agent',
-        text: "🎉 Welcome to SAP! Let's start by introducing you to our culture and values.\n\n1️⃣ Watch the Welcome Video\n2️⃣ Review Company Policies\n3️⃣ Complete the Culture Quiz\n\nTake your time — I'll guide you step by step!",
-        timestamp: new Date()
-      };
+        const welcomeMessage = {
+          id: Date.now(),
+          type: 'agent',
+          text: "Welcome to SAP! Let's get you set up.\n\n1. Watch Welcome Video\n2. Review Company Policies\n3. Set up accounts\n\nI'll guide you step by step!\n\nAny questions about SAP or the onboarding process before we begin?",
+          timestamp: new Date()
+        };
       setChatMessages([welcomeMessage]);
     }
   };
@@ -264,14 +264,14 @@ function Onboarding() {
         <div className="progress-container">
           <div className="progress-info">
             <span className="progress-text">
-              {currentNode === 'welcome_overview' ? 'Welcome & Company Overview' : 'Account Setup & Permissions'}
+              {currentNode === 'welcome_overview' ? 'Welcome & Company Overview' : 'Personal Information & Legal Forms'}
             </span>
             <div className="node-indicator">
               <div className={`node ${currentNode === 'welcome_overview' ? 'active' : 'completed'}`}>
                 Node 1: Welcome & Overview
               </div>
-              <div className={`node ${currentNode === 'account_setup' ? 'active' : ''}`}>
-                Node 2: Account Setup
+              <div className={`node ${currentNode === 'personal_info' ? 'active' : ''}`}>
+                Node 2: Personal Information
               </div>
             </div>
           </div>

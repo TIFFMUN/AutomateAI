@@ -5,7 +5,7 @@ from typing import Dict, Any, Optional, List
 from sqlalchemy.orm import Session
 from datetime import datetime
 from config import settings
-from simple_agent import SimpleHRAgent
+from langgraph_connection import LangGraphConnection
 from database import get_db, create_tables
 from models import UserState, ChatMessage
 
@@ -26,7 +26,7 @@ app.add_middleware(
 )
 
 # HR Agent
-hr_agent = SimpleHRAgent(settings.GEMINI_API_KEY)
+hr_agent = LangGraphConnection(settings.OPENAI_API_KEY)
 
 # Models
 class ChatRequest(BaseModel):
@@ -131,7 +131,7 @@ def handle_chat(user_id: str, request: ChatRequest, db: Session = Depends(get_db
     save_chat_message(db, user_id, "user", request.message)
     
     # Get agent response with database state
-    result = hr_agent.chat(request.message, user_id, chat_history, db_state)
+    result = hr_agent.process_chat(request.message, user_id, chat_history, db_state)
     
     # Handle restart case
     if result.get("restarted"):
