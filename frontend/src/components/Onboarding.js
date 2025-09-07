@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Onboarding.css';
 
@@ -46,11 +46,21 @@ function Onboarding() {
       permissions: false
     }
   });
+  const messagesEndRef = useRef(null);
 
   // Initialize chat with state loading
   useEffect(() => {
     loadUserState();
   }, []);
+
+  // Auto-scroll to bottom when new messages are added
+  useEffect(() => {
+    scrollToBottom();
+  }, [chatMessages]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
 
   const loadUserState = async () => {
     try {
@@ -422,6 +432,7 @@ function Onboarding() {
               </div>
             </div>
           )}
+          <div ref={messagesEndRef} />
         </div>
         
         {/* Chat Input */}
@@ -576,7 +587,7 @@ function Onboarding() {
                   <div className="form-group">
                     <label>Email Address:</label>
                     <input 
-                      type="email" 
+                      type="text" 
                       placeholder="Enter your email address" 
                       value={personalInfoForm.email}
                       onChange={(e) => handleFormInputChange('email', e.target.value)}
@@ -585,7 +596,7 @@ function Onboarding() {
                   <div className="form-group">
                     <label>Phone Number:</label>
                     <input 
-                      type="tel" 
+                      type="text" 
                       placeholder="Enter your phone number" 
                       value={personalInfoForm.phone}
                       onChange={(e) => handleFormInputChange('phone', e.target.value)}
@@ -615,7 +626,7 @@ function Onboarding() {
                   <div className="form-group">
                     <label>Emergency Contact Phone:</label>
                     <input 
-                      type="tel" 
+                      type="text" 
                       placeholder="Enter emergency contact phone" 
                       value={personalInfoForm.emergencyContactPhone}
                       onChange={(e) => handleFormInputChange('emergencyContactPhone', e.target.value)}
