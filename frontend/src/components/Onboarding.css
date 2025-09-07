@@ -386,7 +386,6 @@ body {
   color: #999;
 }
 
-
 /* Popup Overlay */
 .video-popup-overlay {
   position: fixed;
@@ -540,7 +539,6 @@ body {
   letter-spacing: 1px;
 }
 
-
 /* Policy Slider */
 .policy-popup {
   max-width: 600px;
@@ -556,7 +554,6 @@ body {
   align-items: center;
   margin-top: 20px;
 }
-
 
 .policy-counter {
   font-size: 1rem;
