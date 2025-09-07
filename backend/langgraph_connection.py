@@ -8,6 +8,7 @@ from nodes import (
     handle_triggers_node,
     welcome_overview_node,
     personal_info_node,
+    account_setup_node,
     route_to_node,
     get_default_tasks,
     OnboardingState
@@ -35,6 +36,7 @@ class LangGraphConnection:
         # Add nodes
         workflow.add_node("welcome_overview", welcome_overview_node)
         workflow.add_node("personal_info", personal_info_node)
+        workflow.add_node("account_setup", account_setup_node)
         workflow.add_node("process_message", process_message_node)
         workflow.add_node("handle_triggers", handle_triggers_node)
         
@@ -46,11 +48,13 @@ class LangGraphConnection:
             {
                 "welcome_overview": "welcome_overview",
                 "personal_info": "personal_info",
+                "account_setup": "account_setup",
                 "end": END
             }
         )
         workflow.add_edge("welcome_overview", END)
         workflow.add_edge("personal_info", END)
+        workflow.add_edge("account_setup", END)
         
         # Set entry point
         workflow.set_entry_point("process_message")
@@ -68,6 +72,10 @@ class LangGraphConnection:
         # Personal Information Node fallbacks
         elif current_node == 'personal_info':
             return "Let's collect your personal information and complete required legal forms. Any questions about the information collection process before we begin?"
+        
+        # Account Setup Node fallbacks
+        elif current_node == 'account_setup':
+            return "Now let's set up your IT accounts and security. I'll assign you a 6-digit username and then we'll reset your password. Your assigned username is 123456. Let's start with resetting your password. What would you like your new password to be?"
         
         # Default response
         return "I'm here to help with your SAP onboarding. What would you like to know?"
@@ -149,7 +157,7 @@ class LangGraphConnection:
     def _process_with_llm(self, user_message: str, current_node: str, chat_history: list) -> str:
         """Process message with LLM or fallback responses"""
         try:
-            from prompts import get_system_prompt, get_user_prompt, format_chat_history, get_welcome_overview_prompt, get_personal_info_prompt
+            from prompts import get_system_prompt, get_user_prompt, format_chat_history, get_welcome_overview_prompt, get_personal_info_prompt, get_account_setup_prompt
             
             # Always use LLM processing to ensure proper question prompts are followed
             
@@ -158,6 +166,8 @@ class LangGraphConnection:
                 node_prompt = get_welcome_overview_prompt()
             elif current_node == 'personal_info':
                 node_prompt = get_personal_info_prompt()
+            elif current_node == 'account_setup':
+                node_prompt = get_account_setup_prompt()
             else:
                 node_prompt = ""
             

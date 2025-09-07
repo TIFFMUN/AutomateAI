@@ -340,14 +340,19 @@ function Onboarding() {
         <div className="progress-container">
           <div className="progress-info">
             <span className="progress-text">
-              {currentNode === 'welcome_overview' ? 'Welcome & Company Overview' : 'Personal Information & Legal Forms'}
+              {currentNode === 'welcome_overview' ? 'Welcome & Company Overview' : 
+               currentNode === 'personal_info' ? 'Personal Information & Legal Forms' : 
+               'Account Setup'}
             </span>
             <div className="node-indicator">
               <div className={`node ${currentNode === 'welcome_overview' ? 'active' : 'completed'}`}>
                 Node 1: Welcome & Overview
               </div>
-              <div className={`node ${currentNode === 'personal_info' ? 'active' : ''}`}>
+              <div className={`node ${currentNode === 'personal_info' ? 'active' : currentNode === 'account_setup' ? 'completed' : ''}`}>
                 Node 2: Personal Information
+              </div>
+              <div className={`node ${currentNode === 'account_setup' ? 'active' : ''}`}>
+                Node 3: Account Setup
               </div>
             </div>
           </div>
