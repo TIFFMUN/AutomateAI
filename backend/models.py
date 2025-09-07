@@ -10,6 +10,20 @@ class UserState(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(String, unique=True, index=True, nullable=False)
+    current_node = Column(String, default="welcome_overview")
+    current_policy = Column(Integer, default=0)  # Track which policy user is reviewing (0-3)
+    node_tasks = Column(JSON, default=lambda: {
+        "welcome_overview": {
+            "welcome_video": False,
+            "company_policies": False,
+            "culture_quiz": False
+        },
+        "account_setup": {
+            "email_setup": False,
+            "sap_access": False,
+            "permissions": False
+        }
+    })
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     

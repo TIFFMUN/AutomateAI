@@ -40,6 +40,9 @@ class ChatMessageResponse(BaseModel):
 
 class UserStateResponse(BaseModel):
     user_id: str
+    current_node: str
+    current_policy: int
+    node_tasks: Dict[str, Any]
     chat_messages: List[ChatMessageResponse]
     created_at: datetime
     updated_at: datetime
@@ -97,6 +100,9 @@ def get_user_state_endpoint(user_id: str, db: Session = Depends(get_db)):
     
     return UserStateResponse(
         user_id=user_state.user_id,
+        current_node=user_state.current_node,
+        current_policy=user_state.current_policy,
+        node_tasks=user_state.node_tasks,
         chat_messages=chat_message_responses,
         created_at=user_state.created_at,
         updated_at=user_state.updated_at
@@ -113,11 +119,58 @@ def handle_chat(user_id: str, request: ChatRequest, db: Session = Depends(get_db
     existing_messages = get_chat_messages(db, user_id)
     chat_history = [{"role": msg.role, "content": msg.content} for msg in existing_messages]
     
+    # Prepare database state for agent
+    db_state = {
+        'current_node': user_state.current_node,
+        'current_policy': user_state.current_policy,
+        'node_tasks': user_state.node_tasks,
+        'chat_history': chat_history
+    }
+    
     # Save user message
     save_chat_message(db, user_id, "user", request.message)
     
-    # Get agent response
-    result = hr_agent.chat(request.message, chat_history)
+    # Get agent response with database state
+    result = hr_agent.chat(request.message, user_id, chat_history, db_state)
+    
+    # Handle restart case
+    if result.get("restarted"):
+        # Clear existing messages for restart
+        db.query(ChatMessage).filter(ChatMessage.user_id == user_id).delete()
+        db.commit()
+        
+        # Reset user state
+        user_state.current_node = "welcome_overview"
+        user_state.current_policy = 0
+        user_state.node_tasks = {
+            "welcome_overview": {
+                "welcome_video": False,
+                "company_policies": False,
+                "culture_quiz": False
+            },
+            "account_setup": {
+                "email_setup": False,
+                "sap_access": False,
+                "permissions": False
+            }
+        }
+        db.commit()
+        
+        # Save the restart message
+        save_chat_message(db, user_id, "assistant", result["agent_response"])
+        
+        return {
+            "agent_response": result["agent_response"],
+            "current_node": result["current_node"],
+            "node_tasks": result["node_tasks"],
+            "chat_history": []
+        }
+    
+    # Update user state with new information
+    user_state.current_node = result["current_node"]
+    user_state.current_policy = result.get("current_policy", user_state.current_policy)
+    user_state.node_tasks = result["node_tasks"]
+    db.commit()
     
     # Save agent response
     save_chat_message(db, user_id, "assistant", result["agent_response"])
@@ -137,7 +190,10 @@ def handle_chat(user_id: str, request: ChatRequest, db: Session = Depends(get_db
     
     return {
         "messages": chat_message_responses,
-        "agent_response": result["agent_response"]
+        "agent_response": result["agent_response"],
+        "current_node": result["current_node"],
+        "node_tasks": result["node_tasks"],
+        "chat_history": result["chat_history"]
     }
 
 if __name__ == "__main__":

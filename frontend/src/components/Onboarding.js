@@ -7,36 +7,192 @@ function Onboarding() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [chatMessages, setChatMessages] = useState([]);
   const [userInput, setUserInput] = useState('');
+  const [showVideoPopup, setShowVideoPopup] = useState(false);
+  const [showPolicyPopup, setShowPolicyPopup] = useState(false);
+  const [showQuizPopup, setShowQuizPopup] = useState(false);
+  const [currentPolicyIndex, setCurrentPolicyIndex] = useState(0);
+  const [currentQuizQuestion, setCurrentQuizQuestion] = useState(0);
+  const [quizScore, setQuizScore] = useState(0);
+  
+  const policies = [
+    { name: 'Code of Conduct', icon: '📋', description: 'Ethical principles and standards of behavior expected of all SAP employees.' },
+    { name: 'Data Protection', icon: '🔒', description: 'Guidelines for handling personal and sensitive data in compliance with regulations.' },
+    { name: 'Workplace Safety', icon: '🛡️', description: 'Safety protocols and procedures to ensure a secure working environment.' },
+    { name: 'Diversity & Inclusion', icon: '🤝', description: 'Commitment to creating an inclusive workplace that values diversity.' }
+  ];
+  
+  const quizQuestions = [
+    {
+      question: "What is SAP's mission?",
+      options: [
+        "To help the world run better and improve people's lives",
+        "To be the largest software company",
+        "To focus only on enterprise software",
+        "To compete with Microsoft"
+      ],
+      correct: 0,
+      explanation: "SAP's mission is to help the world run better and improve people's lives through innovative software solutions."
+    },
+    {
+      question: "Which SAP value means communicating openly and honestly?",
+      options: [
+        "Stay curious",
+        "Tell it like it is",
+        "Build bridges, not silos",
+        "Run simple"
+      ],
+      correct: 1,
+      explanation: "'Tell it like it is' means we communicate openly and honestly with each other."
+    },
+    {
+      question: "What does 'Build bridges, not silos' mean?",
+      options: [
+        "Focus on individual work",
+        "Collaborate effectively across teams",
+        "Work in isolation",
+        "Avoid teamwork"
+      ],
+      correct: 1,
+      explanation: "'Build bridges, not silos' means we collaborate effectively across teams and organizations."
+    },
+    {
+      question: "Which value encourages lifelong learning and innovation?",
+      options: [
+        "Run simple",
+        "Keep promises",
+        "Stay curious",
+        "Act like owners"
+      ],
+      correct: 2,
+      explanation: "'Stay curious' means we embrace lifelong learning and innovation."
+    }
+  ];
+  const [currentNode, setCurrentNode] = useState('welcome_overview');
+  const [nodeTasks, setNodeTasks] = useState({
+    welcome_overview: {
+      welcome_video: false,
+      company_policies: false,
+      culture_quiz: false
+    },
+    account_setup: {
+      email_setup: false,
+      sap_access: false,
+      permissions: false
+    }
+  });
 
-  // Initialize chat
+  // Initialize chat with state loading
   useEffect(() => {
-    if (chatMessages.length === 0) {
+    loadUserState();
+  }, []);
+
+  const loadUserState = async () => {
+    try {
+      // Load user state from backend
+      const response = await fetch(`http://localhost:8000/api/user/test_user/state`);
+      const data = await response.json();
+      
+      if (data.chat_messages && data.chat_messages.length > 0) {
+        // Convert backend messages to frontend format
+        const messages = data.chat_messages.map(msg => ({
+          id: Date.now() + Math.random(),
+          type: msg.role === 'user' ? 'user' : 'agent',
+          text: msg.content,
+          timestamp: new Date(msg.timestamp)
+        }));
+        setChatMessages(messages);
+        
+        // Update state from backend
+        if (data.current_node) {
+          setCurrentNode(data.current_node);
+        }
+        if (data.node_tasks) {
+          setNodeTasks(data.node_tasks);
+        }
+      } else {
+        // No existing state, show welcome message
+        const welcomeMessage = {
+          id: Date.now(),
+          type: 'agent',
+          text: "🎉 Welcome to SAP! Let's start by introducing you to our culture and values.\n\n1️⃣ Watch the Welcome Video\n2️⃣ Review Company Policies\n3️⃣ Complete the Culture Quiz\n\nTake your time — I'll guide you step by step!",
+          timestamp: new Date()
+        };
+        setChatMessages([welcomeMessage]);
+      }
+    } catch (error) {
+      console.error('Error loading user state:', error);
+      // Fallback to welcome message
       const welcomeMessage = {
         id: Date.now(),
         type: 'agent',
-        text: "🎉 Welcome aboard! I'm your AI Assistant. How can I help you today?",
+        text: "🎉 Welcome to SAP! Let's start by introducing you to our culture and values.\n\n1️⃣ Watch the Welcome Video\n2️⃣ Review Company Policies\n3️⃣ Complete the Culture Quiz\n\nTake your time — I'll guide you step by step!",
         timestamp: new Date()
       };
-      
       setChatMessages([welcomeMessage]);
     }
-  }, []);
+  };
+
+  // Handle video popup
+  const handleShowVideo = () => {
+    setShowVideoPopup(true);
+  };
+
+  const handleCloseVideo = () => {
+    setShowVideoPopup(false);
+    // Send a message indicating video was watched
+    handleUserMessage("I've watched the video");
+  };
+
+  // Handle policy popup
+  const handleShowPolicy = () => {
+    setCurrentPolicyIndex(0); // Start with first policy
+    setShowPolicyPopup(true);
+  };
+
+  const handleClosePolicy = () => {
+    setShowPolicyPopup(false);
+    // Send a message indicating all policies were reviewed
+    handleUserMessage("I've reviewed all company policies");
+  };
+
+  const handleNextPolicy = () => {
+    if (currentPolicyIndex < policies.length - 1) {
+      setCurrentPolicyIndex(currentPolicyIndex + 1);
+    }
+  };
+
+  const handlePrevPolicy = () => {
+    if (currentPolicyIndex > 0) {
+      setCurrentPolicyIndex(currentPolicyIndex - 1);
+    }
+  };
+
+  // Handle quiz popup
+  const handleShowQuiz = () => {
+    setCurrentQuizQuestion(0);
+    setQuizScore(0);
+    setShowQuizPopup(true);
+  };
+
+  const handleCloseQuiz = () => {
+    setShowQuizPopup(false);
+    // Send a message indicating quiz was completed
+    handleUserMessage("I've completed the culture quiz");
+  };
+
+  const handleSkipQuiz = () => {
+    setShowQuizPopup(false);
+    // Send a message indicating quiz was skipped
+    handleUserMessage("I skipped the culture quiz");
+  };
 
   // Handle user message
   const handleUserMessage = async (message) => {
     if (!message.trim()) return;
     
-    // Add user message
-    const userMessage = {
-      id: Date.now(),
-      type: 'user',
-      text: message,
-      timestamp: new Date()
-    };
-    setChatMessages(prev => [...prev, userMessage]);
-    setUserInput('');
+    console.log('Sending message:', message);
     
-    // Call backend API
+    // Call backend API first to check for restart
     setIsProcessing(true);
     try {
       const response = await fetch(`http://localhost:8000/api/user/test_user/chat`, {
@@ -51,15 +207,103 @@ function Onboarding() {
       });
       
       const data = await response.json();
+      console.log('Backend response:', data);
+      console.log('Agent response text:', data.agent_response);
+      console.log('Contains SHOW_CULTURE_QUIZ_BUTTON:', data.agent_response.includes('SHOW_CULTURE_QUIZ_BUTTON'));
+      console.log('Agent response:', data.agent_response);
+      console.log('Contains SHOW_CODE_OF_CONDUCT_BUTTON:', data.agent_response.includes('SHOW_CODE_OF_CONDUCT_BUTTON'));
       
+      // Handle restart case first
+      if (data.restarted) {
+        console.log('Restart detected, replacing chat history');
+        // Replace chat messages with restart message only
+        const restartMessage = {
+          id: Date.now(),
+          type: 'agent',
+          text: data.agent_response,
+          timestamp: new Date(),
+          current_node: data.current_node,
+          node_tasks: data.node_tasks
+        };
+        setChatMessages([restartMessage]);
+        setIsProcessing(false);
+        return;
+      }
+      
+      // For non-restart messages, add user message first
+      const userMessage = {
+        id: Date.now(),
+        type: 'user',
+        text: message,
+        timestamp: new Date()
+      };
+      setChatMessages(prev => [...prev, userMessage]);
+      setUserInput('');
+      
+      // Update node information
+      if (data.current_node) {
+        setCurrentNode(data.current_node);
+      }
+      if (data.node_tasks) {
+        setNodeTasks(data.node_tasks);
+      }
+      
+      // Check if response contains video button trigger
+      if (data.agent_response.includes('SHOW_VIDEO_BUTTON')) {
+        // Remove the trigger text and add video button
+        const cleanResponse = data.agent_response.replace('SHOW_VIDEO_BUTTON', '');
+        const aiResponse = {
+          id: Date.now() + 1,
+          type: 'agent',
+          text: cleanResponse,
+          timestamp: new Date(),
+          current_node: data.current_node,
+          node_tasks: data.node_tasks,
+          showVideoButton: true
+        };
+        setChatMessages(prev => [...prev, aiResponse]);
+      } else if (data.agent_response.includes('SHOW_COMPANY_POLICIES_BUTTON')) {
+        console.log('Company policies button trigger detected!');
+        // Remove the trigger text and add single policy button
+        const cleanResponse = data.agent_response.replace('SHOW_COMPANY_POLICIES_BUTTON', '');
+        const aiResponse = {
+          id: Date.now() + 1,
+          type: 'agent',
+          text: cleanResponse,
+          timestamp: new Date(),
+          current_node: data.current_node,
+          node_tasks: data.node_tasks,
+          showCompanyPoliciesButton: true
+        };
+        console.log('Adding company policies button to message:', aiResponse);
+        setChatMessages(prev => [...prev, aiResponse]);
+      } else if (data.agent_response.includes('SHOW_CULTURE_QUIZ_BUTTON')) {
+        console.log('Culture quiz button trigger detected!');
+        // Remove the trigger text and add quiz button
+        const cleanResponse = data.agent_response.replace('SHOW_CULTURE_QUIZ_BUTTON', '');
+        const aiResponse = {
+          id: Date.now() + 1,
+          type: 'agent',
+          text: cleanResponse,
+          timestamp: new Date(),
+          current_node: data.current_node,
+          node_tasks: data.node_tasks,
+          showCultureQuizButton: true
+        };
+        console.log('Adding culture quiz button to message:', aiResponse);
+        setChatMessages(prev => [...prev, aiResponse]);
+      } else {
       // Add AI response
       const aiResponse = {
         id: Date.now() + 1,
         type: 'agent',
         text: data.agent_response,
-        timestamp: new Date()
+          timestamp: new Date(),
+          current_node: data.current_node,
+          node_tasks: data.node_tasks
       };
       setChatMessages(prev => [...prev, aiResponse]);
+      }
       
     } catch (error) {
       console.error('Error calling backend:', error);
@@ -81,12 +325,27 @@ function Onboarding() {
       <div className="progress-header">
         <div className="progress-container">
           <div className="progress-info">
-            <span className="progress-text">AI Assistant</span>
+            <span className="progress-text">
+              {currentNode === 'welcome_overview' ? 'Welcome & Company Overview' : 'Account Setup & Permissions'}
+            </span>
+            <div className="node-indicator">
+              <div className={`node ${currentNode === 'welcome_overview' ? 'active' : 'completed'}`}>
+                Node 1: Welcome & Overview
+              </div>
+              <div className={`node ${currentNode === 'account_setup' ? 'active' : ''}`}>
+                Node 2: Account Setup
+              </div>
+            </div>
           </div>
         </div>
+        <div className="header-buttons">
+          <button className="restart-btn" onClick={() => handleUserMessage('restart')}>
+            🔄 Restart
+          </button>
         <button className="back-btn" onClick={() => navigate('/main')}>
           ← Back to Main
         </button>
+        </div>
       </div>
 
       {/* Chat Interface */}
@@ -99,6 +358,34 @@ function Onboarding() {
               )}
               <div className="message-content">
                 <div className="message-text">{message.text}</div>
+                {message.showVideoButton && (
+                  <button 
+                    className="video-button"
+                    onClick={handleShowVideo}
+                  >
+                    🎥 Show Video
+                  </button>
+                )}
+                {message.showCompanyPoliciesButton && (
+                  <div className="single-policy-button">
+                    <button 
+                      className="policy-button"
+                      onClick={handleShowPolicy}
+                    >
+                      📋 Company Policies
+                    </button>
+                  </div>
+                )}
+                {message.showCultureQuizButton && (
+                  <div className="single-policy-button">
+                    <button 
+                      className="policy-button"
+                      onClick={handleShowQuiz}
+                    >
+                      🧠 Culture Quiz
+                    </button>
+                  </div>
+                )}
                 <div className="message-time">
                   {message.timestamp.toLocaleTimeString()}
                 </div>
@@ -144,6 +431,103 @@ function Onboarding() {
           </div>
         </div>
       </div>
+
+      {/* Video Popup */}
+      {showVideoPopup && (
+        <div className="video-popup-overlay">
+          <div className="video-popup">
+            <div className="video-popup-header">
+              <h3>SAP Welcome Video</h3>
+              <button className="close-btn" onClick={handleCloseVideo}>×</button>
+            </div>
+            <div className="video-content">
+              <div className="video-placeholder">
+                <div className="video-icon">🎥</div>
+                <p>SAP Welcome Video</p>
+                <p className="work-in-progress">Work in Progress</p>
+                <p>This video will introduce you to SAP's mission, values, and culture.</p>
+              </div>
+            </div>
+            <div className="video-popup-footer">
+              <button className="btn-primary" onClick={handleCloseVideo}>
+                I've Watched the Video
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Policy Popup */}
+      {showPolicyPopup && (
+        <div className="video-popup-overlay">
+          <div className="video-popup policy-popup">
+            <div className="video-popup-header">
+              <h3>SAP Company Policies</h3>
+              <button className="close-btn" onClick={handleClosePolicy}>×</button>
+            </div>
+            <div className="video-content">
+              <div className="policy-slider">
+                <div className="policy-slide">
+                  <div className="policy-icon">{policies[currentPolicyIndex].icon}</div>
+                  <h4>{policies[currentPolicyIndex].name}</h4>
+                  <p className="work-in-progress">Work in Progress</p>
+                  <p>{policies[currentPolicyIndex].description}</p>
+                </div>
+                
+                <div className="policy-navigation">
+                  <button 
+                    className="nav-btn prev-btn" 
+                    onClick={handlePrevPolicy}
+                    disabled={currentPolicyIndex === 0}
+                  >
+                    ← Previous
+                  </button>
+                  <span className="policy-counter">
+                    {currentPolicyIndex + 1} of {policies.length}
+                  </span>
+                  <button 
+                    className="nav-btn next-btn" 
+                    onClick={handleNextPolicy}
+                    disabled={currentPolicyIndex === policies.length - 1}
+                  >
+                    Next →
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div className="video-popup-footer">
+              <button className="btn-primary" onClick={handleClosePolicy}>
+                I've Reviewed All Policies
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Culture Quiz Popup */}
+      {showQuizPopup && (
+        <div className="video-popup-overlay">
+          <div className="video-popup quiz-popup">
+            <div className="video-popup-header">
+              <h3>SAP Culture Quiz</h3>
+              <button className="close-btn" onClick={handleSkipQuiz}>×</button>
+            </div>
+            <div className="video-content">
+              <div className="quiz-placeholder">
+                <div className="quiz-icon">🧠</div>
+                <h4>SAP Culture Quiz</h4>
+                <p className="work-in-progress">Work in Progress</p>
+                <p>This quiz will test your knowledge of SAP's mission, values, and culture.</p>
+              </div>
+            </div>
+            <div className="video-popup-footer">
+              <button className="btn-primary" onClick={handleCloseQuiz}>
+                Finish Quiz
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
