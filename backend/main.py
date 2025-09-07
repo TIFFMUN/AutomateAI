@@ -1,11 +1,145 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from typing import Dict, Any, Optional, List
+from sqlalchemy.orm import Session
+from datetime import datetime
+from config import settings
+from simple_agent import SimpleHRAgent
+from database import get_db, create_tables
+from models import UserState, ChatMessage
 
-app = FastAPI()
+app = FastAPI(title="SAP HR Assistant", version="1.0.0")
 
+# Create database tables on startup
+@app.on_event("startup")
+def startup_event():
+    create_tables()
+
+# CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.ALLOWED_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# HR Agent
+hr_agent = SimpleHRAgent(settings.GEMINI_API_KEY)
+
+# Models
+class ChatRequest(BaseModel):
+    user_id: str
+    message: str
+
+class ChatMessageResponse(BaseModel):
+    role: str
+    content: str
+    timestamp: datetime
+
+class UserStateResponse(BaseModel):
+    user_id: str
+    chat_messages: List[ChatMessageResponse]
+    created_at: datetime
+    updated_at: datetime
+
+# Database functions
+def get_user_state(db: Session, user_id: str) -> Optional[UserState]:
+    return db.query(UserState).filter(UserState.user_id == user_id).first()
+
+def create_user_state(db: Session, user_id: str) -> UserState:
+    user_state = UserState(user_id=user_id)
+    db.add(user_state)
+    db.commit()
+    db.refresh(user_state)
+    return user_state
+
+def get_chat_messages(db: Session, user_id: str) -> List[ChatMessage]:
+    return db.query(ChatMessage).filter(ChatMessage.user_id == user_id).order_by(ChatMessage.timestamp).all()
+
+def save_chat_message(db: Session, user_id: str, role: str, content: str) -> ChatMessage:
+    message = ChatMessage(user_id=user_id, role=role, content=content)
+    db.add(message)
+    db.commit()
+    db.refresh(message)
+    return message
+
+def update_user_state_timestamp(db: Session, user_id: str):
+    user_state = get_user_state(db, user_id)
+    if user_state:
+        user_state.updated_at = datetime.utcnow()
+        db.commit()
+
+# API Endpoints
 @app.get("/")
 def read_root():
-    return {"message": "AutomateAI Backend is running!"}
+    return {"message": "SAP HR Assistant API"}
 
 @app.get("/health")
 def health_check():
     return {"status": "healthy"}
+
+@app.get("/api/user/{user_id}/state")
+def get_user_state_endpoint(user_id: str, db: Session = Depends(get_db)):
+    user_state = get_user_state(db, user_id)
+    if not user_state:
+        user_state = create_user_state(db, user_id)
+    
+    chat_messages = get_chat_messages(db, user_id)
+    chat_message_responses = [
+        ChatMessageResponse(
+            role=msg.role,
+            content=msg.content,
+            timestamp=msg.timestamp
+        ) for msg in chat_messages
+    ]
+    
+    return UserStateResponse(
+        user_id=user_state.user_id,
+        chat_messages=chat_message_responses,
+        created_at=user_state.created_at,
+        updated_at=user_state.updated_at
+    )
+
+@app.post("/api/user/{user_id}/chat")
+def handle_chat(user_id: str, request: ChatRequest, db: Session = Depends(get_db)):
+    # Ensure user state exists
+    user_state = get_user_state(db, user_id)
+    if not user_state:
+        user_state = create_user_state(db, user_id)
+    
+    # Get existing chat messages
+    existing_messages = get_chat_messages(db, user_id)
+    chat_history = [{"role": msg.role, "content": msg.content} for msg in existing_messages]
+    
+    # Save user message
+    save_chat_message(db, user_id, "user", request.message)
+    
+    # Get agent response
+    result = hr_agent.chat(request.message, chat_history)
+    
+    # Save agent response
+    save_chat_message(db, user_id, "assistant", result["agent_response"])
+    
+    # Update user state timestamp
+    update_user_state_timestamp(db, user_id)
+    
+    # Get updated chat messages
+    updated_messages = get_chat_messages(db, user_id)
+    chat_message_responses = [
+        ChatMessageResponse(
+            role=msg.role,
+            content=msg.content,
+            timestamp=msg.timestamp
+        ) for msg in updated_messages
+    ]
+    
+    return {
+        "messages": chat_message_responses,
+        "agent_response": result["agent_response"]
+    }
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
