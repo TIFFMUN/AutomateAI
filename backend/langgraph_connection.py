@@ -63,53 +63,11 @@ class LangGraphConnection:
         
         # Welcome Overview Node fallbacks
         if current_node == 'welcome_overview':
-            # Initial questions
-            if any(word in user_msg_lower for word in ['yes', 'yeah', 'yep', 'sure']):
-                if 'questions' in user_msg_lower or len(chat_history) < 2:
-                    return "What's your question about SAP or the onboarding process?"
-                elif 'video' in user_msg_lower or 'ready' in user_msg_lower:
-                    return "Perfect! Click the button below to watch: SHOW_VIDEO_BUTTON"
-                elif 'mission' in user_msg_lower or 'values' in user_msg_lower:
-                    return "Great! Let's review SAP's Company Policies. Click the button below: SHOW_COMPANY_POLICIES_BUTTON"
-            
-            # Video acknowledgment
-            elif 'watched' in user_msg_lower and 'video' in user_msg_lower:
-                return "You've watched the welcome video. SAP's mission is to help the world run better. Our core values: Tell it like it is, Stay curious, Build bridges not silos, Run simple, Keep promises. Any questions about SAP's mission and values before we move to company policies?"
-            
-            # Policy acknowledgment
-            elif 'reviewed' in user_msg_lower and any(policy in user_msg_lower for policy in ['company policies', 'policies']):
-                return "You've reviewed the company policies. Any questions about them?"
-            
-            # No questions responses
-            elif any(word in user_msg_lower for word in ['no', 'nope', 'none', 'ready', 'continue']):
-                if 'questions about the policies' in str(chat_history[-1:]) if chat_history else '':
-                    return "Great! Let's start the Culture Quiz. Click the button below: SHOW_CULTURE_QUIZ_BUTTON"
-                elif 'questions about sap' in str(chat_history[-1:]) if chat_history else '':
-                    return "Are you ready to watch the SAP Welcome Video?"
-                else:
-                    return "Great! Let's move on to the next step."
-            
-            # Quiz completion
-            elif 'quiz' in user_msg_lower and ('completed' in user_msg_lower or 'finished' in user_msg_lower):
-                return "Great! Now let's move to account setup. → account_setup"
-            
-            # Default fallback
-            else:
-                return "I'm here to help with your SAP onboarding. What would you like to know?"
+            return "I'm here to help with your SAP onboarding. What would you like to know?"
         
         # Personal Information Node fallbacks
         elif current_node == 'personal_info':
-            if any(word in user_msg_lower for word in ['yes', 'yeah', 'yep', 'sure']):
-                if 'questions' in user_msg_lower:
-                    return "What's your question about the information collection process?"
-                else:
-                    return "Let's start with your personal information. What's your full name?"
-            
-            elif any(word in user_msg_lower for word in ['no', 'nope', 'none']):
-                return "Let's start with your personal information. What's your full name?"
-            
-            else:
-                return "Let's collect your personal information and complete required legal forms. Any questions about the information collection process before we begin?"
+            return "Let's collect your personal information and complete required legal forms. Any questions about the information collection process before we begin?"
         
         # Default response
         return "I'm here to help with your SAP onboarding. What would you like to know?"
