@@ -4,15 +4,25 @@ import './Onboarding.css';
 
 function Onboarding() {
   const navigate = useNavigate();
+  const messagesEndRef = useRef(null);
+  
+  // Chat state
   const [isProcessing, setIsProcessing] = useState(false);
   const [showLoading, setShowLoading] = useState(false);
   const [chatMessages, setChatMessages] = useState([]);
   const [userInput, setUserInput] = useState('');
+  
+  // Node state
+  const [currentNode, setCurrentNode] = useState('welcome_overview');
+  
+  // Popup states
   const [showVideoPopup, setShowVideoPopup] = useState(false);
   const [showPolicyPopup, setShowPolicyPopup] = useState(false);
   const [showQuizPopup, setShowQuizPopup] = useState(false);
   const [showEmployeePerksPopup, setShowEmployeePerksPopup] = useState(false);
   const [showPersonalInfoFormPopup, setShowPersonalInfoFormPopup] = useState(false);
+  
+  // Form state
   const [personalInfoForm, setPersonalInfoForm] = useState({
     fullName: '',
     preferredName: '',
@@ -26,9 +36,12 @@ function Onboarding() {
     nda: false,
     taxWithholding: false
   });
+  
+  // Slider states
   const [currentPolicyIndex, setCurrentPolicyIndex] = useState(0);
   const [currentPerksIndex, setCurrentPerksIndex] = useState(0);
-  
+
+  // Data constants
   const policies = [
     { name: 'Code of Conduct', icon: '📋', description: 'Ethical principles and standards of behavior expected of all SAP employees.' },
     { name: 'Data Protection', icon: '🔒', description: 'Guidelines for handling personal and sensitive data in compliance with regulations.' },
@@ -42,21 +55,6 @@ function Onboarding() {
     { name: 'Work-Life Balance', icon: '⚖️', description: 'Flexible working arrangements, paid time off, and programs to support work-life integration.' },
     { name: 'Career Growth', icon: '🚀', description: 'Mentorship programs, internal mobility, and clear career progression paths within SAP.' }
   ];
-  
-  const [currentNode, setCurrentNode] = useState('welcome_overview');
-  const [nodeTasks, setNodeTasks] = useState({
-    welcome_overview: {
-      welcome_video: false,
-      company_policies: false,
-      culture_quiz: false
-    },
-    account_setup: {
-      email_setup: false,
-      sap_access: false,
-      permissions: false
-    }
-  });
-  const messagesEndRef = useRef(null);
 
   // Initialize chat with state loading
   useEffect(() => {
@@ -127,9 +125,6 @@ function Onboarding() {
         if (data.current_node) {
           setCurrentNode(data.current_node);
         }
-        if (data.node_tasks) {
-          setNodeTasks(data.node_tasks);
-        }
       } else {
         // No existing state, show welcome message
         const welcomeMessage = {
@@ -176,27 +171,17 @@ function Onboarding() {
     handleUserMessage("I've reviewed all company policies");
   };
 
-  const handleNextPolicy = () => {
-    if (currentPolicyIndex < policies.length - 1) {
-      setCurrentPolicyIndex(currentPolicyIndex + 1);
-    }
-  };
-
-  const handlePrevPolicy = () => {
-    if (currentPolicyIndex > 0) {
-      setCurrentPolicyIndex(currentPolicyIndex - 1);
-    }
-  };
-
-  const handleNextPerks = () => {
-    if (currentPerksIndex < employeePerks.length - 1) {
-      setCurrentPerksIndex(currentPerksIndex + 1);
-    }
-  };
-
-  const handlePrevPerks = () => {
-    if (currentPerksIndex > 0) {
-      setCurrentPerksIndex(currentPerksIndex - 1);
+  // Navigation helpers
+  const navigateSlider = (type, direction) => {
+    const isPolicy = type === 'policy';
+    const currentIndex = isPolicy ? currentPolicyIndex : currentPerksIndex;
+    const setCurrentIndex = isPolicy ? setCurrentPolicyIndex : setCurrentPerksIndex;
+    const maxIndex = isPolicy ? policies.length - 1 : employeePerks.length - 1;
+    
+    if (direction === 'next' && currentIndex < maxIndex) {
+      setCurrentIndex(currentIndex + 1);
+    } else if (direction === 'prev' && currentIndex > 0) {
+      setCurrentIndex(currentIndex - 1);
     }
   };
 
@@ -306,8 +291,7 @@ function Onboarding() {
           type: 'agent',
           text: data.agent_response,
           timestamp: new Date(),
-          current_node: data.current_node,
-          node_tasks: data.node_tasks
+          current_node: data.current_node
         };
         setChatMessages([restartMessage]);
         setIsProcessing(false);
@@ -317,9 +301,6 @@ function Onboarding() {
       // Update node information
       if (data.current_node) {
         setCurrentNode(data.current_node);
-      }
-      if (data.node_tasks) {
-        setNodeTasks(data.node_tasks);
       }
       
       // Check if response contains video button trigger
@@ -332,7 +313,6 @@ function Onboarding() {
           text: cleanResponse,
           timestamp: new Date(),
           current_node: data.current_node,
-          node_tasks: data.node_tasks,
           showVideoButton: true
         };
         setChatMessages(prev => [...prev, aiResponse]);
@@ -345,7 +325,6 @@ function Onboarding() {
           text: cleanResponse,
           timestamp: new Date(),
           current_node: data.current_node,
-          node_tasks: data.node_tasks,
           showCompanyPoliciesButton: true
         };
         setChatMessages(prev => [...prev, aiResponse]);
@@ -358,7 +337,6 @@ function Onboarding() {
           text: cleanResponse,
           timestamp: new Date(),
           current_node: data.current_node,
-          node_tasks: data.node_tasks,
           showCultureQuizButton: true
         };
         setChatMessages(prev => [...prev, aiResponse]);
@@ -371,7 +349,6 @@ function Onboarding() {
           text: cleanResponse,
           timestamp: new Date(),
           current_node: data.current_node,
-          node_tasks: data.node_tasks,
           showPersonalInfoFormButton: true
         };
         setChatMessages(prev => [...prev, aiResponse]);
@@ -384,7 +361,6 @@ function Onboarding() {
           text: cleanResponse,
           timestamp: new Date(),
           current_node: data.current_node,
-          node_tasks: data.node_tasks,
           showEmployeePerksButton: true
         };
         setChatMessages(prev => [...prev, aiResponse]);
@@ -394,9 +370,8 @@ function Onboarding() {
         id: Date.now() + 1,
         type: 'agent',
         text: data.agent_response,
-          timestamp: new Date(),
-          current_node: data.current_node,
-          node_tasks: data.node_tasks
+        timestamp: new Date(),
+        current_node: data.current_node
       };
       setChatMessages(prev => [...prev, aiResponse]);
       }
@@ -424,16 +399,17 @@ function Onboarding() {
             <span className="progress-text">
               {currentNode === 'welcome_overview' ? 'Welcome & Company Overview' : 
                currentNode === 'personal_info' ? 'SAP Onboarding' : 
+               currentNode === 'onboarding_complete' ? 'Onboarding Complete!' :
                'Account Setup'}
             </span>
             <div className="node-indicator">
               <div className={`node ${currentNode === 'welcome_overview' ? 'active' : 'completed'}`}>
                 Node 1: Company Welcome
               </div>
-              <div className={`node ${currentNode === 'personal_info' ? 'active' : currentNode === 'account_setup' ? 'completed' : ''}`}>
+              <div className={`node ${currentNode === 'personal_info' ? 'active' : currentNode === 'account_setup' || currentNode === 'onboarding_complete' ? 'completed' : ''}`}>
                 Node 2: Personal Information
               </div>
-              <div className={`node ${currentNode === 'account_setup' ? 'active' : ''}`}>
+              <div className={`node ${currentNode === 'account_setup' ? 'active' : currentNode === 'onboarding_complete' ? 'completed' : ''}`}>
                 Node 3: Account Setup
               </div>
             </div>
@@ -530,13 +506,7 @@ function Onboarding() {
             <input
               type="text"
               value={userInput}
-              onChange={(e) => {
-                setUserInput(e.target.value);
-                // Add typing indicator or update chat in real-time
-                if (e.target.value.trim()) {
-                  // You could add a typing indicator here if needed
-                }
-              }}
+              onChange={(e) => setUserInput(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey && userInput.trim()) {
                   e.preventDefault();
@@ -550,10 +520,7 @@ function Onboarding() {
             />
             <button
               className="send-btn"
-              onClick={() => {
-                handleUserMessage(userInput);
-                setUserInput(''); // Clear input after sending
-              }}
+              onClick={() => handleUserMessage(userInput)}
               disabled={isProcessing || !userInput.trim()}
             >
               Send
@@ -607,7 +574,7 @@ function Onboarding() {
                 <div className="policy-navigation">
                   <button 
                     className="nav-btn prev-btn" 
-                    onClick={handlePrevPolicy}
+                    onClick={() => navigateSlider('policy', 'prev')}
                     disabled={currentPolicyIndex === 0}
                   >
                     ← Previous
@@ -617,7 +584,7 @@ function Onboarding() {
                   </span>
                   <button 
                     className="nav-btn next-btn" 
-                    onClick={handleNextPolicy}
+                    onClick={() => navigateSlider('policy', 'next')}
                     disabled={currentPolicyIndex === policies.length - 1}
                   >
                     Next →
@@ -679,7 +646,7 @@ function Onboarding() {
                 <div className="policy-navigation">
                   <button 
                     className="nav-btn prev-btn" 
-                    onClick={handlePrevPerks}
+                    onClick={() => navigateSlider('perks', 'prev')}
                     disabled={currentPerksIndex === 0}
                   >
                     ← Previous
@@ -689,7 +656,7 @@ function Onboarding() {
                   </span>
                   <button 
                     className="nav-btn next-btn" 
-                    onClick={handleNextPerks}
+                    onClick={() => navigateSlider('perks', 'next')}
                     disabled={currentPerksIndex === employeePerks.length - 1}
                   >
                     Next →
