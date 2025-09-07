@@ -11,8 +11,6 @@ function Onboarding() {
   const [showPolicyPopup, setShowPolicyPopup] = useState(false);
   const [showQuizPopup, setShowQuizPopup] = useState(false);
   const [currentPolicyIndex, setCurrentPolicyIndex] = useState(0);
-  const [currentQuizQuestion, setCurrentQuizQuestion] = useState(0);
-  const [quizScore, setQuizScore] = useState(0);
   
   const policies = [
     { name: 'Code of Conduct', icon: '📋', description: 'Ethical principles and standards of behavior expected of all SAP employees.' },
@@ -21,52 +19,6 @@ function Onboarding() {
     { name: 'Diversity & Inclusion', icon: '🤝', description: 'Commitment to creating an inclusive workplace that values diversity.' }
   ];
   
-  const quizQuestions = [
-    {
-      question: "What is SAP's mission?",
-      options: [
-        "To help the world run better and improve people's lives",
-        "To be the largest software company",
-        "To focus only on enterprise software",
-        "To compete with Microsoft"
-      ],
-      correct: 0,
-      explanation: "SAP's mission is to help the world run better and improve people's lives through innovative software solutions."
-    },
-    {
-      question: "Which SAP value means communicating openly and honestly?",
-      options: [
-        "Stay curious",
-        "Tell it like it is",
-        "Build bridges, not silos",
-        "Run simple"
-      ],
-      correct: 1,
-      explanation: "'Tell it like it is' means we communicate openly and honestly with each other."
-    },
-    {
-      question: "What does 'Build bridges, not silos' mean?",
-      options: [
-        "Focus on individual work",
-        "Collaborate effectively across teams",
-        "Work in isolation",
-        "Avoid teamwork"
-      ],
-      correct: 1,
-      explanation: "'Build bridges, not silos' means we collaborate effectively across teams and organizations."
-    },
-    {
-      question: "Which value encourages lifelong learning and innovation?",
-      options: [
-        "Run simple",
-        "Keep promises",
-        "Stay curious",
-        "Act like owners"
-      ],
-      correct: 2,
-      explanation: "'Stay curious' means we embrace lifelong learning and innovation."
-    }
-  ];
   const [currentNode, setCurrentNode] = useState('welcome_overview');
   const [nodeTasks, setNodeTasks] = useState({
     welcome_overview: {
@@ -169,8 +121,6 @@ function Onboarding() {
 
   // Handle quiz popup
   const handleShowQuiz = () => {
-    setCurrentQuizQuestion(0);
-    setQuizScore(0);
     setShowQuizPopup(true);
   };
 
@@ -191,8 +141,6 @@ function Onboarding() {
     if (!message.trim()) return;
     
     console.log('Sending message:', message);
-    
-    // Call backend API first to check for restart
     setIsProcessing(true);
     try {
       const response = await fetch(`http://localhost:8000/api/user/test_user/chat`, {
@@ -207,15 +155,9 @@ function Onboarding() {
       });
       
       const data = await response.json();
-      console.log('Backend response:', data);
-      console.log('Agent response text:', data.agent_response);
-      console.log('Contains SHOW_CULTURE_QUIZ_BUTTON:', data.agent_response.includes('SHOW_CULTURE_QUIZ_BUTTON'));
-      console.log('Agent response:', data.agent_response);
-      console.log('Contains SHOW_CODE_OF_CONDUCT_BUTTON:', data.agent_response.includes('SHOW_CODE_OF_CONDUCT_BUTTON'));
       
       // Handle restart case first
       if (data.restarted) {
-        console.log('Restart detected, replacing chat history');
         // Replace chat messages with restart message only
         const restartMessage = {
           id: Date.now(),
@@ -263,7 +205,6 @@ function Onboarding() {
         };
         setChatMessages(prev => [...prev, aiResponse]);
       } else if (data.agent_response.includes('SHOW_COMPANY_POLICIES_BUTTON')) {
-        console.log('Company policies button trigger detected!');
         // Remove the trigger text and add single policy button
         const cleanResponse = data.agent_response.replace('SHOW_COMPANY_POLICIES_BUTTON', '');
         const aiResponse = {
@@ -275,10 +216,8 @@ function Onboarding() {
           node_tasks: data.node_tasks,
           showCompanyPoliciesButton: true
         };
-        console.log('Adding company policies button to message:', aiResponse);
         setChatMessages(prev => [...prev, aiResponse]);
       } else if (data.agent_response.includes('SHOW_CULTURE_QUIZ_BUTTON')) {
-        console.log('Culture quiz button trigger detected!');
         // Remove the trigger text and add quiz button
         const cleanResponse = data.agent_response.replace('SHOW_CULTURE_QUIZ_BUTTON', '');
         const aiResponse = {
@@ -290,7 +229,6 @@ function Onboarding() {
           node_tasks: data.node_tasks,
           showCultureQuizButton: true
         };
-        console.log('Adding culture quiz button to message:', aiResponse);
         setChatMessages(prev => [...prev, aiResponse]);
       } else {
       // Add AI response
