@@ -20,6 +20,11 @@ function Onboarding() {
   const [pointsEarned, setPointsEarned] = useState(0);
   const [showPointsAnimation, setShowPointsAnimation] = useState(false);
   
+  // Visual points notification state
+  const [showVisualPointsNotification, setShowVisualPointsNotification] = useState(false);
+  const [visualPointsValue, setVisualPointsValue] = useState(0);
+  const [visualPointsMessage, setVisualPointsMessage] = useState('');
+  
   // Popup states
   const [showVideoPopup, setShowVideoPopup] = useState(false);
   const [showPolicyPopup, setShowPolicyPopup] = useState(false);
@@ -110,6 +115,18 @@ function Onboarding() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  // Show visual points notification
+  const showVisualPoints = (points, message) => {
+    setVisualPointsValue(points);
+    setVisualPointsMessage(message);
+    setShowVisualPointsNotification(true);
+    
+    // Hide notification after 2 seconds (will sync with popup close)
+    setTimeout(() => {
+      setShowVisualPointsNotification(false);
+    }, 2000);
+  };
+
   const loadUserState = async () => {
     try {
       // Load user state from backend
@@ -162,9 +179,15 @@ function Onboarding() {
   };
 
   const handleCloseVideo = () => {
-    setShowVideoPopup(false);
-    // Send a message indicating video was watched
-    handleUserMessage("I've watched the video");
+    // Show visual notification immediately with estimated points
+    showVisualPoints(300, "Welcome Video Completed!");
+    
+    // Close popup after delay to sync with notification
+    setTimeout(() => {
+      setShowVideoPopup(false);
+      // Send a message indicating video was watched
+      handleUserMessage("I've watched the video");
+    }, 2000);
   };
 
   // Handle policy popup
@@ -174,9 +197,15 @@ function Onboarding() {
   };
 
   const handleClosePolicy = () => {
-    setShowPolicyPopup(false);
-    // Send a message indicating all policies were reviewed
-    handleUserMessage("I've reviewed all company policies");
+    // Show visual notification immediately with estimated points
+    showVisualPoints(200, "Company Policies Reviewed!");
+    
+    // Close popup after delay to sync with notification
+    setTimeout(() => {
+      setShowPolicyPopup(false);
+      // Send a message indicating all policies were reviewed
+      handleUserMessage("I've reviewed all company policies");
+    }, 2000);
   };
 
   // Navigation helpers
@@ -199,9 +228,15 @@ function Onboarding() {
   };
 
   const handleCloseQuiz = () => {
-    setShowQuizPopup(false);
-    // Send a message indicating quiz was completed
-    handleUserMessage("I've completed the culture quiz");
+    // Show visual notification immediately with estimated points
+    showVisualPoints(250, "Culture Quiz Completed!");
+    
+    // Close popup after delay to sync with notification
+    setTimeout(() => {
+      setShowQuizPopup(false);
+      // Send a message indicating quiz was completed
+      handleUserMessage("I've completed the culture quiz");
+    }, 2000);
   };
 
   const handleSkipQuiz = () => {
@@ -216,9 +251,15 @@ function Onboarding() {
   };
 
   const handleCloseEmployeePerks = () => {
-    setShowEmployeePerksPopup(false);
-    // Send a message indicating perks were reviewed
-    handleUserMessage("I've reviewed the employee perks");
+    // Show visual notification immediately with estimated points
+    showVisualPoints(150, "Employee Perks Reviewed!");
+    
+    // Close popup after delay to sync with notification
+    setTimeout(() => {
+      setShowEmployeePerksPopup(false);
+      // Send a message indicating perks were reviewed
+      handleUserMessage("I've reviewed the employee perks");
+    }, 2000);
   };
 
   // Handle personal info form popup
@@ -227,24 +268,30 @@ function Onboarding() {
   };
 
   const handleClosePersonalInfoForm = () => {
-    setShowPersonalInfoFormPopup(false);
-    // Send form data to agent for intelligent analysis
-    const formData = {
-      fullName: personalInfoForm.fullName,
-      preferredName: personalInfoForm.preferredName,
-      email: personalInfoForm.email,
-      phone: personalInfoForm.phone,
-      address: personalInfoForm.address,
-      emergencyContactName: personalInfoForm.emergencyContactName,
-      emergencyContactPhone: personalInfoForm.emergencyContactPhone,
-      relationship: personalInfoForm.relationship,
-      employmentContract: personalInfoForm.employmentContract,
-      nda: personalInfoForm.nda,
-      taxWithholding: personalInfoForm.taxWithholding
-    };
+    // Show visual notification immediately with estimated points
+    showVisualPoints(400, "Personal Info Form Submitted!");
     
-    // Send detailed form data to agent
-    handleUserMessage(`I've submitted the personal information form with the following details: ${JSON.stringify(formData)}`);
+    // Close popup after delay to sync with notification
+    setTimeout(() => {
+      setShowPersonalInfoFormPopup(false);
+      // Send form data to agent for intelligent analysis
+      const formData = {
+        fullName: personalInfoForm.fullName,
+        preferredName: personalInfoForm.preferredName,
+        email: personalInfoForm.email,
+        phone: personalInfoForm.phone,
+        address: personalInfoForm.address,
+        emergencyContactName: personalInfoForm.emergencyContactName,
+        emergencyContactPhone: personalInfoForm.emergencyContactPhone,
+        relationship: personalInfoForm.relationship,
+        employmentContract: personalInfoForm.employmentContract,
+        nda: personalInfoForm.nda,
+        taxWithholding: personalInfoForm.taxWithholding
+      };
+      
+      // Send detailed form data to agent
+      handleUserMessage(`I've submitted the personal information form with the following details: ${JSON.stringify(formData)}`);
+    }, 2000);
   };
 
   const handleFormInputChange = (field, value) => {
@@ -466,6 +513,19 @@ function Onboarding() {
           </div>
         )}
       </div>
+
+      {/* Visual Points Notification */}
+      {showVisualPointsNotification && (
+        <div className="visual-points-notification">
+          <div className="visual-points-content">
+            <div className="visual-points-icon">🎉</div>
+            <div className="visual-points-text">
+              <div className="visual-points-message">{visualPointsMessage}</div>
+              <div className="visual-points-value">+{visualPointsValue} points!</div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Chat Interface */}
       <div className="chat-container">

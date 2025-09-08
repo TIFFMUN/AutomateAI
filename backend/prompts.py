@@ -1,7 +1,6 @@
 """
 Prompt templates for the HR assistant
 """
-from typing import Dict, Any
 
 # Common conversation style rules
 CONVERSATION_STYLE = """
