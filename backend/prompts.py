@@ -2,6 +2,26 @@
 Prompt templates for the HR assistant
 """
 
+# Performance Feedback Analysis Prompt
+PERFORMANCE_FEEDBACK_ANALYSIS = """
+Analyze the following performance feedback and provide a structured analysis. Please respond with clear, readable text (not JSON format).
+
+Performance Feedback:
+{feedback_text}
+
+Please provide your analysis in this exact format:
+
+SUMMARY: [Write a brief 2-3 sentence summary of the overall feedback]
+
+STRENGTHS: [List 3-5 key strengths in bullet point format, each on a new line starting with •]
+
+AREAS FOR IMPROVEMENT: [List 2-4 areas that need improvement in bullet point format, each on a new line starting with •]
+
+NEXT STEPS: [Provide 2-3 specific, actionable next steps for the employee, each on a new line starting with •]
+
+Make sure to use bullet points (•) and keep the text concise but informative.
+"""
+
 # Common conversation style rules
 CONVERSATION_STYLE = """
 CONVERSATION STYLE:
