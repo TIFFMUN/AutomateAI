@@ -374,78 +374,91 @@ function Onboarding() {
         }, 3000);
       }
       
-      // Check if response contains video button trigger
-      if (data.agent_response.includes('SHOW_VIDEO_BUTTON')) {
-        // Remove the trigger text and add video button
-        const cleanResponse = data.agent_response.replace('SHOW_VIDEO_BUTTON', '');
-        const aiResponse = {
-          id: Date.now() + 1,
-          type: 'agent',
-          text: cleanResponse,
-          timestamp: new Date(),
-          current_node: data.current_node,
-          showVideoButton: true
-        };
-        setChatMessages(prev => [...prev, aiResponse]);
-      } else if (data.agent_response.includes('SHOW_COMPANY_POLICIES_BUTTON')) {
-        // Remove the trigger text and add single policy button
-        const cleanResponse = data.agent_response.replace('SHOW_COMPANY_POLICIES_BUTTON', '');
-        const aiResponse = {
-          id: Date.now() + 1,
-          type: 'agent',
-          text: cleanResponse,
-          timestamp: new Date(),
-          current_node: data.current_node,
-          showCompanyPoliciesButton: true
-        };
-        setChatMessages(prev => [...prev, aiResponse]);
-      } else if (data.agent_response.includes('SHOW_CULTURE_QUIZ_BUTTON')) {
-        // Remove the trigger text and add quiz button
-        const cleanResponse = data.agent_response.replace('SHOW_CULTURE_QUIZ_BUTTON', '');
-        const aiResponse = {
-          id: Date.now() + 1,
-          type: 'agent',
-          text: cleanResponse,
-          timestamp: new Date(),
-          current_node: data.current_node,
-          showCultureQuizButton: true
-        };
-        setChatMessages(prev => [...prev, aiResponse]);
-      } else if (data.agent_response.includes('SHOW_PERSONAL_INFO_FORM_BUTTON')) {
-        // Remove the trigger text and add personal info form button
-        const cleanResponse = data.agent_response.replace('SHOW_PERSONAL_INFO_FORM_BUTTON', '');
-        const aiResponse = {
-          id: Date.now() + 1,
-          type: 'agent',
-          text: cleanResponse,
-          timestamp: new Date(),
-          current_node: data.current_node,
-          showPersonalInfoFormButton: true
-        };
-        setChatMessages(prev => [...prev, aiResponse]);
-      } else if (data.agent_response.includes('SHOW_EMPLOYEE_PERKS_BUTTON')) {
-        // Remove the trigger text and add employee perks button
-        const cleanResponse = data.agent_response.replace('SHOW_EMPLOYEE_PERKS_BUTTON', '');
-        const aiResponse = {
-          id: Date.now() + 1,
-          type: 'agent',
-          text: cleanResponse,
-          timestamp: new Date(),
-          current_node: data.current_node,
-          showEmployeePerksButton: true
-        };
-        setChatMessages(prev => [...prev, aiResponse]);
-      } else {
-      // Add AI response
-      const aiResponse = {
-        id: Date.now() + 1,
-        type: 'agent',
-        text: data.agent_response,
-        timestamp: new Date(),
-        current_node: data.current_node
-      };
-      setChatMessages(prev => [...prev, aiResponse]);
-      }
+      // Handle multiple agent messages if available, otherwise use single response
+      const agentMessages = data.agent_messages || [data.agent_response];
+      
+      // Add each agent message with typing delays for natural conversation flow
+      agentMessages.forEach((message, index) => {
+        // Calculate delay: first message immediate, then increasing delays for typing effect
+        const baseDelay = index === 0 ? 0 : 1200; // 1.2s delay for typing effect
+        const typingDelay = index * 1500; // 1.5s between each message
+        const totalDelay = baseDelay + typingDelay;
+        
+        setTimeout(() => {
+          // Check if response contains button triggers
+          if (message.includes('SHOW_VIDEO_BUTTON')) {
+            // Remove the trigger text and add video button
+            const cleanResponse = message.replace('SHOW_VIDEO_BUTTON', '');
+            const aiResponse = {
+              id: Date.now() + index + 1,
+              type: 'agent',
+              text: cleanResponse,
+              timestamp: new Date(),
+              current_node: data.current_node,
+              showVideoButton: true
+            };
+            setChatMessages(prev => [...prev, aiResponse]);
+          } else if (message.includes('SHOW_COMPANY_POLICIES_BUTTON')) {
+            // Remove the trigger text and add single policy button
+            const cleanResponse = message.replace('SHOW_COMPANY_POLICIES_BUTTON', '');
+            const aiResponse = {
+              id: Date.now() + index + 1,
+              type: 'agent',
+              text: cleanResponse,
+              timestamp: new Date(),
+              current_node: data.current_node,
+              showCompanyPoliciesButton: true
+            };
+            setChatMessages(prev => [...prev, aiResponse]);
+          } else if (message.includes('SHOW_CULTURE_QUIZ_BUTTON')) {
+            // Remove the trigger text and add quiz button
+            const cleanResponse = message.replace('SHOW_CULTURE_QUIZ_BUTTON', '');
+            const aiResponse = {
+              id: Date.now() + index + 1,
+              type: 'agent',
+              text: cleanResponse,
+              timestamp: new Date(),
+              current_node: data.current_node,
+              showCultureQuizButton: true
+            };
+            setChatMessages(prev => [...prev, aiResponse]);
+          } else if (message.includes('SHOW_PERSONAL_INFO_FORM_BUTTON')) {
+            // Remove the trigger text and add personal info form button
+            const cleanResponse = message.replace('SHOW_PERSONAL_INFO_FORM_BUTTON', '');
+            const aiResponse = {
+              id: Date.now() + index + 1,
+              type: 'agent',
+              text: cleanResponse,
+              timestamp: new Date(),
+              current_node: data.current_node,
+              showPersonalInfoFormButton: true
+            };
+            setChatMessages(prev => [...prev, aiResponse]);
+          } else if (message.includes('SHOW_EMPLOYEE_PERKS_BUTTON')) {
+            // Remove the trigger text and add employee perks button
+            const cleanResponse = message.replace('SHOW_EMPLOYEE_PERKS_BUTTON', '');
+            const aiResponse = {
+              id: Date.now() + index + 1,
+              type: 'agent',
+              text: cleanResponse,
+              timestamp: new Date(),
+              current_node: data.current_node,
+              showEmployeePerksButton: true
+            };
+            setChatMessages(prev => [...prev, aiResponse]);
+          } else {
+            // Add regular AI response
+            const aiResponse = {
+              id: Date.now() + index + 1,
+              type: 'agent',
+              text: message,
+              timestamp: new Date(),
+              current_node: data.current_node
+            };
+            setChatMessages(prev => [...prev, aiResponse]);
+          }
+        }, totalDelay);
+      });
       
     } catch (error) {
       console.error('Error calling backend:', error);

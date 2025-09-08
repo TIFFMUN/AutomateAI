@@ -28,7 +28,7 @@ def handle_triggers_node(state: OnboardingState) -> OnboardingState:
     if ("→ personal_info" in ai_response or 
         (current_node == "welcome_overview" and 
          ("personal information" in ai_response.lower() or "personal info" in ai_response.lower()) and 
-         any(word in ai_response.lower() for word in ['move on', 'next step', 'let\'s', 'now', 'ready to begin']))):
+         any(word in ai_response.lower() for word in ['move on', 'next step', 'let\'s', 'now', 'ready to begin', 'move to personal information']))):
         # Clean up the response and update node
         clean_response = ai_response.replace("→ personal_info", "").strip()
         return {
@@ -40,8 +40,9 @@ def handle_triggers_node(state: OnboardingState) -> OnboardingState:
     elif ("→ account_setup" in ai_response or 
           (current_node == "personal_info" and 
            ("account setup" in ai_response.lower() or "account set up" in ai_response.lower()) and 
-           any(word in ai_response.lower() for word in ['move on', 'next step', 'let\'s', 'now', 'ready to begin', 'personal information collection complete'])) or
-          (current_node == "personal_info" and "personal information collection complete" in ai_response.lower())):
+           any(word in ai_response.lower() for word in ['move on', 'next step', 'let\'s', 'now', 'ready to begin', 'personal information collection complete', 'get your accounts all set up'])) or
+          (current_node == "personal_info" and "personal information collection complete" in ai_response.lower()) or
+          (current_node == "personal_info" and "get your accounts all set up" in ai_response.lower())):
         # Clean up the response and update node
         clean_response = ai_response.replace("→ account_setup", "").strip()
         return {

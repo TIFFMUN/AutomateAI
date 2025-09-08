@@ -1,4 +1,4 @@
-from typing import Dict, Any
+from typing import Dict, Any, List
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, AIMessage, BaseMessage
 from langgraph.graph import StateGraph, END
@@ -13,6 +13,7 @@ from nodes import (
     get_default_tasks,
     OnboardingState
 )
+import re
 
 class LangGraphConnection:
     """LangGraph connection manager for SAP onboarding"""
@@ -28,6 +29,97 @@ class LangGraphConnection:
             openai_api_key=openai_api_key
         )
         self.graph = self._create_graph()
+    
+    def _split_message(self, message: str) -> List[str]:
+        """Split long messages into multiple shorter messages for better conversation flow"""
+        # Don't split messages that contain button triggers to avoid duplicates
+        # BUT if the message is very long (300+ chars), we should split it for readability
+        button_triggers = [
+            'SHOW_VIDEO_BUTTON',
+            'SHOW_COMPANY_POLICIES_BUTTON', 
+            'SHOW_CULTURE_QUIZ_BUTTON',
+            'SHOW_EMPLOYEE_PERKS_BUTTON',
+            'SHOW_PERSONAL_INFO_FORM_BUTTON'
+        ]
+        
+        # Only keep button trigger messages intact if they're reasonably short
+        if any(trigger in message for trigger in button_triggers) and len(message) <= 250:
+            return [message]  # Don't split short button trigger messages
+        
+        # Don't split short messages (up to 200 characters)
+        if len(message) <= 200:
+            return [message]
+        
+        # Split on natural break points (sentences)
+        sentences = re.split(r'(?<=[.!?])\s+', message)
+        
+        if len(sentences) <= 2:  # Don't split if only 1-2 sentences
+            return [message]
+        
+        # Group sentences into chunks, aiming for 150-200 characters per chunk
+        chunks = []
+        current_chunk = []
+        
+        for sentence in sentences:
+            current_chunk.append(sentence)
+            current_text = ' '.join(current_chunk)
+            
+            # Create a chunk if it's getting long (200+ chars) or we have 2+ sentences
+            if len(current_text) > 200 or len(current_chunk) >= 2:
+                chunks.append(current_text)
+                current_chunk = []
+        
+        # Add any remaining sentences
+        if current_chunk:
+            chunks.append(' '.join(current_chunk))
+        
+        # If we have too many chunks (more than 3), recombine some
+        if len(chunks) > 3:
+            combined_chunks = []
+            for i in range(0, len(chunks), 2):
+                if i + 1 < len(chunks):
+                    combined_chunks.append(chunks[i] + ' ' + chunks[i + 1])
+                else:
+                    combined_chunks.append(chunks[i])
+            chunks = combined_chunks
+        
+        return chunks
+    
+    def _format_task_status(self, current_node: str, node_tasks: Dict[str, Any] = None) -> str:
+        """Format task completion status for LLM context"""
+        if not node_tasks:
+            return "TASK STATUS: No tasks completed yet."
+        
+        status_lines = ["TASK COMPLETION STATUS:"]
+        
+        # Welcome Overview tasks
+        if current_node == "welcome_overview" and "welcome_overview" in node_tasks:
+            welcome_tasks = node_tasks["welcome_overview"]
+            status_lines.append("- Welcome Overview:")
+            status_lines.append(f"  * Welcome Video: {'✅ COMPLETED' if welcome_tasks.get('welcome_video', False) else '❌ NOT COMPLETED'}")
+            status_lines.append(f"  * Company Policies: {'✅ COMPLETED' if welcome_tasks.get('company_policies', False) else '❌ NOT COMPLETED'}")
+            status_lines.append(f"  * Employee Perks: {'✅ COMPLETED' if welcome_tasks.get('employee_perks', False) else '❌ NOT COMPLETED'}")
+            status_lines.append(f"  * Culture Quiz: {'✅ COMPLETED' if welcome_tasks.get('culture_quiz', False) else '❌ NOT COMPLETED'}")
+        
+        # Personal Info tasks
+        elif current_node == "personal_info" and "personal_info" in node_tasks:
+            personal_tasks = node_tasks["personal_info"]
+            status_lines.append("- Personal Information:")
+            status_lines.append(f"  * Personal Info Form: {'✅ COMPLETED' if personal_tasks.get('personal_info_form', False) else '❌ NOT COMPLETED'}")
+            status_lines.append(f"  * Emergency Contact: {'✅ COMPLETED' if personal_tasks.get('emergency_contact', False) else '❌ NOT COMPLETED'}")
+            status_lines.append(f"  * Legal Forms: {'✅ COMPLETED' if personal_tasks.get('legal_forms', False) else '❌ NOT COMPLETED'}")
+        
+        # Account Setup tasks
+        elif current_node == "account_setup" and "account_setup" in node_tasks:
+            account_tasks = node_tasks["account_setup"]
+            status_lines.append("- Account Setup:")
+            status_lines.append(f"  * Email Setup: {'✅ COMPLETED' if account_tasks.get('email_setup', False) else '❌ NOT COMPLETED'}")
+            status_lines.append(f"  * SAP Access: {'✅ COMPLETED' if account_tasks.get('sap_access', False) else '❌ NOT COMPLETED'}")
+            status_lines.append(f"  * Permissions: {'✅ COMPLETED' if account_tasks.get('permissions', False) else '❌ NOT COMPLETED'}")
+        
+        status_lines.append("\nIMPORTANT: Only suggest tasks that are NOT COMPLETED. Do not ask users to repeat completed tasks.")
+        
+        return "\n".join(status_lines)
     
     def _create_graph(self) -> StateGraph:
         """Create the LangGraph workflow"""
@@ -94,6 +186,7 @@ class LangGraphConnection:
             if clean_message.lower() in ['restart', 'reset', 'start over']:
                 return {
                     "agent_response": "Welcome to SAP! Let's get you set up. I'll guide you step by step!",
+                    "agent_messages": ["Welcome to SAP! Let's get you set up. I'll guide you step by step!"],
                     "current_node": 'welcome_overview',
                     "current_policy": 0,
                     "node_tasks": get_default_tasks(),
@@ -115,6 +208,7 @@ class LangGraphConnection:
             if current_node == "onboarding_complete":
                 return {
                     "agent_response": "Thank you! Your onboarding is complete. If you have any questions or need assistance, feel free to reach out. Welcome to the SAP team!",
+                    "agent_messages": ["Thank you! Your onboarding is complete. If you have any questions or need assistance, feel free to reach out. Welcome to the SAP team!"],
                     "current_node": "onboarding_complete",
                     "node_tasks": node_tasks,
                     "chat_history": existing_chat_history,
@@ -122,16 +216,19 @@ class LangGraphConnection:
                 }
             
             # Handle LLM processing before graph execution
-            ai_response = self._process_with_llm(clean_message, current_node, existing_chat_history)
+            ai_response = self._process_with_llm(clean_message, current_node, existing_chat_history, node_tasks)
             
             # Check for onboarding completion
             onboarding_complete = "ONBOARDING_COMPLETE" in ai_response
             if onboarding_complete:
                 # Clean up the completion signal from the response
                 ai_response = ai_response.replace("ONBOARDING_COMPLETE", "").strip()
+                # Split the completion message
+                split_messages = self._split_message(ai_response)
                 # Return completion response directly without running the graph
                 return {
                     "agent_response": ai_response,
+                    "agent_messages": split_messages,
                     "current_node": "onboarding_complete",
                     "node_tasks": node_tasks,
                     "chat_history": existing_chat_history,
@@ -153,9 +250,13 @@ class LangGraphConnection:
             # Run the graph
             result = self.graph.invoke(initial_state)
             
+            # Split the response into multiple messages
+            split_messages = self._split_message(result["agent_response"])
+            
             # Return formatted response
             return {
                 "agent_response": result["agent_response"],
+                "agent_messages": split_messages,
                 "current_node": result["current_node"],
                 "node_tasks": result["node_tasks"],
                 "chat_history": result["chat_history"],
@@ -168,13 +269,14 @@ class LangGraphConnection:
             
             return {
                 "agent_response": error_response,
+                "agent_messages": [error_response],
                 "current_node": 'welcome_overview',
                 "node_tasks": get_default_tasks(),
                 "chat_history": [],
                 "restarted": False
             }
     
-    def _process_with_llm(self, user_message: str, current_node: str, chat_history: list) -> str:
+    def _process_with_llm(self, user_message: str, current_node: str, chat_history: list, node_tasks: Dict[str, Any] = None) -> str:
         """Process message with LLM or fallback responses"""
         try:
             from prompts import get_system_prompt, get_user_prompt, format_chat_history, get_welcome_overview_prompt, get_personal_info_prompt, get_account_setup_prompt
@@ -189,6 +291,9 @@ class LangGraphConnection:
             else:
                 node_prompt = ""
             
+            # Create task completion status context
+            task_status = self._format_task_status(current_node, node_tasks)
+            
             # Create full prompt with limited history (last 3 messages only)
             system_prompt = get_system_prompt()
             user_prompt = get_user_prompt(user_message)
@@ -197,7 +302,7 @@ class LangGraphConnection:
             recent_history = chat_history[-3:] if len(chat_history) > 3 else chat_history
             history_context = format_chat_history(recent_history)
             
-            full_prompt = f"{system_prompt}\n\n{node_prompt}\n\nCurrent Node: {current_node}\n\n{history_context}{user_prompt}"
+            full_prompt = f"{system_prompt}\n\n{node_prompt}\n\nCurrent Node: {current_node}\n\n{task_status}\n\n{history_context}{user_prompt}"
             
             # Get AI response
             response = self.llm.invoke([HumanMessage(content=full_prompt)])
