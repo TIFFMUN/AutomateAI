@@ -106,19 +106,16 @@ class LangGraphConnection:
                 current_node = db_state.get('current_node', 'welcome_overview')
                 node_tasks = db_state.get('node_tasks', get_default_tasks())
                 existing_chat_history = db_state.get('chat_history', [])
-                current_policy = db_state.get('current_policy', 0)
             else:
                 current_node = 'welcome_overview'
                 node_tasks = get_default_tasks()
                 existing_chat_history = []
-                current_policy = 0
             
             # If already completed, provide completion responses
             if current_node == "onboarding_complete":
                 return {
                     "agent_response": "Thank you! Your onboarding is complete. If you have any questions or need assistance, feel free to reach out. Welcome to the SAP team!",
                     "current_node": "onboarding_complete",
-                    "current_policy": 0,
                     "node_tasks": node_tasks,
                     "chat_history": existing_chat_history,
                     "restarted": False
@@ -136,7 +133,6 @@ class LangGraphConnection:
                 return {
                     "agent_response": ai_response,
                     "current_node": "onboarding_complete",
-                    "current_policy": current_policy,
                     "node_tasks": node_tasks,
                     "chat_history": existing_chat_history,
                     "restarted": False
@@ -147,7 +143,7 @@ class LangGraphConnection:
                 user_id=user_id,
                 current_node=current_node,
                 node_tasks=node_tasks,
-                current_policy=current_policy,
+                total_points=0,
                 messages=[HumanMessage(content=clean_message), AIMessage(content=ai_response)],
                 chat_history=existing_chat_history,
                 agent_response=ai_response,
@@ -161,7 +157,6 @@ class LangGraphConnection:
             return {
                 "agent_response": result["agent_response"],
                 "current_node": result["current_node"],
-                "current_policy": result["current_policy"],
                 "node_tasks": result["node_tasks"],
                 "chat_history": result["chat_history"],
                 "restarted": result.get("restarted", False)
@@ -174,7 +169,6 @@ class LangGraphConnection:
             return {
                 "agent_response": error_response,
                 "current_node": 'welcome_overview',
-                "current_policy": 0,
                 "node_tasks": get_default_tasks(),
                 "chat_history": [],
                 "restarted": False
