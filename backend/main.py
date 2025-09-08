@@ -141,6 +141,7 @@ def handle_chat(user_id: str, request: ChatRequest, db: Session = Depends(get_db
         
         return {
             "agent_response": result["agent_response"],
+            "agent_messages": result.get("agent_messages", [result["agent_response"]]),
             "current_node": result["current_node"],
             "node_tasks": result["node_tasks"],
             "chat_history": []
@@ -156,8 +157,10 @@ def handle_chat(user_id: str, request: ChatRequest, db: Session = Depends(get_db
     
     db.commit()
     
-    # Save agent response
-    save_chat_message(db, user_id, "assistant", result["agent_response"])
+    # Save agent messages (multiple messages if split)
+    agent_messages = result.get("agent_messages", [result["agent_response"]])
+    for message in agent_messages:
+        save_chat_message(db, user_id, "assistant", message)
     
     # Update user state timestamp
     update_user_state_timestamp(db, user_id)
@@ -175,6 +178,7 @@ def handle_chat(user_id: str, request: ChatRequest, db: Session = Depends(get_db
     return {
         "messages": chat_message_responses,
         "agent_response": result["agent_response"],
+        "agent_messages": agent_messages,
         "current_node": result["current_node"],
         "node_tasks": result["node_tasks"],
         "chat_history": result["chat_history"],
