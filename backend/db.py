@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, JSON, ForeignKey, create_engine
+from sqlalchemy import Column, Integer, String, Text, DateTime, JSON, ForeignKey, create_engine, Boolean
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship, Session
 from datetime import datetime
@@ -11,6 +11,41 @@ engine = create_engine(settings.DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # Database Models
+class User(Base):
+    __tablename__ = "users"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(String, unique=True, index=True, nullable=False)
+    name = Column(String, nullable=False)
+    email = Column(String, nullable=False)
+    role = Column(String, nullable=False)  # 'employee' or 'manager'
+    manager_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    manager = relationship("User", remote_side=[id], backref="direct_reports")
+    performance_feedbacks_given = relationship("PerformanceFeedback", foreign_keys="PerformanceFeedback.manager_id", back_populates="manager")
+    performance_feedbacks_received = relationship("PerformanceFeedback", foreign_keys="PerformanceFeedback.employee_id", back_populates="employee")
+
+class PerformanceFeedback(Base):
+    __tablename__ = "performance_feedbacks"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    employee_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    manager_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    feedback_text = Column(Text, nullable=False)
+    ai_summary = Column(Text, nullable=True)  # AI-generated summary
+    strengths = Column(Text, nullable=True)  # AI-extracted strengths
+    areas_for_improvement = Column(Text, nullable=True)  # AI-extracted improvement areas
+    next_steps = Column(Text, nullable=True)  # AI-suggested next steps
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    employee = relationship("User", foreign_keys=[employee_id], back_populates="performance_feedbacks_received")
+    manager = relationship("User", foreign_keys=[manager_id], back_populates="performance_feedbacks_given")
+
 class UserState(Base):
     __tablename__ = "user_states"
     
@@ -154,3 +189,64 @@ def get_task_completion_summary(node_tasks: dict) -> dict:
                     summary[node_name]["tasks"].append(f"⏳ {task_name}")
     
     return summary
+
+# User CRUD Functions
+def get_user_by_user_id(db: Session, user_id: str) -> Optional[User]:
+    """Get user by user_id"""
+    return db.query(User).filter(User.user_id == user_id).first()
+
+def create_user(db: Session, user_id: str, name: str, email: str, role: str, manager_id: Optional[int] = None) -> User:
+    """Create a new user"""
+    user = User(user_id=user_id, name=name, email=email, role=role, manager_id=manager_id)
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return user
+
+def get_user_direct_reports(db: Session, manager_id: int) -> List[User]:
+    """Get all direct reports for a manager"""
+    return db.query(User).filter(User.manager_id == manager_id).all()
+
+# Performance Feedback CRUD Functions
+def create_performance_feedback(db: Session, employee_id: int, manager_id: int, feedback_text: str) -> PerformanceFeedback:
+    """Create a new performance feedback"""
+    feedback = PerformanceFeedback(
+        employee_id=employee_id,
+        manager_id=manager_id,
+        feedback_text=feedback_text
+    )
+    db.add(feedback)
+    db.commit()
+    db.refresh(feedback)
+    return feedback
+
+def get_performance_feedback_by_employee(db: Session, employee_id: int) -> List[PerformanceFeedback]:
+    """Get all performance feedbacks for an employee"""
+    return db.query(PerformanceFeedback).filter(PerformanceFeedback.employee_id == employee_id).order_by(PerformanceFeedback.created_at.desc()).all()
+
+def get_performance_feedback_by_manager(db: Session, manager_id: int) -> List[PerformanceFeedback]:
+    """Get all performance feedbacks given by a manager"""
+    return db.query(PerformanceFeedback).filter(PerformanceFeedback.manager_id == manager_id).order_by(PerformanceFeedback.created_at.desc()).all()
+
+def update_performance_feedback(db: Session, feedback_id: int, feedback_text: str) -> Optional[PerformanceFeedback]:
+    """Update performance feedback text"""
+    feedback = db.query(PerformanceFeedback).filter(PerformanceFeedback.id == feedback_id).first()
+    if feedback:
+        feedback.feedback_text = feedback_text
+        feedback.updated_at = datetime.utcnow()
+        db.commit()
+        db.refresh(feedback)
+    return feedback
+
+def update_performance_feedback_ai_analysis(db: Session, feedback_id: int, ai_summary: str, strengths: str, areas_for_improvement: str, next_steps: str) -> Optional[PerformanceFeedback]:
+    """Update performance feedback with AI analysis"""
+    feedback = db.query(PerformanceFeedback).filter(PerformanceFeedback.id == feedback_id).first()
+    if feedback:
+        feedback.ai_summary = ai_summary
+        feedback.strengths = strengths
+        feedback.areas_for_improvement = areas_for_improvement
+        feedback.next_steps = next_steps
+        feedback.updated_at = datetime.utcnow()
+        db.commit()
+        db.refresh(feedback)
+    return feedback
