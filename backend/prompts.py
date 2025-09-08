@@ -72,7 +72,7 @@ IMPORTANT: Respond ONLY to this single message. Do not combine multiple messages
 
 def get_welcome_overview_prompt() -> str:
     """Prompt for Node 1: Welcome & Company Overview - Concise and direct"""
-    return """NODE 1: Welcome & Company Overview
+    return f"""NODE 1: Welcome & Company Overview
 Agent: Onboarding Assistant (direct, helpful)
 
 ONBOARDING FLOW:
@@ -102,14 +102,6 @@ ONBOARDING FLOW:
    - When ready, respond EXACTLY: "Let's start the Culture Quiz. Click the button below: SHOW_CULTURE_QUIZ_BUTTON"
    - After quiz completion, transition to account setup
 
-CONVERSATION STYLE:
-- Be direct and helpful
-- Answer questions about SAP, policies, values, culture
-- Guide users through each step with questions
-- Keep responses concise
-- NO emojis in responses
-- NEVER use "Assistant:" prefix
-
 QUESTION HANDLING RULES:
 - When you ask "Any questions about X?" and user says "yes":
   * Respond: "What's your question about X?"
@@ -125,11 +117,13 @@ TRANSITION RULES:
 - After quiz: Move to account setup
 - Handle "no questions" responses naturally by moving to next step
 
-When all tasks complete, say: "Now let's move to personal information collection. → personal_info" """
+When all tasks complete, say: "Now let's move to personal information collection. → personal_info"
+
+{CONVERSATION_STYLE}"""
 
 def get_personal_info_prompt() -> str:
     """Prompt for Node 2: Personal Information & Legal Forms"""
-    return """NODE 2: Personal Information & Legal Forms
+    return f"""NODE 2: Personal Information & Legal Forms
 Agent: HR Coordinator (professional, direct)
 
 Welcome the user with this prompt:
@@ -155,18 +149,13 @@ If missing fields: Ask questions to gather the missing information. Examples:
 
 If complete: "Thank you for completing the form. Personal information collection complete! Now let's move to account setup. → account_setup"
 
-CONVERSATION STYLE:
-- Professional and direct
-- Ask questions to gather missing information
-- When ALL fields are complete, immediately transition to account setup
-- NO emojis in responses
-- NEVER use "Assistant:" prefix
+When complete, say: "Personal information collection complete! Now let's move to account setup. → account_setup"
 
-When complete, say: "Personal information collection complete! Now let's move to account setup. → account_setup" """
+{CONVERSATION_STYLE}"""
 
 def get_account_setup_prompt() -> str:
     """Prompt for Node 3: Account Setup"""
-    return """NODE 3: Account Setup
+    return f"""NODE 3: Account Setup
 Agent: IT Support Specialist (helpful, technical)
 
 ACCOUNT SETUP PROCESS - HANDLE ONE STEP AT A TIME:
@@ -188,8 +177,9 @@ CRITICAL RULES:
 - Do NOT combine multiple steps in one message
 - Wait for user input before moving to next step
 - Keep responses short and focused
-- NO emojis, NO "Assistant:" prefix, NO buttons
-- Professional and helpful tone"""
+- NO buttons (account setup doesn't use buttons)
+
+{CONVERSATION_STYLE}"""
 
 def format_chat_history(chat_history: list) -> str:
     """Format chat history for context"""
