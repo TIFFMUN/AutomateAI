@@ -6,8 +6,11 @@ from sqlalchemy.orm import Session
 from datetime import datetime
 from config import settings
 from langgraph_connection import LangGraphConnection
-from database import get_db, create_tables
-from models import UserState, ChatMessage
+from db import (
+    get_db, create_tables, UserState, ChatMessage,
+    get_user_state, create_user_state, get_chat_messages,
+    save_chat_message, update_user_state_timestamp, calculate_points_for_task
+)
 
 app = FastAPI(title="SAP HR Assistant", version="1.0.0")
 
@@ -41,38 +44,13 @@ class ChatMessageResponse(BaseModel):
 class UserStateResponse(BaseModel):
     user_id: str
     current_node: str
-    current_policy: int
+    total_points: int
     node_tasks: Dict[str, Any]
     chat_messages: List[ChatMessageResponse]
     created_at: datetime
     updated_at: datetime
 
-# Database functions
-def get_user_state(db: Session, user_id: str) -> Optional[UserState]:
-    return db.query(UserState).filter(UserState.user_id == user_id).first()
-
-def create_user_state(db: Session, user_id: str) -> UserState:
-    user_state = UserState(user_id=user_id)
-    db.add(user_state)
-    db.commit()
-    db.refresh(user_state)
-    return user_state
-
-def get_chat_messages(db: Session, user_id: str) -> List[ChatMessage]:
-    return db.query(ChatMessage).filter(ChatMessage.user_id == user_id).order_by(ChatMessage.timestamp).all()
-
-def save_chat_message(db: Session, user_id: str, role: str, content: str) -> ChatMessage:
-    message = ChatMessage(user_id=user_id, role=role, content=content)
-    db.add(message)
-    db.commit()
-    db.refresh(message)
-    return message
-
-def update_user_state_timestamp(db: Session, user_id: str):
-    user_state = get_user_state(db, user_id)
-    if user_state:
-        user_state.updated_at = datetime.utcnow()
-        db.commit()
+# All database functions are now in db.py
 
 # API Endpoints
 @app.get("/")
@@ -101,7 +79,7 @@ def get_user_state_endpoint(user_id: str, db: Session = Depends(get_db)):
     return UserStateResponse(
         user_id=user_state.user_id,
         current_node=user_state.current_node,
-        current_policy=user_state.current_policy,
+        total_points=user_state.total_points,
         node_tasks=user_state.node_tasks,
         chat_messages=chat_message_responses,
         created_at=user_state.created_at,
@@ -122,13 +100,15 @@ def handle_chat(user_id: str, request: ChatRequest, db: Session = Depends(get_db
     # Prepare database state for agent
     db_state = {
         'current_node': user_state.current_node,
-        'current_policy': user_state.current_policy,
         'node_tasks': user_state.node_tasks,
         'chat_history': chat_history
     }
     
     # Save user message
     save_chat_message(db, user_id, "user", request.message)
+    
+    # Calculate points for task completion
+    points_earned = calculate_points_for_task("", request.message)
     
     # Get agent response with database state
     result = hr_agent.process_chat(request.message, user_id, chat_history, db_state)
@@ -141,7 +121,7 @@ def handle_chat(user_id: str, request: ChatRequest, db: Session = Depends(get_db
         
         # Reset user state
         user_state.current_node = "welcome_overview"
-        user_state.current_policy = 0
+        user_state.total_points = 0
         user_state.node_tasks = {
             "welcome_overview": {
                 "welcome_video": False,
@@ -168,8 +148,12 @@ def handle_chat(user_id: str, request: ChatRequest, db: Session = Depends(get_db
     
     # Update user state with new information
     user_state.current_node = result["current_node"]
-    user_state.current_policy = result.get("current_policy", user_state.current_policy)
     user_state.node_tasks = result["node_tasks"]
+    
+    # Add points if earned
+    if points_earned > 0:
+        user_state.total_points += points_earned
+    
     db.commit()
     
     # Save agent response
@@ -193,7 +177,9 @@ def handle_chat(user_id: str, request: ChatRequest, db: Session = Depends(get_db
         "agent_response": result["agent_response"],
         "current_node": result["current_node"],
         "node_tasks": result["node_tasks"],
-        "chat_history": result["chat_history"]
+        "chat_history": result["chat_history"],
+        "points_earned": points_earned,
+        "total_points": user_state.total_points
     }
 
 if __name__ == "__main__":

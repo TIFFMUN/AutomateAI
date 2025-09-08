@@ -5,12 +5,12 @@ load_dotenv()
 
 class Settings:
     # PostgreSQL Database
-    DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:password@localhost:5432/automateai")
+    DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:password123@localhost:5432/sap_onboarding")
     POSTGRES_HOST = os.getenv("POSTGRES_HOST", "localhost")
     POSTGRES_PORT = int(os.getenv("POSTGRES_PORT", "5432"))
-    POSTGRES_DB = os.getenv("POSTGRES_DB", "automateai")
+    POSTGRES_DB = os.getenv("POSTGRES_DB", "sap_onboarding")
     POSTGRES_USER = os.getenv("POSTGRES_USER", "postgres")
-    POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD", "password")
+    POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD", "password123")
     
     # OpenAI Configuration
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
@@ -26,13 +26,4 @@ class Settings:
     # CORS
     ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:3001").split(",")
     
-    # OTP Configuration
-    SMTP_SERVER = os.getenv("SMTP_SERVER", "smtp.gmail.com")
-    SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
-    SMTP_USERNAME = os.getenv("SMTP_USERNAME", "")
-    SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
-    
-    SMS_API_KEY = os.getenv("SMS_API_KEY", "")
-    SMS_API_URL = os.getenv("SMS_API_URL", "")
-
 settings = Settings()

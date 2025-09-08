@@ -15,6 +15,11 @@ function Onboarding() {
   // Node state
   const [currentNode, setCurrentNode] = useState('welcome_overview');
   
+  // Points state
+  const [totalPoints, setTotalPoints] = useState(0);
+  const [pointsEarned, setPointsEarned] = useState(0);
+  const [showPointsAnimation, setShowPointsAnimation] = useState(false);
+  
   // Popup states
   const [showVideoPopup, setShowVideoPopup] = useState(false);
   const [showPolicyPopup, setShowPolicyPopup] = useState(false);
@@ -124,6 +129,9 @@ function Onboarding() {
         // Update state from backend
         if (data.current_node) {
           setCurrentNode(data.current_node);
+        }
+        if (data.total_points !== undefined) {
+          setTotalPoints(data.total_points);
         }
       } else {
         // No existing state, show welcome message
@@ -294,6 +302,10 @@ function Onboarding() {
           current_node: data.current_node
         };
         setChatMessages([restartMessage]);
+        setTotalPoints(0);
+        setPointsEarned(0);
+        setShowPointsAnimation(false);
+        
         setIsProcessing(false);
         return;
       }
@@ -301,6 +313,18 @@ function Onboarding() {
       // Update node information
       if (data.current_node) {
         setCurrentNode(data.current_node);
+      }
+      
+      // Handle points
+      if (data.points_earned && data.points_earned > 0) {
+        setPointsEarned(data.points_earned);
+        setTotalPoints(data.total_points);
+        setShowPointsAnimation(true);
+        
+        // Hide animation after 3 seconds
+        setTimeout(() => {
+          setShowPointsAnimation(false);
+        }, 3000);
       }
       
       // Check if response contains video button trigger
@@ -423,6 +447,24 @@ function Onboarding() {
           Back to Main
         </button>
         </div>
+      </div>
+
+      {/* Points Display */}
+      <div className="points-display">
+        <div className="points-container">
+          <div className="points-icon">⭐</div>
+          <div className="points-text">
+            <span className="points-label">Points</span>
+            <span className="points-value">{totalPoints}</span>
+          </div>
+        </div>
+        
+        {/* Points Animation */}
+        {showPointsAnimation && (
+          <div className="points-animation">
+            <div className="points-earned">+{pointsEarned}</div>
+          </div>
+        )}
       </div>
 
       {/* Chat Interface */}
