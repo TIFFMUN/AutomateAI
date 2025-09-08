@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, List
 from sqlalchemy.orm import Session
 from datetime import datetime
 from config import settings
