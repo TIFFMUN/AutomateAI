@@ -1,14 +1,9 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, JSON, ForeignKey, create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, relationship, Session
+from sqlalchemy import Column, Integer, String, Text, DateTime, JSON, ForeignKey
+from sqlalchemy.orm import relationship, Session
 from datetime import datetime
 from typing import Optional, List
 from config import settings
-
-# Database setup
-Base = declarative_base()
-engine = create_engine(settings.DATABASE_URL)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+from database import Base, engine, SessionLocal
 
 # Database Models
 class UserState(Base):
@@ -48,18 +43,7 @@ class ChatMessage(Base):
     # Relationship back to user state
     user_state = relationship("UserState", back_populates="chat_messages")
 
-# Database Functions
-def get_db():
-    """Dependency to get database session"""
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-def create_tables():
-    """Create all database tables"""
-    Base.metadata.create_all(bind=engine)
+# Database Functions (get_db and create_tables are now in database.py)
 
 # Database CRUD Functions
 def get_user_state(db: Session, user_id: str) -> Optional[UserState]:

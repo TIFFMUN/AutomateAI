@@ -1,12 +1,38 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import './MainPage/MainPage.css';
 
 function MainPage() {
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
   const [hoveredCard, setHoveredCard] = useState(null);
+  const [totalPoints, setTotalPoints] = useState(null);
+  const [rank, setRank] = useState(null);
+
+  useEffect(() => {
+    const loadUserStats = async () => {
+      try {
+        const userId = user?.id || user?.username;
+        if (!userId) return;
+        const [stateRes, rankRes] = await Promise.all([
+          fetch(`http://localhost:8000/api/user/${userId}/state`),
+          fetch(`http://localhost:8000/api/user/${userId}/rank`)
+        ]);
+        if (stateRes.ok) {
+          const data = await stateRes.json();
+          if (typeof data.total_points === 'number') setTotalPoints(data.total_points);
+        }
+        if (rankRes.ok) {
+          const r = await rankRes.json();
+          if (typeof r.rank === 'number') setRank(r.rank);
+        }
+      } catch (_) {
+        // ignore errors for now
+      }
+    };
+    loadUserStats();
+  }, [user?.id, user?.username]);
 
   const handleLogout = async () => {
     await logout();
@@ -81,7 +107,14 @@ function MainPage() {
         <div className="main-header">
           <div className="header-content">
             <h1>Welcome Back! 👋</h1>
-            <p className="header-subtitle">Manage your professional development journey</p>
+            <p className="header-subtitle">
+              Manage your professional development journey
+              {totalPoints !== null && (
+                <span style={{ marginLeft: 12 }}>
+                  • Points: {totalPoints}{rank !== null && ` (Rank #${rank})`}
+                </span>
+              )}
+            </p>
           </div>
           <button className="logout-btn" onClick={handleLogout}>
             <span className="logout-icon">🚪</span>
