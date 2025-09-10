@@ -10,8 +10,8 @@ COPY package*.json ./
 # Install dependencies
 RUN npm install
 
-# Copy source code
-COPY . .
+# Don't copy source code - it will be mounted via volume
+# COPY . .
 
 # Expose port
 EXPOSE 3000
