@@ -61,6 +61,18 @@ class UserStateResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
 
+class LeaderboardEntry(BaseModel):
+    user_id: str
+    total_points: int
+
+class LeaderboardResponse(BaseModel):
+    entries: List[LeaderboardEntry]
+
+class UserRankResponse(BaseModel):
+    user_id: str
+    total_points: int
+    rank: int
+
 # All database functions are now in db.py
 
 # API Endpoints
@@ -101,6 +113,32 @@ def get_user_state_endpoint(user_id: str, db: Session = Depends(get_db)):
         created_at=user_state.created_at,
         updated_at=user_state.updated_at
     )
+
+@app.get("/api/leaderboard", response_model=LeaderboardResponse)
+def get_leaderboard(limit: int = 10, db: Session = Depends(get_db)):
+    # Top N users by total_points desc
+    top_users = (
+        db.query(UserState)
+        .order_by(UserState.total_points.desc(), UserState.updated_at.desc())
+        .limit(max(1, min(limit, 100)))
+        .all()
+    )
+    entries = [
+        LeaderboardEntry(user_id=u.user_id, total_points=u.total_points or 0)
+        for u in top_users
+    ]
+    return LeaderboardResponse(entries=entries)
+
+@app.get("/api/user/{user_id}/rank", response_model=UserRankResponse)
+def get_user_rank(user_id: str, db: Session = Depends(get_db)):
+    user_state = get_user_state(db, user_id)
+    if not user_state:
+        user_state = create_user_state(db, user_id)
+    user_points = user_state.total_points or 0
+    # Rank = number of users with higher points + 1
+    higher_count = db.query(UserState).filter(UserState.total_points > user_points).count()
+    rank = higher_count + 1
+    return UserRankResponse(user_id=user_id, total_points=user_points, rank=rank)
 
 @app.post("/api/user/{user_id}/chat")
 def handle_chat(user_id: str, request: ChatRequest, db: Session = Depends(get_db)):

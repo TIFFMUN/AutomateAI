@@ -19,15 +19,20 @@ class LangGraphConnection:
     """LangGraph connection manager for SAP onboarding"""
     
     def __init__(self, openai_api_key: str):
+        self.llm = None
         if not openai_api_key or openai_api_key.strip() == "":
             print("WARNING: OpenAI API key is not configured!")
             print("Please set OPENAI_API_KEY in your .env file")
-        
-        self.llm = ChatOpenAI(
-            model=settings.OPENAI_MODEL,
-            temperature=0.3,
-            openai_api_key=openai_api_key
-        )
+        else:
+            try:
+                self.llm = ChatOpenAI(
+                    model=settings.OPENAI_MODEL,
+                    temperature=0.3,
+                    openai_api_key=openai_api_key
+                )
+            except Exception as e:
+                print(f"Failed to initialize OpenAI LLM, falling back. Error: {e}")
+                self.llm = None
         self.graph = self._create_graph()
     
     def _split_message(self, message: str) -> List[str]:
@@ -278,6 +283,8 @@ class LangGraphConnection:
     
     def _process_with_llm(self, user_message: str, current_node: str, chat_history: list, node_tasks: Dict[str, Any] = None) -> str:
         """Process message with LLM or fallback responses"""
+        if self.llm is None:
+            return self._get_fallback_response(user_message, current_node, chat_history)
         try:
             from prompts import get_system_prompt, get_user_prompt, format_chat_history, get_welcome_overview_prompt, get_personal_info_prompt, get_account_setup_prompt
             

@@ -1,4 +1,4 @@
-# Use Node.js 18 Alpine for smaller image size
+    # Use Node.js 18 Alpine for smaller image size
 FROM node:18-alpine
 
 # Set working directory
