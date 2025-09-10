@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import './Onboarding.css';
 
 function Onboarding() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const messagesEndRef = useRef(null);
   
   // Chat state
@@ -68,8 +70,14 @@ function Onboarding() {
 
   // Initialize chat with state loading
   useEffect(() => {
-    loadUserState();
-  }, []);
+    console.log('User object in Onboarding:', user);
+    const userId = user?.id || user?.username;
+    if (userId) {
+      loadUserState();
+    } else {
+      console.log('No user ID or username found, user object:', user);
+    }
+  }, [user?.id, user?.username]);
 
   // Auto-scroll to bottom when new messages are added
   useEffect(() => {
@@ -128,9 +136,16 @@ function Onboarding() {
   };
 
   const loadUserState = async () => {
+    // Use user.id if available, otherwise fall back to username
+    const userId = user?.id || user?.username;
+    if (!userId) {
+      console.log('No user ID or username found');
+      return;
+    }
+    
     try {
-      // Load user state from backend
-      const response = await fetch(`http://localhost:8000/api/user/test_user/state`);
+      // Load user state from backend using authenticated user's ID
+      const response = await fetch(`http://localhost:8000/api/user/${userId}/state`);
       const data = await response.json();
       
       if (data.chat_messages && data.chat_messages.length > 0) {
@@ -309,9 +324,14 @@ function Onboarding() {
 
   // Handle user message
   const handleUserMessage = async (message) => {
-    if (!message.trim()) return;
+    // Use user.id if available, otherwise fall back to username
+    const userId = user?.id || user?.username;
+    if (!message.trim() || !userId) {
+      console.log('Cannot send message - user not authenticated or message empty:', { user, message, userId });
+      return;
+    }
     
-    console.log('Sending message:', message);
+    console.log('Sending message:', message, 'for user:', userId);
     
     // Add user message immediately
     const userMessage = {
@@ -325,18 +345,25 @@ function Onboarding() {
     
     setIsProcessing(true);
     try {
-      const response = await fetch(`http://localhost:8000/api/user/test_user/chat`, {
+      console.log('Making request to:', `http://localhost:8000/api/user/${userId}/chat`);
+      const response = await fetch(`http://localhost:8000/api/user/${userId}/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          user_id: 'test_user',
+          user_id: userId,
           message: message
         })
       });
       
+      console.log('Response status:', response.status);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
       const data = await response.json();
+      console.log('Response data:', data);
       
       // Handle restart case first
       if (data.restarted) {
@@ -375,7 +402,15 @@ function Onboarding() {
       }
       
       // Handle multiple agent messages if available, otherwise use single response
-      const agentMessages = data.agent_messages || [data.agent_response];
+      // Process agent messages - ensure we have valid messages
+      const agentMessages = data.agent_messages || (data.agent_response ? [data.agent_response] : []);
+      
+      // Ensure agentMessages is an array
+      if (!Array.isArray(agentMessages)) {
+        console.error('agentMessages is not an array:', agentMessages);
+        setIsProcessing(false);
+        return;
+      }
       
       // Add each agent message with typing delays for natural conversation flow
       agentMessages.forEach((message, index) => {
@@ -385,10 +420,13 @@ function Onboarding() {
         const totalDelay = baseDelay + typingDelay;
         
         setTimeout(() => {
+          // Ensure message is a string before calling includes
+          const messageText = message || '';
+          
           // Check if response contains button triggers
-          if (message.includes('SHOW_VIDEO_BUTTON')) {
+          if (messageText.includes('SHOW_VIDEO_BUTTON')) {
             // Remove the trigger text and add video button
-            const cleanResponse = message.replace('SHOW_VIDEO_BUTTON', '');
+            const cleanResponse = messageText.replace('SHOW_VIDEO_BUTTON', '');
             const aiResponse = {
               id: Date.now() + index + 1,
               type: 'agent',
@@ -398,9 +436,9 @@ function Onboarding() {
               showVideoButton: true
             };
             setChatMessages(prev => [...prev, aiResponse]);
-          } else if (message.includes('SHOW_COMPANY_POLICIES_BUTTON')) {
+          } else if (messageText.includes('SHOW_COMPANY_POLICIES_BUTTON')) {
             // Remove the trigger text and add single policy button
-            const cleanResponse = message.replace('SHOW_COMPANY_POLICIES_BUTTON', '');
+            const cleanResponse = messageText.replace('SHOW_COMPANY_POLICIES_BUTTON', '');
             const aiResponse = {
               id: Date.now() + index + 1,
               type: 'agent',
@@ -410,9 +448,9 @@ function Onboarding() {
               showCompanyPoliciesButton: true
             };
             setChatMessages(prev => [...prev, aiResponse]);
-          } else if (message.includes('SHOW_CULTURE_QUIZ_BUTTON')) {
+          } else if (messageText.includes('SHOW_CULTURE_QUIZ_BUTTON')) {
             // Remove the trigger text and add quiz button
-            const cleanResponse = message.replace('SHOW_CULTURE_QUIZ_BUTTON', '');
+            const cleanResponse = messageText.replace('SHOW_CULTURE_QUIZ_BUTTON', '');
             const aiResponse = {
               id: Date.now() + index + 1,
               type: 'agent',
@@ -422,9 +460,9 @@ function Onboarding() {
               showCultureQuizButton: true
             };
             setChatMessages(prev => [...prev, aiResponse]);
-          } else if (message.includes('SHOW_PERSONAL_INFO_FORM_BUTTON')) {
+          } else if (messageText.includes('SHOW_PERSONAL_INFO_FORM_BUTTON')) {
             // Remove the trigger text and add personal info form button
-            const cleanResponse = message.replace('SHOW_PERSONAL_INFO_FORM_BUTTON', '');
+            const cleanResponse = messageText.replace('SHOW_PERSONAL_INFO_FORM_BUTTON', '');
             const aiResponse = {
               id: Date.now() + index + 1,
               type: 'agent',
@@ -434,9 +472,9 @@ function Onboarding() {
               showPersonalInfoFormButton: true
             };
             setChatMessages(prev => [...prev, aiResponse]);
-          } else if (message.includes('SHOW_EMPLOYEE_PERKS_BUTTON')) {
+          } else if (messageText.includes('SHOW_EMPLOYEE_PERKS_BUTTON')) {
             // Remove the trigger text and add employee perks button
-            const cleanResponse = message.replace('SHOW_EMPLOYEE_PERKS_BUTTON', '');
+            const cleanResponse = messageText.replace('SHOW_EMPLOYEE_PERKS_BUTTON', '');
             const aiResponse = {
               id: Date.now() + index + 1,
               type: 'agent',
@@ -451,7 +489,7 @@ function Onboarding() {
             const aiResponse = {
               id: Date.now() + index + 1,
               type: 'agent',
-              text: message,
+              text: messageText,
               timestamp: new Date(),
               current_node: data.current_node
             };
