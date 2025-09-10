@@ -67,7 +67,7 @@
 
 .dropdown-selected {
   padding: 0.75rem 1rem;
-  border: 2px solid rgba(52, 152, 219, 0.2);
+  border: 2px solid rgba(52, 152, 219, 0.6);
   border-radius: 12px;
   font-size: 0.9rem;
   background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
@@ -83,7 +83,7 @@
 }
 
 .dropdown-selected:hover {
-  border-color: rgba(52, 152, 219, 0.4);
+  border-color: rgba(52, 152, 219, 0.8);
   box-shadow: 0 6px 20px rgba(52, 152, 219, 0.15);
   transform: translateY(-1px);
   background: linear-gradient(135deg, #ffffff 0%, #f0f8ff 100%);
@@ -105,7 +105,7 @@
   left: 0;
   right: 0;
   background: white;
-  border: 2px solid rgba(52, 152, 219, 0.2);
+  border: 2px solid rgba(52, 152, 219, 0.6);
   border-top: none;
   border-radius: 0 0 12px 12px;
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
@@ -183,6 +183,7 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 2rem;
+  overflow: visible;
 }
 
 .manager-section {
@@ -190,6 +191,9 @@
   padding: 1.5rem;
   border-radius: 12px;
   border: 1px solid #e9ecef;
+  overflow: visible;
+  position: relative;
+  z-index: 1;
 }
 
 .manager-section h2 {
@@ -209,6 +213,8 @@
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  position: relative;
+  z-index: 1;
 }
 
 .form-group label {
@@ -226,11 +232,42 @@
   transition: border-color 0.3s ease;
 }
 
+/* Enhanced Employee Selection Dropdown */
+.form-group select {
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+  border: 2px solid rgba(52, 152, 219, 0.3);
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  font-weight: 500;
+  color: #2c3e50;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  backdrop-filter: blur(5px);
+  transition: all 0.3s ease;
+  position: relative;
+  z-index: 5;
+}
+
+.form-group select:hover {
+  border-color: rgba(52, 152, 219, 0.6);
+  box-shadow: 0 6px 20px rgba(52, 152, 219, 0.15);
+  transform: translateY(-1px);
+  background: linear-gradient(135deg, #ffffff 0%, #f0f8ff 100%);
+}
+
 .form-group select:focus,
 .form-group textarea:focus {
   outline: none;
   border-color: #3498db;
   box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+.form-group select:focus {
+  border-color: rgba(52, 152, 219, 0.8);
+  box-shadow: 0 6px 20px rgba(52, 152, 219, 0.2),
+    0 0 0 3px rgba(52, 152, 219, 0.1);
+  background: linear-gradient(135deg, #ffffff 0%, #f0f8ff 100%);
+  z-index: 10;
+  position: relative;
 }
 
 .form-group textarea {
