@@ -11,6 +11,10 @@ services:
       - /app/node_modules
     environment:
       - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true
+      - FAST_REFRESH=true
+      - REACT_APP_ENV=development
+      - NODE_ENV=development
     depends_on:
       - backend
     networks:
@@ -24,12 +28,10 @@ services:
     volumes:
       - ./backend:/app
     environment:
-      - DATABASE_URL=${DATABASE_URL}
-      - REDIS_URL=${REDIS_URL}
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - DATABASE_URL=postgresql://postgres:password123@postgres:5432/sap_onboarding
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
     depends_on:
       - postgres
-      - redis
     networks:
       - automate-ai-network
 
@@ -37,9 +39,9 @@ services:
   postgres:
     image: postgres:15
     environment:
-      - POSTGRES_DB=${POSTGRES_DB}
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=sap_onboarding
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password123
     ports:
       - "5432:5432"
     volumes:
@@ -47,20 +49,12 @@ services:
     networks:
       - automate-ai-network
 
-  # Redis for caching and message queue
-  redis:
-    image: redis:7-alpine
-    ports:
-      - "6379:6379"
-    networks:
-      - automate-ai-network
-
   # Optional: pgAdmin for database management
   pgadmin:
     image: dpage/pgadmin4
     environment:
-      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_EMAIL}
-      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_PASSWORD}
+      - PGADMIN_DEFAULT_EMAIL=admin@admin.com
+      - PGADMIN_DEFAULT_PASSWORD=admin123
     ports:
       - "5050:80"
     depends_on:

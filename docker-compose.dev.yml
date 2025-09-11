@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  # Frontend React App - Development Only
+  frontend:
+    build: 
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true
+      - FAST_REFRESH=true
+      - REACT_APP_ENV=development
+      - NODE_ENV=development
+    stdin_open: true
+    tty: true
+    command: npm start

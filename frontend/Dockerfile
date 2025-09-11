@@ -1,4 +1,4 @@
-# Use Node.js 18 Alpine for smaller image size
+    # Use Node.js 18 Alpine for smaller image size
 FROM node:18-alpine
 
 # Set working directory
@@ -10,8 +10,8 @@ COPY package*.json ./
 # Install dependencies
 RUN npm install
 
-# Copy source code
-COPY . .
+# Don't copy source code - it will be mounted via volume
+# COPY . .
 
 # Expose port
 EXPOSE 3000
