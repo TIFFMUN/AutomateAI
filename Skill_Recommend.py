@@ -5,7 +5,7 @@ from IPython.display import display
 # -------------------------
 # Configure Gemini API
 # -------------------------
-genai.configure(api_key="AIzaSyCPMg3PcARYHPOtUV4UIhPjTokNqYlRCVw")
+genai.configure(api_key="key")
 
 # -------------------------
 # Sample Databases
