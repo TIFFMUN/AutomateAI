@@ -145,7 +145,8 @@ function Onboarding() {
     
     try {
       // Load user state from backend using authenticated user's ID
-      const response = await fetch(`http://localhost:8000/api/user/${userId}/state`);
+      const apiBase = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+      const response = await fetch(`${apiBase}/api/user/${userId}/state`);
       const data = await response.json();
       
       if (data.chat_messages && data.chat_messages.length > 0) {
@@ -345,8 +346,9 @@ function Onboarding() {
     
     setIsProcessing(true);
     try {
-      console.log('Making request to:', `http://localhost:8000/api/user/${userId}/chat`);
-      const response = await fetch(`http://localhost:8000/api/user/${userId}/chat`, {
+      const apiBase = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+      console.log('Making request to:', `${apiBase}/api/user/${userId}/chat`);
+      const response = await fetch(`${apiBase}/api/user/${userId}/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

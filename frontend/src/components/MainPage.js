@@ -15,9 +15,10 @@ function MainPage() {
       try {
         const userId = user?.id || user?.username;
         if (!userId) return;
+        const apiBase = process.env.REACT_APP_API_URL || 'http://localhost:8000';
         const [stateRes, rankRes] = await Promise.all([
-          fetch(`http://localhost:8000/api/user/${userId}/state`),
-          fetch(`http://localhost:8000/api/user/${userId}/rank`)
+          fetch(`${apiBase}/api/user/${userId}/state`),
+          fetch(`${apiBase}/api/user/${userId}/rank`)
         ]);
         if (stateRes.ok) {
           const data = await stateRes.json();
