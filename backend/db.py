@@ -65,6 +65,14 @@ class UserState(Base):
             "permissions": False
         }
     })
+    personal_goals = Column(JSON, default=lambda: {
+        "goals": [
+            {"id": 1, "name": "Training", "progress": 0, "target": 100},
+            {"id": 2, "name": "Onboarding", "progress": 0, "target": 100},
+            {"id": 3, "name": "Project Delivery", "progress": 0, "target": 100},
+            {"id": 4, "name": "Skill Development", "progress": 0, "target": 100}
+        ]
+    })
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
@@ -250,3 +258,79 @@ def update_performance_feedback_ai_analysis(db: Session, feedback_id: int, ai_su
         db.commit()
         db.refresh(feedback)
     return feedback
+
+# Personal Goals CRUD Functions
+def update_user_personal_goals(db: Session, user_id: str, personal_goals: dict) -> Optional[UserState]:
+    """Update user's personal goals"""
+    user_state = get_user_state(db, user_id)
+    if user_state:
+        user_state.personal_goals = personal_goals
+        user_state.updated_at = datetime.utcnow()
+        db.commit()
+        db.refresh(user_state)
+    return user_state
+
+def get_user_personal_goals(db: Session, user_id: str) -> dict:
+    """Get user's personal goals"""
+    user_state = get_user_state(db, user_id)
+    if user_state and user_state.personal_goals:
+        return user_state.personal_goals
+    else:
+        # Return default goals if none exist
+        return {
+            "goals": [
+                {"id": 1, "name": "Training", "progress": 0, "target": 100},
+                {"id": 2, "name": "Onboarding", "progress": 0, "target": 100},
+                {"id": 3, "name": "Project Delivery", "progress": 0, "target": 100},
+                {"id": 4, "name": "Skill Development", "progress": 0, "target": 100}
+            ]
+        }
+
+def calculate_goal_progress_from_onboarding(node_tasks: dict, current_node: str) -> dict:
+    """Calculate goal progress based on onboarding completion"""
+    goals = {
+        "goals": [
+            {"id": 1, "name": "Training", "progress": 0, "target": 100},
+            {"id": 2, "name": "Onboarding", "progress": 0, "target": 100},
+            {"id": 3, "name": "Project Delivery", "progress": 0, "target": 100},
+            {"id": 4, "name": "Skill Development", "progress": 0, "target": 100}
+        ]
+    }
+    
+    # Calculate onboarding progress based on completed tasks
+    if "welcome_overview" in node_tasks:
+        welcome_tasks = node_tasks["welcome_overview"]
+        completed_welcome = sum(1 for task in welcome_tasks.values() if task)
+        total_welcome = len(welcome_tasks)
+        welcome_progress = (completed_welcome / total_welcome) * 100 if total_welcome > 0 else 0
+        
+        # Update onboarding goal based on welcome progress
+        goals["goals"][1]["progress"] = min(welcome_progress, 100)
+    
+    # Calculate personal info progress
+    if "personal_info" in node_tasks:
+        personal_tasks = node_tasks["personal_info"]
+        completed_personal = sum(1 for task in personal_tasks.values() if task)
+        total_personal = len(personal_tasks)
+        personal_progress = (completed_personal / total_personal) * 100 if total_personal > 0 else 0
+        
+        # Update onboarding goal (personal info is part of onboarding)
+        current_onboarding_progress = goals["goals"][1]["progress"]
+        goals["goals"][1]["progress"] = min((current_onboarding_progress + personal_progress) / 2, 100)
+    
+    # Calculate account setup progress
+    if "account_setup" in node_tasks:
+        account_tasks = node_tasks["account_setup"]
+        completed_account = sum(1 for task in account_tasks.values() if task)
+        total_account = len(account_tasks)
+        account_progress = (completed_account / total_account) * 100 if total_account > 0 else 0
+        
+        # Update onboarding goal (account setup is part of onboarding)
+        current_onboarding_progress = goals["goals"][1]["progress"]
+        goals["goals"][1]["progress"] = min((current_onboarding_progress + account_progress) / 2, 100)
+    
+    # Set training progress based on current node (basic training starts after welcome)
+    if current_node != "welcome_overview":
+        goals["goals"][0]["progress"] = 20  # Basic training started
+    
+    return goals

@@ -14,7 +14,8 @@ from db import (
     get_user_by_user_id, create_user, get_user_direct_reports,
     create_performance_feedback, get_performance_feedback_by_employee,
     get_performance_feedback_by_manager, update_performance_feedback,
-    update_performance_feedback_ai_analysis
+    update_performance_feedback_ai_analysis, update_user_personal_goals,
+    get_user_personal_goals, calculate_goal_progress_from_onboarding
 )
 
 app = FastAPI(title="SAP HR Assistant", version="1.0.0")
@@ -94,6 +95,13 @@ class FeedbackAnalysisRequest(BaseModel):
 
 class RealTimeFeedbackRequest(BaseModel):
     feedback_text: str
+
+class ProgressUpdateRequest(BaseModel):
+    progress_text: str
+    current_goals: List[Dict[str, Any]]
+
+class PersonalGoalsResponse(BaseModel):
+    goals: List[Dict[str, Any]]
 
 # All database functions are now in db.py
 
@@ -199,6 +207,13 @@ def handle_chat(user_id: str, request: ChatRequest, db: Session = Depends(get_db
     # Add points if earned
     if points_earned > 0:
         user_state.total_points += points_earned
+    
+    # Update personal goals based on onboarding progress
+    updated_goals = calculate_goal_progress_from_onboarding(
+        user_state.node_tasks, 
+        user_state.current_node
+    )
+    user_state.personal_goals = updated_goals
     
     db.commit()
     
@@ -537,6 +552,142 @@ def get_realtime_suggestions(request: RealTimeFeedbackRequest, db: Session = Dep
         
     except Exception as e:
         return {"error": f"Failed to get suggestions: {str(e)}"}
+
+@app.post("/api/progress/update")
+def update_progress(request: ProgressUpdateRequest, db: Session = Depends(get_db)):
+    """Update employee progress using LangGraph chain-of-experts"""
+    try:
+        # Get user state to understand current onboarding progress
+        user_state = get_user_state(db, "test_user")  # Using test_user for now
+        onboarding_context = ""
+        if user_state:
+            onboarding_context = f"""
+Current Onboarding Status:
+- Current Node: {user_state.current_node}
+- Node Tasks: {user_state.node_tasks}
+- Total Points: {user_state.total_points}
+"""
+
+        # Create the chain-of-experts prompt
+        chain_of_experts_prompt = f"""
+You are a Chain of Experts system for processing employee progress updates. You must output ONLY valid JSON in the exact format specified below.
+
+Input: "{request.progress_text}"
+Current Goals: {request.current_goals}
+{onboarding_context}
+
+Expert 1 - Progress Parser: Analyze the natural language input and extract structured progress data.
+Expert 2 - Chart Generator: Generate chart configuration data for visualization.
+Expert 3 - Insight Generator: Create a friendly, encouraging comment about the progress.
+
+Rules for Goal Updates:
+1. If the input mentions completing onboarding tasks (video, policies, quiz, forms), update the "Onboarding" goal
+2. If the input mentions training, courses, or learning, update the "Training" goal
+3. If the input mentions projects, deliverables, or work completion, update the "Project Delivery" goal
+4. If the input mentions skills, certifications, or development, update the "Skill Development" goal
+5. Progress should be realistic and incremental (typically 10-30% increases)
+6. Consider the onboarding context when updating goals
+
+Output Format (JSON only, no additional text):
+{{
+  "goals": [
+    {{"id": 1, "name": "Training", "progress": 40, "target": 100}},
+    {{"id": 2, "name": "Onboarding", "progress": 60, "target": 100}},
+    {{"id": 3, "name": "Project Delivery", "progress": 25, "target": 100}},
+    {{"id": 4, "name": "Skill Development", "progress": 30, "target": 100}}
+  ],
+  "chart_data": {{
+    "type": "bar",
+    "labels": ["Training", "Onboarding", "Project Delivery", "Skill Development"],
+    "datasets": [{{
+      "label": "Progress %",
+      "data": [40, 60, 25, 30],
+      "backgroundColor": ["#3498db", "#2980b9", "#1f5f8b", "#34495e"]
+    }}]
+  }},
+  "insight": "Great progress! You've completed key onboarding tasks and are making solid progress on training."
+}}
+
+Output ONLY the JSON, no explanations or additional text.
+"""
+
+        # Use the HR agent to process the chain-of-experts prompt
+        result = hr_agent.process_chat(chain_of_experts_prompt, f"progress_update_{hash(request.progress_text)}", [], {})
+        ai_response = result["agent_response"]
+        
+        # Try to parse JSON response
+        try:
+            import json
+            progress_data = json.loads(ai_response)
+            
+            # Validate the response structure
+            if "goals" in progress_data and "chart_data" in progress_data and "insight" in progress_data:
+                # Update goals in database if user state exists
+                if user_state:
+                    update_user_personal_goals(db, "test_user", {"goals": progress_data["goals"]})
+                
+                return progress_data
+            else:
+                raise ValueError("Invalid response structure")
+                
+        except (json.JSONDecodeError, ValueError) as e:
+            # If JSON parsing fails, return a structured response based on input analysis
+            return {
+                "goals": request.current_goals,  # Keep current goals as fallback
+                "chart_data": {
+                    "type": "bar",
+                    "labels": [goal["name"] for goal in request.current_goals],
+                    "datasets": [{
+                        "label": "Progress %",
+                        "data": [goal["progress"] for goal in request.current_goals],
+                        "backgroundColor": ["#3498db", "#2980b9", "#1f5f8b", "#34495e"]
+                    }]
+                },
+                "insight": "Progress update received! Keep up the great work on your goals."
+            }
+        
+    except Exception as e:
+        return {"error": f"Failed to update progress: {str(e)}"}
+
+@app.get("/api/user/{user_id}/goals")
+def get_user_goals(user_id: str, db: Session = Depends(get_db)):
+    """Get user's personal goals"""
+    try:
+        goals_data = get_user_personal_goals(db, user_id)
+        return PersonalGoalsResponse(goals=goals_data["goals"])
+    except Exception as e:
+        return {"error": f"Failed to get goals: {str(e)}"}
+
+@app.put("/api/user/{user_id}/goals")
+def update_user_goals(user_id: str, goals_data: PersonalGoalsResponse, db: Session = Depends(get_db)):
+    """Update user's personal goals"""
+    try:
+        updated_goals = {"goals": goals_data.goals}
+        update_user_personal_goals(db, user_id, updated_goals)
+        return PersonalGoalsResponse(goals=goals_data.goals)
+    except Exception as e:
+        return {"error": f"Failed to update goals: {str(e)}"}
+
+@app.post("/api/user/{user_id}/goals/update-from-onboarding")
+def update_goals_from_onboarding(user_id: str, db: Session = Depends(get_db)):
+    """Update goals based on current onboarding progress"""
+    try:
+        user_state = get_user_state(db, user_id)
+        if not user_state:
+            return {"error": "User state not found"}
+        
+        # Calculate goals based on onboarding progress
+        updated_goals = calculate_goal_progress_from_onboarding(
+            user_state.node_tasks, 
+            user_state.current_node
+        )
+        
+        # Update goals in database
+        update_user_personal_goals(db, user_id, updated_goals)
+        
+        return PersonalGoalsResponse(goals=updated_goals["goals"])
+    except Exception as e:
+        return {"error": f"Failed to update goals from onboarding: {str(e)}"}
 
 if __name__ == "__main__":
     import uvicorn

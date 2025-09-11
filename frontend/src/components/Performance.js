@@ -1,6 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement } from 'chart.js';
+import { Bar, Doughnut } from 'react-chartjs-2';
 import './Performance.css';
+
+// Register Chart.js components
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement);
 
 function Performance() {
   const navigate = useNavigate();
@@ -19,7 +24,6 @@ function Performance() {
   const [aiAssistantEnabled, setAiAssistantEnabled] = useState(true); // AI assistant toggle
   const [aiAnalysis, setAiAnalysis] = useState(null); // AI analysis data
   const [aiLoading, setAiLoading] = useState(false); // AI loading state
-  const [realtimeSuggestions, setRealtimeSuggestions] = useState(null); // Real-time suggestions
   const [aiProcessingSteps, setAiProcessingSteps] = useState([]); // AI processing steps
   const [aiConfidence, setAiConfidence] = useState(null); // AI confidence score
   const [aiModelInfo, setAiModelInfo] = useState({ model: 'GPT-4', version: '2024-01-01' }); // AI model info
@@ -316,26 +320,6 @@ function Performance() {
     }
   };
 
-  const getRealtimeSuggestions = async (text) => {
-    if (!text.trim() || !aiAssistantEnabled) return;
-    
-    try {
-      const response = await fetch('http://localhost:8000/api/feedback/realtime-suggestions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ feedback_text: text }),
-      });
-
-      if (response.ok) {
-        const suggestions = await response.json();
-        setRealtimeSuggestions(suggestions);
-      }
-    } catch (err) {
-      console.error('Error getting suggestions:', err);
-    }
-  };
 
   // Debounced AI analysis
   const debouncedAnalyzeFeedback = useCallback(
@@ -347,14 +331,6 @@ function Performance() {
     [aiAssistantEnabled]
   );
 
-  const debouncedRealtimeSuggestions = useCallback(
-    debounce((text) => {
-      if (text.length > 5) { // Get suggestions for shorter text
-        getRealtimeSuggestions(text);
-      }
-    }, 1000), // Wait 1 second for real-time suggestions
-    [aiAssistantEnabled]
-  );
 
   // Handle feedback text changes
   const handleFeedbackTextChange = (e) => {
@@ -364,7 +340,6 @@ function Performance() {
     // Trigger AI analysis
     if (aiAssistantEnabled) {
       debouncedAnalyzeFeedback(newText);
-      debouncedRealtimeSuggestions(newText);
     }
   };
 
@@ -445,7 +420,6 @@ function Performance() {
               setAiAssistantEnabled={setAiAssistantEnabled}
               aiAnalysis={aiAnalysis}
               aiLoading={aiLoading}
-              realtimeSuggestions={realtimeSuggestions}
               onFeedbackTextChange={handleFeedbackTextChange}
               aiProcessingSteps={aiProcessingSteps}
               aiConfidence={aiConfidence}
@@ -489,7 +463,6 @@ function ManagerView({
   setAiAssistantEnabled,
   aiAnalysis,
   aiLoading,
-  realtimeSuggestions,
   onFeedbackTextChange,
   aiProcessingSteps,
   aiConfidence,
@@ -867,22 +840,27 @@ function EmployeeView({ userProfile, feedbacks, loading, showAIAnalysis, setShow
   
   return (
     <div className="employee-view">
-      <div className="employee-section">
-        <div className="section-header">
-          <h2>Your Performance Feedback</h2>
-          <div className="ai-toggle">
-            <label className="toggle-label">
-              <input
-                type="checkbox"
-                checked={showAIAnalysis}
-                onChange={(e) => setShowAIAnalysis(e.target.checked)}
-                className="toggle-input"
-              />
-              <span className="toggle-slider"></span>
-              <span className="toggle-text">Show AI Analysis</span>
-            </label>
+      <div className="employee-dashboard">
+        {/* Personal Goals Section - Left Sidebar */}
+        <PersonalGoalsSection />
+        
+        {/* Manager Feedback Section - Right Side */}
+        <div className="manager-feedback-section">
+          <div className="section-header">
+            <h2>Your Performance Feedback</h2>
+            <div className="ai-toggle">
+              <label className="toggle-label">
+                <input
+                  type="checkbox"
+                  checked={showAIAnalysis}
+                  onChange={(e) => setShowAIAnalysis(e.target.checked)}
+                  className="toggle-input"
+                />
+                <span className="toggle-slider"></span>
+                <span className="toggle-text">Show AI Analysis</span>
+              </label>
+            </div>
           </div>
-        </div>
         
         {safeFeedbacks.length === 0 ? (
           <p className="no-feedback">No feedback received yet.</p>
@@ -976,6 +954,391 @@ function EmployeeView({ userProfile, feedbacks, loading, showAIAnalysis, setShow
             </div>
           ))
         )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Personal Goals Section Component
+function PersonalGoalsSection() {
+  const [progressUpdate, setProgressUpdate] = useState('');
+  const [goals, setGoals] = useState([
+    { id: 1, name: 'Training', progress: 0, target: 100 },
+    { id: 2, name: 'Onboarding', progress: 0, target: 100 },
+    { id: 3, name: 'Project Delivery', progress: 0, target: 100 },
+    { id: 4, name: 'Skill Development', progress: 0, target: 100 }
+  ]);
+  const [insight, setInsight] = useState('');
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [chartData, setChartData] = useState(null);
+  const [loadingGoals, setLoadingGoals] = useState(true);
+
+  // Load goals from backend on component mount
+  useEffect(() => {
+    loadGoalsFromBackend();
+  }, []);
+
+  const loadGoalsFromBackend = async () => {
+    try {
+      setLoadingGoals(true);
+      const response = await fetch('http://localhost:8000/api/user/test_user/goals');
+      if (response.ok) {
+        const data = await response.json();
+        if (data.goals) {
+          setGoals(data.goals);
+        }
+      } else {
+        console.error('Failed to load goals from backend');
+      }
+    } catch (err) {
+      console.error('Error loading goals:', err);
+    } finally {
+      setLoadingGoals(false);
+    }
+  };
+
+  const handleProgressUpdate = async () => {
+    if (!progressUpdate.trim()) return;
+    
+    setIsUpdating(true);
+    
+    try {
+      const response = await fetch('http://localhost:8000/api/progress/update', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          progress_text: progressUpdate,
+          current_goals: goals
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        
+        // Update goals with new progress
+        if (result.goals) {
+          setGoals(result.goals);
+          
+          // Save updated goals to backend
+          await fetch('http://localhost:8000/api/user/test_user/goals', {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              goals: result.goals
+            }),
+          });
+        }
+        
+        // Update insight
+        if (result.insight) {
+          setInsight(result.insight);
+        }
+        
+        // Update chart data
+        if (result.chart_data) {
+          setChartData(result.chart_data);
+        }
+        
+        // Clear input
+        setProgressUpdate('');
+      } else {
+        console.error('Failed to update progress');
+      }
+    } catch (err) {
+      console.error('Error updating progress:', err);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleProgressUpdate();
+    }
+  };
+
+  return (
+    <div className="personal-goals-section">
+      <div className="goals-header">
+        <h2>Personal Goals</h2>
+        <div className="goals-subtitle">Track your progress and achievements</div>
+        <button 
+          className="refresh-goals-btn"
+          onClick={loadGoalsFromBackend}
+          disabled={loadingGoals}
+        >
+          {loadingGoals ? '⏳' : '🔄'} Refresh from Onboarding
+        </button>
+      </div>
+
+      {/* Progress Chart */}
+      <div className="progress-chart-container">
+        <h3>Goal Progress</h3>
+        <div className="chart-wrapper">
+          {loadingGoals ? (
+            <div className="chart-loading">
+              <div className="loading-spinner"></div>
+              <p>Loading goals...</p>
+            </div>
+          ) : chartData ? (
+            <ProgressChart data={chartData} />
+          ) : (
+            <DefaultProgressChart goals={goals} />
+          )}
+        </div>
+      </div>
+
+      {/* AI Insight */}
+      {insight && (
+        <div className="insight-container">
+          <div className="insight-header">
+            <span className="insight-icon">💡</span>
+            <h4>AI Insight</h4>
+          </div>
+          <p className="insight-text">{insight}</p>
+        </div>
+      )}
+
+      {/* Progress Update Input */}
+      <div className="progress-update-section">
+        <label htmlFor="progress-update" className="update-label">
+          Update your progress
+        </label>
+        <div className="update-input-container">
+          <textarea
+            id="progress-update"
+            value={progressUpdate}
+            onChange={(e) => setProgressUpdate(e.target.value)}
+            onKeyPress={handleKeyPress}
+            placeholder="I finished module 2 of training and had my first onboarding call..."
+            className="progress-update-input"
+            rows={3}
+            disabled={isUpdating}
+          />
+          <button
+            onClick={handleProgressUpdate}
+            disabled={isUpdating || !progressUpdate.trim()}
+            className="update-btn"
+          >
+            {isUpdating ? 'Updating...' : 'Update'}
+          </button>
+        </div>
+      </div>
+
+      {/* Goals List */}
+      <div className="goals-list">
+        <h3>Current Goals</h3>
+        <div className="goals-grid">
+          {goals.map(goal => (
+            <div key={goal.id} className="goal-card">
+              <div className="goal-header">
+                <h4>{goal.name}</h4>
+                <span className="goal-progress">{goal.progress}%</span>
+              </div>
+              <div className="goal-progress-bar">
+                <div 
+                  className="goal-progress-fill" 
+                  style={{ width: `${goal.progress}%` }}
+                ></div>
+              </div>
+              <div className="goal-target">Target: {goal.target}%</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Progress Chart Component
+function ProgressChart({ data }) {
+  if (!data || !data.chart_data) {
+    return (
+      <div className="chart-container">
+        <div className="chart-placeholder">
+          <span className="chart-icon">📊</span>
+          <p>No chart data available</p>
+        </div>
+      </div>
+    );
+  }
+
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'top',
+      },
+      title: {
+        display: true,
+        text: 'Goal Progress Overview',
+        font: {
+          size: 16,
+          weight: 'bold'
+        }
+      },
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        max: 100,
+        ticks: {
+          callback: function(value) {
+            return value + '%';
+          }
+        }
+      }
+    }
+  };
+
+  const doughnutOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'bottom',
+      },
+      title: {
+        display: true,
+        text: 'Progress Distribution',
+        font: {
+          size: 16,
+          weight: 'bold'
+        }
+      },
+    }
+  };
+
+  return (
+    <div className="chart-container">
+      <div className="chart-tabs">
+        <div className="chart-tab active">Bar Chart</div>
+        <div className="chart-tab">Doughnut Chart</div>
+      </div>
+      
+      <div className="chart-content">
+        <div className="chart-wrapper">
+          <Bar data={data.chart_data} options={chartOptions} />
+        </div>
+        
+        <div className="chart-wrapper">
+          <Doughnut 
+            data={{
+              ...data.chart_data,
+              datasets: [{
+                ...data.chart_data.datasets[0],
+                backgroundColor: [
+                  'var(--primary-blue)',
+                  'var(--secondary-blue)', 
+                  'var(--dark-blue)',
+                  'var(--dark-gray)',
+                  'var(--darker-gray)'
+                ]
+              }]
+            }} 
+            options={doughnutOptions} 
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Default Progress Chart Component
+function DefaultProgressChart({ goals }) {
+  // Create chart data from goals
+  const chartData = {
+    labels: goals.map(goal => goal.name),
+    datasets: [{
+      label: 'Progress %',
+      data: goals.map(goal => goal.progress),
+      backgroundColor: [
+        'var(--primary-blue)',
+        'var(--secondary-blue)', 
+        'var(--dark-blue)',
+        'var(--dark-gray)',
+        'var(--darker-gray)'
+      ],
+      borderColor: [
+        'var(--secondary-blue)',
+        'var(--dark-blue)',
+        'var(--dark-gray)',
+        'var(--darker-gray)',
+        'var(--darkest-gray)'
+      ],
+      borderWidth: 2
+    }]
+  };
+
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'top',
+      },
+      title: {
+        display: true,
+        text: 'Goal Progress Overview',
+        font: {
+          size: 16,
+          weight: 'bold'
+        }
+      },
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        max: 100,
+        ticks: {
+          callback: function(value) {
+            return value + '%';
+          }
+        }
+      }
+    }
+  };
+
+  const doughnutOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'bottom',
+      },
+      title: {
+        display: true,
+        text: 'Progress Distribution',
+        font: {
+          size: 16,
+          weight: 'bold'
+        }
+      },
+    }
+  };
+
+  return (
+    <div className="chart-container">
+      <div className="chart-tabs">
+        <div className="chart-tab active">Bar Chart</div>
+        <div className="chart-tab">Doughnut Chart</div>
+      </div>
+      
+      <div className="chart-content">
+        <div className="chart-wrapper">
+          <Bar data={chartData} options={chartOptions} />
+        </div>
+        
+        <div className="chart-wrapper">
+          <Doughnut data={chartData} options={doughnutOptions} />
+        </div>
       </div>
     </div>
   );
