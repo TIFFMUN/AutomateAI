@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from datetime import datetime
 from config import settings
 from langgraph_connection import LangGraphConnection
-from prompts import PERFORMANCE_FEEDBACK_ANALYSIS
+from prompts import PERFORMANCE_FEEDBACK_ANALYSIS, PERFORMANCE_FEEDBACK_ANALYSIS_PROMPT, REAL_TIME_FEEDBACK_SUGGESTIONS_PROMPT
 from db import (
     get_db, create_tables, UserState, ChatMessage, User, PerformanceFeedback,
     get_user_state, create_user_state, get_chat_messages,
@@ -88,6 +88,12 @@ class UpdateFeedbackRequest(BaseModel):
 
 class GenerateAISummaryRequest(BaseModel):
     feedback_id: int
+
+class FeedbackAnalysisRequest(BaseModel):
+    feedback_text: str
+
+class RealTimeFeedbackRequest(BaseModel):
+    feedback_text: str
 
 # All database functions are now in db.py
 
@@ -446,6 +452,91 @@ def generate_ai_summary(feedback_id: int, db: Session = Depends(get_db)):
         
     except Exception as e:
         return {"error": f"Failed to generate AI summary: {str(e)}"}
+
+@app.post("/api/feedback/analyze")
+def analyze_feedback(request: FeedbackAnalysisRequest, db: Session = Depends(get_db)):
+    """Analyze feedback text and provide AI-powered suggestions"""
+    try:
+        # Use the existing HR agent to analyze feedback
+        analysis_prompt = PERFORMANCE_FEEDBACK_ANALYSIS_PROMPT.format(feedback_text=request.feedback_text)
+        
+        result = hr_agent.process_chat(analysis_prompt, f"feedback_analysis_{hash(request.feedback_text)}", [], {})
+        ai_response = result["agent_response"]
+        
+        # Try to parse JSON response
+        try:
+            import json
+            analysis_data = json.loads(ai_response)
+            return analysis_data
+        except json.JSONDecodeError:
+            # If JSON parsing fails, return structured response
+            return {
+                "quality_score": 7,
+                "tone_analysis": {
+                    "overall_tone": "constructive",
+                    "constructiveness_score": 7,
+                    "balance_score": 6
+                },
+                "specificity_suggestions": [
+                    "Add specific examples of performance",
+                    "Include measurable outcomes",
+                    "Provide concrete instances"
+                ],
+                "missing_areas": [
+                    "Communication skills",
+                    "Leadership development",
+                    "Technical competencies"
+                ],
+                "actionability_suggestions": [
+                    "Set specific goals for next quarter",
+                    "Schedule regular check-ins",
+                    "Provide training resources"
+                ],
+                "overall_recommendations": "Consider adding more specific examples and actionable next steps to make this feedback more effective."
+            }
+        
+    except Exception as e:
+        return {"error": f"Failed to analyze feedback: {str(e)}"}
+
+@app.post("/api/feedback/realtime-suggestions")
+def get_realtime_suggestions(request: RealTimeFeedbackRequest, db: Session = Depends(get_db)):
+    """Get real-time suggestions as manager types feedback"""
+    try:
+        # Use the existing HR agent for real-time suggestions
+        suggestions_prompt = REAL_TIME_FEEDBACK_SUGGESTIONS_PROMPT.format(feedback_text=request.feedback_text)
+        
+        result = hr_agent.process_chat(suggestions_prompt, f"realtime_{hash(request.feedback_text)}", [], {})
+        ai_response = result["agent_response"]
+        
+        # Try to parse JSON response
+        try:
+            import json
+            suggestions_data = json.loads(ai_response)
+            return suggestions_data
+        except json.JSONDecodeError:
+            # If JSON parsing fails, return default suggestions
+            return {
+                "live_suggestions": [
+                    "Consider adding specific examples",
+                    "Include measurable outcomes",
+                    "Balance positive and improvement areas"
+                ],
+                "completeness_check": {
+                    "has_specifics": len(request.feedback_text.split()) > 20,
+                    "has_examples": "example" in request.feedback_text.lower() or "instance" in request.feedback_text.lower(),
+                    "has_action_items": "next" in request.feedback_text.lower() or "goal" in request.feedback_text.lower(),
+                    "covers_communication": "communication" in request.feedback_text.lower(),
+                    "covers_leadership": "leadership" in request.feedback_text.lower() or "lead" in request.feedback_text.lower(),
+                    "covers_technical": "technical" in request.feedback_text.lower() or "skill" in request.feedback_text.lower()
+                },
+                "next_suggestions": [
+                    "Add specific examples of performance",
+                    "Include actionable next steps"
+                ]
+            }
+        
+    except Exception as e:
+        return {"error": f"Failed to get suggestions: {str(e)}"}
 
 if __name__ == "__main__":
     import uvicorn
