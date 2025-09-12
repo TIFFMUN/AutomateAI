@@ -1,5 +1,4 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Response, Request
-from fastapi.security import HTTPBearer
 from sqlalchemy.orm import Session
 from database import get_db
 from schemas.auth import UserCreate, UserLogin, UserResponse, Token, RefreshTokenRequest
@@ -9,7 +8,6 @@ from models.user import User
 from datetime import timedelta
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
-security = HTTPBearer()
 
 @router.post("/register", response_model=UserResponse)
 async def register(user: UserCreate, db: Session = Depends(get_db)):
