@@ -39,6 +39,12 @@ function Performance() {
   const [lastFeedbackCount, setLastFeedbackCount] = useState(0);
   const [pollingInterval, setPollingInterval] = useState(null);
 
+  // Helper function to build API URLs without double slashes
+  const buildApiUrl = (endpoint) => {
+    const baseUrl = process.env.REACT_APP_API_URL || 'https://automateai-56bf.onrender.com';
+    return `${baseUrl.replace(/\/$/, '')}${endpoint}`;
+  };
+
   // Available users from performance testing database
   const availableUsers = [
     { id: "perf_manager001", name: "Alex Thompson", role: "Manager" },
@@ -88,7 +94,7 @@ function Performance() {
 
   const loadDirectReports = async () => {
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://automateai-56bf.onrender.com'}/api/performance/users/${currentUserId}/direct-reports`);
+      const response = await fetch(buildApiUrl(`/api/performance/users/${currentUserId}/direct-reports`));
       if (response.ok) {
         const reports = await response.json();
         console.log('Direct reports loaded:', reports);
@@ -105,7 +111,7 @@ function Performance() {
 
   const loadEmployeeFeedbacks = async () => {
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://automateai-56bf.onrender.com'}/api/user/${currentUserId}/feedback`);
+      const response = await fetch(buildApiUrl(`/api/user/${currentUserId}/feedback`));
       if (response.ok) {
         const feedbacks = await response.json();
         const feedbackArray = Array.isArray(feedbacks) ? feedbacks : [];
@@ -131,7 +137,7 @@ function Performance() {
 
   const loadManagerFeedbacks = async () => {
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://automateai-56bf.onrender.com'}/api/manager/${currentUserId}/feedback`);
+      const response = await fetch(buildApiUrl(`/api/manager/${currentUserId}/feedback`));
       if (response.ok) {
         const feedbacks = await response.json();
         const feedbackArray = Array.isArray(feedbacks) ? feedbacks : [];
@@ -157,7 +163,7 @@ function Performance() {
 
   const loadLatestInsight = async () => {
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://automateai-56bf.onrender.com'}/api/performance/users/${currentUserId}/latest-insight`);
+      const response = await fetch(buildApiUrl(`/api/performance/users/${currentUserId}/latest-insight`));
       if (response.ok) {
         const data = await response.json();
         if (data.insight) {
@@ -176,7 +182,7 @@ function Performance() {
   const loadGoalsFromBackend = async () => {
     try {
       setLoadingGoals(true);
-      const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://automateai-56bf.onrender.com'}/api/performance/users/${currentUserId}/goals`);
+      const response = await fetch(buildApiUrl(`/api/performance/users/${currentUserId}/goals`));
       if (response.ok) {
         const data = await response.json();
         if (data.goals) {
@@ -273,7 +279,7 @@ function Performance() {
     setError(null);
 
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://automateai-56bf.onrender.com'}/api/manager/${currentUserId}/feedback`, {
+      const response = await fetch(buildApiUrl(`/api/manager/${currentUserId}/feedback`), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -311,7 +317,7 @@ function Performance() {
     setError(null);
 
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://automateai-56bf.onrender.com'}/api/feedback/${feedbackId}`, {
+      const response = await fetch(buildApiUrl(`/api/feedback/${feedbackId}`), {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -343,7 +349,7 @@ function Performance() {
     setError(null);
 
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://automateai-56bf.onrender.com'}/api/feedback/${feedbackId}/ai-summary`, {
+      const response = await fetch(buildApiUrl(`/api/feedback/${feedbackId}/ai-summary`), {
         method: 'POST',
       });
 
@@ -411,7 +417,7 @@ function Performance() {
       // Start processing simulation
       simulateProcessing();
       
-      const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://automateai-56bf.onrender.com'}/api/feedback/analyze`, {
+      const response = await fetch(buildApiUrl(`/api/feedback/analyze`), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1176,7 +1182,7 @@ function PersonalGoalsSection({ currentUserId, insight, setInsight, chartData, s
     setIsUpdating(true);
     
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://automateai-56bf.onrender.com'}/api/progress/update/${currentUserId}`, {
+      const response = await fetch(buildApiUrl(`/api/progress/update/${currentUserId}`), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
