@@ -1,4 +1,4 @@
-from fastapi import Request, HTTPException, status
+from fastapi import Request, HTTPException, status, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from database import get_db
@@ -9,7 +9,7 @@ security = HTTPBearer()
 
 async def get_current_user(
     request: Request,
-    credentials: HTTPAuthorizationCredentials = None
+    credentials: HTTPAuthorizationCredentials = Depends(security)
 ):
     """Get current authenticated user from token."""
     # Try to get token from Authorization header first

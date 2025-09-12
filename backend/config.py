@@ -24,6 +24,10 @@ class Settings:
     DEBUG = os.getenv("DEBUG", "False").lower() == "true"
     
     # CORS
-    ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:3001").split(",")
+    # Include localhost for dev and known prod domains by default. Override via ALLOWED_ORIGINS env.
+    ALLOWED_ORIGINS = os.getenv(
+        "ALLOWED_ORIGINS",
+        "http://localhost:3000,http://localhost:3001,https://automate-ai-chi.vercel.app,https://automateai-56bf.onrender.com"
+    ).split(",")
     
 settings = Settings()
