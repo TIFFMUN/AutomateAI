@@ -37,6 +37,9 @@ function Performance() {
     { id: 2, name: 'Onboarding', progress: 0, target: 100 }
   ]); // Goals state
   const [loadingGoals, setLoadingGoals] = useState(true); // Loading goals state
+  const [lastFeedbackCount, setLastFeedbackCount] = useState(0); // Track feedback count for polling
+  const [pollingInterval, setPollingInterval] = useState(null); // Polling interval reference
+  const [newFeedbackNotification, setNewFeedbackNotification] = useState(null); // New feedback notification
 
   // Available users from performance testing database
   const availableUsers = [
@@ -57,7 +60,18 @@ function Performance() {
       } else {
         loadEmployeeFeedbacks();
       }
+      
+      // Start polling for feedback updates (every 10 seconds)
+      startPolling();
     }
+    
+    // Cleanup polling when component unmounts or dependencies change
+    return () => {
+      if (pollingInterval) {
+        clearInterval(pollingInterval);
+        setPollingInterval(null);
+      }
+    };
   }, [isManagerView, currentUserId, hasSelectedRole]);
 
   // Close dropdown when clicking outside
@@ -91,9 +105,10 @@ function Performance() {
       const response = await fetch(`http://localhost:8000/api/performance/users/${currentUserId}/direct-reports`);
       if (response.ok) {
         const reports = await response.json();
+        console.log('Direct reports loaded:', reports);
         setDirectReports(Array.isArray(reports) ? reports : []);
       } else {
-        console.error('Failed to load direct reports');
+        console.error('Failed to load direct reports, status:', response.status);
         setDirectReports([]);
       }
     } catch (err) {
@@ -104,33 +119,53 @@ function Performance() {
 
   const loadEmployeeFeedbacks = async () => {
     try {
-      const response = await fetch(`http://localhost:8000/api/performance/users/${currentUserId}/feedback`);
+      const response = await fetch(`http://localhost:8000/api/user/${currentUserId}/feedback`);
       if (response.ok) {
         const feedbacks = await response.json();
-        setFeedbacks(Array.isArray(feedbacks) ? feedbacks : []);
+        const feedbackArray = Array.isArray(feedbacks) ? feedbacks : [];
+        setFeedbacks(feedbackArray);
+        
+        // Update feedback count for polling detection
+        setLastFeedbackCount(feedbackArray.length);
+        
+        return feedbackArray;
       } else {
         console.error('Failed to load employee feedbacks');
         setFeedbacks([]);
+        setLastFeedbackCount(0);
+        return [];
       }
     } catch (err) {
       console.error('Error loading employee feedbacks:', err);
       setFeedbacks([]);
+      setLastFeedbackCount(0);
+      return [];
     }
   };
 
   const loadManagerFeedbacks = async () => {
     try {
-      const response = await fetch(`http://localhost:8000/api/performance/managers/${currentUserId}/feedback`);
+      const response = await fetch(`http://localhost:8000/api/manager/${currentUserId}/feedback`);
       if (response.ok) {
         const feedbacks = await response.json();
-        setFeedbacks(Array.isArray(feedbacks) ? feedbacks : []);
+        const feedbackArray = Array.isArray(feedbacks) ? feedbacks : [];
+        setFeedbacks(feedbackArray);
+        
+        // Update feedback count for polling detection
+        setLastFeedbackCount(feedbackArray.length);
+        
+        return feedbackArray;
       } else {
         console.error('Failed to load manager feedbacks');
         setFeedbacks([]);
+        setLastFeedbackCount(0);
+        return [];
       }
     } catch (err) {
       console.error('Error loading manager feedbacks:', err);
       setFeedbacks([]);
+      setLastFeedbackCount(0);
+      return [];
     }
   };
 
@@ -141,7 +176,6 @@ function Performance() {
         const data = await response.json();
         if (data.insight) {
           setInsight(data.insight);
-          console.log('Loaded AI insight from backend:', data.insight);
         } else {
           setInsight(''); // Clear insight if none available
         }
@@ -161,7 +195,6 @@ function Performance() {
         const data = await response.json();
         if (data.goals) {
           setGoals(data.goals);
-          console.log('Loaded goals from backend:', data.goals);
           
           // Update chart data when goals are loaded
           const chartData = {
@@ -185,6 +218,64 @@ function Performance() {
     }
   };
 
+  // Polling functions for real-time updates
+  const startPolling = () => {
+    // Clear any existing polling
+    if (pollingInterval) {
+      clearInterval(pollingInterval);
+    }
+    
+    // Start new polling interval (every 10 seconds)
+    const interval = setInterval(async () => {
+      if (currentUserId && hasSelectedRole) {
+        await checkForNewFeedback();
+      }
+    }, 10000); // 10 seconds
+    
+    setPollingInterval(interval);
+  };
+
+  const checkForNewFeedback = async () => {
+    try {
+      let currentFeedbacks = [];
+      
+      if (isManagerView) {
+        currentFeedbacks = await loadManagerFeedbacks();
+      } else {
+        currentFeedbacks = await loadEmployeeFeedbacks();
+      }
+      
+      // Check if feedback count has changed
+      if (currentFeedbacks.length !== lastFeedbackCount) {
+        console.log(`New feedback detected! Count changed from ${lastFeedbackCount} to ${currentFeedbacks.length}`);
+        
+        // Show a subtle notification (optional)
+        if (currentFeedbacks.length > lastFeedbackCount) {
+          console.log('🎉 New feedback received!');
+          setNewFeedbackNotification(`🎉 ${currentFeedbacks.length - lastFeedbackCount} new feedback received!`);
+          
+          // Auto-hide notification after 5 seconds
+          setTimeout(() => {
+            setNewFeedbackNotification(null);
+          }, 5000);
+        }
+      }
+    } catch (err) {
+      console.error('Error checking for new feedback:', err);
+    }
+  };
+
+  const manualRefresh = async () => {
+    console.log('Manual refresh triggered');
+    if (currentUserId && hasSelectedRole) {
+      if (isManagerView) {
+        await loadManagerFeedbacks();
+      } else {
+        await loadEmployeeFeedbacks();
+      }
+    }
+  };
+
   const handleUserChange = (userId) => {
     setCurrentUserId(userId);
     const selectedUser = availableUsers.find(user => user.id === userId);
@@ -202,6 +293,9 @@ function Performance() {
       { id: 2, name: 'Onboarding', progress: 0, target: 100 }
     ]);
     setLoadingGoals(true);
+    
+    // Reset feedback count
+    setLastFeedbackCount(0);
   };
 
   const handleCreateFeedback = async () => {
@@ -214,7 +308,7 @@ function Performance() {
     setError(null);
 
     try {
-      const response = await fetch(`http://localhost:8000/api/performance/managers/${currentUserId}/feedback`, {
+      const response = await fetch(`http://localhost:8000/api/manager/${currentUserId}/feedback`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -463,6 +557,9 @@ function Performance() {
                 </div>
               </div>
             )}
+            <button className="btn btn-secondary" onClick={manualRefresh} title="Refresh feedback">
+              🔄 Refresh
+            </button>
             <button className="btn btn-primary" onClick={handleBack}>
               Back to Main
             </button>
@@ -473,6 +570,12 @@ function Performance() {
           {error && (
             <div className="error-message">
               {error}
+            </div>
+          )}
+          
+          {newFeedbackNotification && (
+            <div className="feedback-notification">
+              {newFeedbackNotification}
             </div>
           )}
 
@@ -584,6 +687,11 @@ function ManagerView({
   const safeFeedbacks = Array.isArray(feedbacks) ? feedbacks : [];
   const safeDirectReports = Array.isArray(directReports) ? directReports : [];
   
+  // Debug logging
+  console.log('ManagerView - directReports:', directReports);
+  console.log('ManagerView - safeDirectReports:', safeDirectReports);
+  console.log('ManagerView - selectedEmployee:', selectedEmployee);
+  
   // Carousel functions
   const nextFeedback = () => {
     setCurrentFeedbackIndex((prev) => 
@@ -609,11 +717,13 @@ function ManagerView({
           
           <div className={`feedback-form ${!aiAssistantEnabled ? 'expanded' : ''}`}>
             <div className="form-group">
-              <label>Select Employee:</label>
+              <label>Select Employee ({safeDirectReports.length} available):</label>
               <select 
                 value={selectedEmployee?.id || ''} 
                 onChange={(e) => {
+                  console.log('Employee selection changed:', e.target.value);
                   const employee = safeDirectReports.find(emp => emp.id === parseInt(e.target.value));
+                  console.log('Found employee:', employee);
                   setSelectedEmployee(employee);
                 }}
                 disabled={!!editingFeedback}
@@ -625,6 +735,11 @@ function ManagerView({
                   </option>
                 ))}
               </select>
+              {safeDirectReports.length === 0 && (
+                <div style={{ color: 'orange', fontSize: '12px', marginTop: '5px' }}>
+                  No employees found. Check if manager has direct reports in database.
+                </div>
+              )}
             </div>
 
             <div className="form-group">
@@ -1124,7 +1239,6 @@ function PersonalGoalsSection({ currentUserId, insight, setInsight, chartData, s
         // Update goals with new progress
         if (result.goals) {
           setGoals(result.goals);
-          console.log('Updated goals from progress update:', result.goals);
         }
         
         // Update insight
@@ -1134,10 +1248,7 @@ function PersonalGoalsSection({ currentUserId, insight, setInsight, chartData, s
         
         // Update chart data
         if (result.chart_data) {
-          console.log('Setting chart data from LLM:', result.chart_data);
           setChartData(result.chart_data);
-        } else {
-          console.log('No chart_data in result:', result);
         }
         
         // Clear input
@@ -1247,8 +1358,6 @@ function PersonalGoalsSection({ currentUserId, insight, setInsight, chartData, s
 
 // Progress Chart Component
 function ProgressChart({ data }) {
-  console.log('ProgressChart received data:', data);
-  
   if (!data) {
     return (
       <div className="chart-container">
