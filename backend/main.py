@@ -39,6 +39,63 @@ app = FastAPI(
     version="1.0.0"
 )
 
+# CORS middleware - MUST be added before any routes
+print(f"Configuring CORS with allowed origins: {settings.ALLOWED_ORIGINS}")
+
+# More comprehensive CORS configuration
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.ALLOWED_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+    allow_headers=[
+        "Accept",
+        "Accept-Language",
+        "Content-Language",
+        "Content-Type",
+        "Authorization",
+        "X-Requested-With",
+        "Origin",
+        "Access-Control-Request-Method",
+        "Access-Control-Request-Headers",
+    ],
+    expose_headers=[
+        "Access-Control-Allow-Origin",
+        "Access-Control-Allow-Credentials",
+        "Access-Control-Allow-Methods",
+        "Access-Control-Allow-Headers",
+    ],
+)
+
+# Add a simple CORS preflight handler for debugging
+@app.options("/{full_path:path}")
+async def options_handler(full_path: str):
+    """Handle CORS preflight requests"""
+    return {"message": "CORS preflight handled"}
+
+# Add middleware to ensure CORS headers are always present
+@app.middleware("http")
+async def add_cors_headers(request, call_next):
+    """Ensure CORS headers are present on all responses"""
+    response = await call_next(request)
+    
+    # Add CORS headers if not already present
+    if "Access-Control-Allow-Origin" not in response.headers:
+        origin = request.headers.get("origin")
+        if origin in settings.ALLOWED_ORIGINS:
+            response.headers["Access-Control-Allow-Origin"] = origin
+    
+    if "Access-Control-Allow-Credentials" not in response.headers:
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+    
+    if "Access-Control-Allow-Methods" not in response.headers:
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+    
+    if "Access-Control-Allow-Headers" not in response.headers:
+        response.headers["Access-Control-Allow-Headers"] = "Accept, Accept-Language, Content-Language, Content-Type, Authorization, X-Requested-With, Origin"
+    
+    return response
+
 # Performance initialization will be done in startup event
 
 @app.get("/api/performance/debug/users")
@@ -102,17 +159,6 @@ def setup_manager_relationships(db: Session = Depends(get_performance_db)):
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Setup failed: {str(e)}")
-
-# CORS middleware
-print(f"Configuring CORS with allowed origins: {settings.ALLOWED_ORIGINS}")
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.ALLOWED_ORIGINS,
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allow_headers=["*"],
-    expose_headers=["*"],
-)
 
 # Include authentication router
 app.include_router(auth_router, prefix="/api")
@@ -250,6 +296,15 @@ def read_root():
 @app.get("/health")
 def health_check():
     return {"status": "healthy"}
+
+@app.get("/api/cors-debug")
+def cors_debug():
+    """Debug endpoint to check CORS configuration"""
+    return {
+        "message": "CORS debug endpoint",
+        "allowed_origins": settings.ALLOWED_ORIGINS,
+        "cors_configured": True
+    }
 
 # Ensure core tables exist (users, etc.) without onboarding tables
 @app.on_event("startup")
