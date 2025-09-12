@@ -1,7 +1,7 @@
 from fastapi import Request, HTTPException, status, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
-from database import get_db
+from database import get_db, SessionLocal
 from auth.auth_utils import verify_token
 from services.auth_service import AuthService
 
@@ -28,13 +28,20 @@ async def get_current_user(
     
     try:
         username = verify_token(token, "access")
-        db = next(get_db())
-        auth_service = AuthService(db)
-        user = auth_service.get_user_by_username(username)
-        return user
-    except HTTPException:
+        print(f"Token verified for username: {username}")
+        db = SessionLocal()
+        try:
+            auth_service = AuthService(db)
+            user = auth_service.get_user_by_username(username)
+            print(f"User found: {user}")
+            return user
+        finally:
+            db.close()
+    except HTTPException as e:
+        print(f"HTTPException in auth middleware: {e.detail}")
         raise
     except Exception as e:
+        print(f"Exception in auth middleware: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Could not validate credentials",
