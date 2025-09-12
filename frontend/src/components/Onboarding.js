@@ -179,12 +179,12 @@ function Onboarding() {
     } catch (error) {
       console.error('Error loading user state:', error);
       // Fallback to welcome message
-        const welcomeMessage = {
-          id: Date.now(),
-          type: 'agent',
-          text: "Welcome to SAP! Let's get you set up.\n\n1. Watch Welcome Video\n2. Review Company Policies\n3. Set up accounts\n\nI'll guide you step by step!\n\nAny questions about SAP or the onboarding process before we begin?",
-          timestamp: new Date()
-        };
+      const welcomeMessage = {
+        id: Date.now(),
+        type: 'agent',
+        text: "Welcome to SAP! Let's get you set up.\n\n1. Watch Welcome Video\n2. Review Company Policies\n3. Set up accounts\n\nI'll guide you step by step!\n\nAny questions about SAP or the onboarding process before we begin?",
+        timestamp: new Date()
+      };
       setChatMessages([welcomeMessage]);
     }
   };
@@ -491,10 +491,26 @@ function Onboarding() {
       
     } catch (error) {
       console.error('Error calling backend:', error);
+      let errorMessage = "Sorry, I'm having trouble connecting. Please try again.";
+      
+      if (error.response) {
+        // Server responded with error status
+        if (error.response.status === 401) {
+          errorMessage = "Authentication failed. Please log in again.";
+        } else if (error.response.status === 500) {
+          errorMessage = "Server error. Please try again in a moment.";
+        } else if (error.response.status === 404) {
+          errorMessage = "Service not found. Please refresh the page.";
+        }
+      } else if (error.request) {
+        // Network error
+        errorMessage = "Network error. Please check your connection and try again.";
+      }
+      
       const errorResponse = {
         id: Date.now() + 1,
         type: 'agent',
-        text: "Sorry, I'm having trouble connecting. Please try again.",
+        text: errorMessage,
         timestamp: new Date()
       };
       setChatMessages(prev => [...prev, errorResponse]);

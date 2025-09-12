@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from datetime import datetime
 from config import settings
 from langgraph_connection import LangGraphConnection
-from database import get_db
+from database import get_db, SessionLocal
 from db import (
     UserState, ChatMessage,
     get_user_state, create_user_state, get_chat_messages,
@@ -253,6 +253,40 @@ def handle_chat(user_id: str, request: ChatRequest, current_user: User = Depends
 @app.get("/api/health")
 def api_health_check():
     return {"status": "healthy", "service": "AutomateAI API"}
+
+@app.get("/api/db-health")
+def database_health_check():
+    """Check database connection and return status"""
+    try:
+        print("Testing database connection...")
+        db = SessionLocal()
+        try:
+            # Test basic query
+            result = db.execute("SELECT 1 as test").fetchone()
+            print(f"Database test result: {result}")
+            if result and result[0] == 1:
+                return {
+                    "status": "healthy", 
+                    "database": "connected",
+                    "test_query": "successful",
+                    "result": str(result)
+                }
+            else:
+                return {
+                    "status": "unhealthy", 
+                    "database": "connected but query failed",
+                    "test_query": "failed",
+                    "result": str(result)
+                }
+        finally:
+            db.close()
+    except Exception as e:
+        print(f"Database connection error: {e}")
+        return {
+            "status": "unhealthy", 
+            "database": "disconnected",
+            "error": str(e)
+        }
 
 @app.options("/api/{path:path}")
 def options_handler(path: str):
