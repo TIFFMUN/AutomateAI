@@ -43,6 +43,9 @@ class Settings:
         "ALLOWED_ORIGINS",
         "http://localhost:3000,http://localhost:3001,https://automate-ai-chi.vercel.app,https://automateai-56bf.onrender.com"
     ).split(",")
+    
+    # Clean up any whitespace from origins
+    ALLOWED_ORIGINS = [origin.strip() for origin in ALLOWED_ORIGINS if origin.strip()]
     PERFORMANCE_ALLOWED_ORIGINS = os.getenv("PERFORMANCE_ALLOWED_ORIGINS", "http://localhost:3002,http://localhost:3001").split(",")
     
 settings = Settings()
