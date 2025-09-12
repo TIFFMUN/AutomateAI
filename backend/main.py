@@ -308,6 +308,13 @@ def cors_debug():
 def on_startup() -> None:
     create_tables()
     
+    # Run database migration for personal_goals column
+    try:
+        from migrate_personal_goals import migrate_personal_goals
+        migrate_personal_goals()
+    except Exception as e:
+        print(f"Migration warning: {e}")
+    
     # Initialize performance tables
     create_performance_tables()
     
