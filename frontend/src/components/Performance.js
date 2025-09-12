@@ -39,7 +39,6 @@ function Performance() {
   const [loadingGoals, setLoadingGoals] = useState(true); // Loading goals state
   const [lastFeedbackCount, setLastFeedbackCount] = useState(0); // Track feedback count for polling
   const [pollingInterval, setPollingInterval] = useState(null); // Polling interval reference
-  const [newFeedbackNotification, setNewFeedbackNotification] = useState(null); // New feedback notification
 
   // Available users from performance testing database
   const availableUsers = [
@@ -248,33 +247,12 @@ function Performance() {
       // Check if feedback count has changed
       if (currentFeedbacks.length !== lastFeedbackCount) {
         console.log(`New feedback detected! Count changed from ${lastFeedbackCount} to ${currentFeedbacks.length}`);
-        
-        // Show a subtle notification (optional)
-        if (currentFeedbacks.length > lastFeedbackCount) {
-          console.log('🎉 New feedback received!');
-          setNewFeedbackNotification(`🎉 ${currentFeedbacks.length - lastFeedbackCount} new feedback received!`);
-          
-          // Auto-hide notification after 5 seconds
-          setTimeout(() => {
-            setNewFeedbackNotification(null);
-          }, 5000);
-        }
       }
     } catch (err) {
       console.error('Error checking for new feedback:', err);
     }
   };
 
-  const manualRefresh = async () => {
-    console.log('Manual refresh triggered');
-    if (currentUserId && hasSelectedRole) {
-      if (isManagerView) {
-        await loadManagerFeedbacks();
-      } else {
-        await loadEmployeeFeedbacks();
-      }
-    }
-  };
 
   const handleUserChange = (userId) => {
     setCurrentUserId(userId);
@@ -557,9 +535,6 @@ function Performance() {
                 </div>
               </div>
             )}
-            <button className="btn btn-secondary" onClick={manualRefresh} title="Refresh feedback">
-              🔄 Refresh
-            </button>
             <button className="btn btn-primary" onClick={handleBack}>
               Back to Main
             </button>
@@ -573,11 +548,6 @@ function Performance() {
             </div>
           )}
           
-          {newFeedbackNotification && (
-            <div className="feedback-notification">
-              {newFeedbackNotification}
-            </div>
-          )}
 
           {!hasSelectedRole ? (
             <div className="empty-state">
