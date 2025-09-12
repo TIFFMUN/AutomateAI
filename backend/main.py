@@ -279,33 +279,75 @@ def on_startup() -> None:
         if existing_users == 0:
             print("Creating performance users...")
             
-            # Create manager (Alex Thompson)
-            manager = create_performance_user(
-                db=db,
-                user_id="perf_manager001",
-                name="Alex Thompson",
-                email="alex.thompson@company.com",
-                role="Manager"
-            )
-            print(f"Created manager: {manager.name} (ID: {manager.id})")
-            
-            # Create employees
-            employees = [
-                ("perf_employee001", "Sarah Chen", "sarah.chen@company.com", "Employee"),
-                ("perf_employee002", "David Rodriguez", "david.rodriguez@company.com", "Employee"),
-                ("perf_employee003", "Lisa Park", "lisa.park@company.com", "Employee")
+            # Create the new users as specified
+            users_to_create = [
+                {
+                    "user_id": "user001",
+                    "name": "John Smith", 
+                    "email": "john.smith@company.com",
+                    "role": "employee",
+                    "manager_id": None,  # Will be set after manager is created
+                    "department": "Engineering",
+                    "position": "Software Developer",
+                    "hire_date": "2023-01-15"
+                },
+                {
+                    "user_id": "user002",
+                    "name": "Sarah Johnson",
+                    "email": "sarah.johnson@company.com", 
+                    "role": "manager",
+                    "manager_id": None,
+                    "department": "Engineering",
+                    "position": "Engineering Manager",
+                    "hire_date": "2022-06-01"
+                },
+                {
+                    "user_id": "user003",
+                    "name": "Mike Davis",
+                    "email": "mike.davis@company.com",
+                    "role": "employee", 
+                    "manager_id": None,  # Will be set after manager is created
+                    "department": "Engineering",
+                    "position": "Senior Developer",
+                    "hire_date": "2023-03-20"
+                },
+                {
+                    "user_id": "user004",
+                    "name": "Emily Wilson",
+                    "email": "emily.wilson@company.com",
+                    "role": "employee",
+                    "manager_id": None,  # Will be set after manager is created
+                    "department": "Marketing", 
+                    "position": "Marketing Specialist",
+                    "hire_date": "2023-05-10"
+                }
             ]
             
-            for user_id, name, email, role in employees:
-                employee = create_performance_user(
+            # Create users
+            created_users = {}
+            for user_data in users_to_create:
+                user = create_performance_user(
                     db=db,
-                    user_id=user_id,
-                    name=name,
-                    email=email,
-                    role=role,
-                    manager_id=manager.id  # Set Alex as their manager
+                    user_id=user_data["user_id"],
+                    name=user_data["name"],
+                    email=user_data["email"],
+                    role=user_data["role"],
+                    manager_id=user_data["manager_id"],
+                    department=user_data["department"],
+                    position=user_data["position"],
+                    hire_date=user_data["hire_date"]
                 )
-                print(f"Created employee: {employee.name} (ID: {employee.id})")
+                created_users[user_data["user_id"]] = user
+                print(f"Created user: {user.name} (ID: {user.id})")
+            
+            # Set manager relationships - Sarah Johnson (user002) is the manager
+            manager_id = created_users["user002"].id
+            for user_id in ["user001", "user003", "user004"]:
+                if user_id in created_users:
+                    user = created_users[user_id]
+                    user.manager_id = manager_id
+                    db.commit()
+                    print(f"Set {user.name} as report to Sarah Johnson")
             
             print("Performance users created successfully!")
         else:

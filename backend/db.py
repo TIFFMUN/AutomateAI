@@ -417,9 +417,28 @@ def calculate_goal_progress_from_onboarding(node_tasks: dict, current_node: str)
 # PERFORMANCE DATABASE CRUD FUNCTIONS
 # =============================================================================
 
-def create_performance_user(db: Session, user_id: str, name: str, email: str, role: str, manager_id: Optional[int] = None) -> PerformanceUser:
+def create_performance_user(db: Session, user_id: str, name: str, email: str, role: str, manager_id: Optional[int] = None, 
+                           department: Optional[str] = None, position: Optional[str] = None, hire_date: Optional[str] = None) -> PerformanceUser:
     """Create a new performance user"""
-    user = PerformanceUser(user_id=user_id, name=name, email=email, role=role, manager_id=manager_id)
+    # Convert hire_date string to date object if provided
+    hire_date_obj = None
+    if hire_date:
+        from datetime import datetime
+        try:
+            hire_date_obj = datetime.strptime(hire_date, "%Y-%m-%d").date()
+        except ValueError:
+            print(f"Invalid hire_date format: {hire_date}")
+    
+    user = PerformanceUser(
+        user_id=user_id, 
+        name=name, 
+        email=email, 
+        role=role, 
+        manager_id=manager_id,
+        department=department,
+        position=position,
+        hire_date=hire_date_obj
+    )
     db.add(user)
     db.commit()
     db.refresh(user)
