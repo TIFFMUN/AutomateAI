@@ -2,6 +2,26 @@
 Prompt templates for the HR assistant
 """
 
+# Performance Feedback Analysis Prompt
+PERFORMANCE_FEEDBACK_ANALYSIS = """
+Analyze the following performance feedback and provide a structured analysis. Please respond with clear, readable text (not JSON format).
+
+Performance Feedback:
+{feedback_text}
+
+Please provide your analysis in this exact format:
+
+SUMMARY: [Write a brief 2-3 sentence summary of the overall feedback]
+
+STRENGTHS: [List 3-5 key strengths in bullet point format, each on a new line starting with •]
+
+AREAS FOR IMPROVEMENT: [List 2-4 areas that need improvement in bullet point format, each on a new line starting with •]
+
+NEXT STEPS: [Provide 2-3 specific, actionable next steps for the employee, each on a new line starting with •]
+
+Make sure to use bullet points (•) and keep the text concise but informative.
+"""
+
 # Common conversation style rules
 CONVERSATION_STYLE = """
 CONVERSATION STYLE:
@@ -220,6 +240,75 @@ CRITICAL RULES:
 - Celebrate each step completion
 
 {CONVERSATION_STYLE}"""
+
+# Performance Feedback AI Assistant Prompts
+PERFORMANCE_FEEDBACK_ANALYSIS_PROMPT = """
+You are an AI assistant helping managers write better performance feedback. Analyze the feedback text and provide structured suggestions.
+
+Feedback Text: "{feedback_text}"
+
+Please provide your analysis in this exact JSON format:
+{{
+    "quality_score": <number from 1-10>,
+    "tone_analysis": {{
+        "overall_tone": "<constructive/critical/neutral/positive>",
+        "constructiveness_score": <number from 1-10>,
+        "balance_score": <number from 1-10>
+    }},
+    "specificity_suggestions": [
+        "<specific suggestion 1>",
+        "<specific suggestion 2>",
+        "<specific suggestion 3>"
+    ],
+    "missing_areas": [
+        "<missing area 1>",
+        "<missing area 2>",
+        "<missing area 3>"
+    ],
+    "actionability_suggestions": [
+        "<actionable suggestion 1>",
+        "<actionable suggestion 2>",
+        "<actionable suggestion 3>"
+    ],
+    "overall_recommendations": "<brief summary of key improvements needed>"
+}}
+
+Focus on:
+- Making feedback more specific and measurable
+- Ensuring constructive tone
+- Adding missing performance areas (communication, leadership, technical skills, etc.)
+- Making suggestions actionable
+- Balancing positive and improvement areas
+"""
+
+REAL_TIME_FEEDBACK_SUGGESTIONS_PROMPT = """
+You are an AI assistant providing real-time feedback suggestions as managers type. Analyze the current feedback text and provide immediate suggestions.
+
+Current Feedback Text: "{feedback_text}"
+
+Provide suggestions in this JSON format:
+{{
+    "live_suggestions": [
+        "<real-time suggestion 1>",
+        "<real-time suggestion 2>",
+        "<real-time suggestion 3>"
+    ],
+    "completeness_check": {{
+        "has_specifics": <true/false>,
+        "has_examples": <true/false>,
+        "has_action_items": <true/false>,
+        "covers_communication": <true/false>,
+        "covers_leadership": <true/false>,
+        "covers_technical": <true/false>
+    }},
+    "next_suggestions": [
+        "<what to add next 1>",
+        "<what to add next 2>"
+    ]
+}}
+
+Keep suggestions concise and immediately actionable.
+"""
 
 def format_chat_history(chat_history: list) -> str:
     """Format chat history for context"""
