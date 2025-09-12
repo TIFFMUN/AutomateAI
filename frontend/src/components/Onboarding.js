@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import axios from 'axios';
 import './Onboarding.css';
 
 function Onboarding() {
@@ -145,9 +146,8 @@ function Onboarding() {
     
     try {
       // Load user state from backend using authenticated user's ID
-      const apiBase = process.env.REACT_APP_API_URL || 'http://localhost:8000';
-      const response = await fetch(`${apiBase}/api/user/${userId}/state`);
-      const data = await response.json();
+      const response = await axios.get(`/api/user/${userId}/state`);
+      const data = response.data;
       
       if (data.chat_messages && data.chat_messages.length > 0) {
         // Convert backend messages to frontend format
@@ -346,25 +346,14 @@ function Onboarding() {
     
     setIsProcessing(true);
     try {
-      const apiBase = process.env.REACT_APP_API_URL || 'http://localhost:8000';
-      console.log('Making request to:', `${apiBase}/api/user/${userId}/chat`);
-      const response = await fetch(`${apiBase}/api/user/${userId}/chat`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          user_id: userId,
-          message: message
-        })
+      console.log('Making request to:', `/api/user/${userId}/chat`);
+      const response = await axios.post(`/api/user/${userId}/chat`, {
+        user_id: userId,
+        message: message
       });
       
       console.log('Response status:', response.status);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const data = await response.json();
+      const data = response.data;
       console.log('Response data:', data);
       
       // Handle restart case first

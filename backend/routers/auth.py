@@ -42,8 +42,8 @@ async def login(
             key="access_token",
             value=access_token,
             httponly=True,
-            secure=False,  # Set to True in production with HTTPS
-            samesite="lax",
+            secure=True,
+            samesite="none",
             max_age=30 * 60  # 30 minutes
         )
         
@@ -51,8 +51,8 @@ async def login(
             key="refresh_token", 
             value=refresh_token,
             httponly=True,
-            secure=False,  # Set to True in production with HTTPS
-            samesite="lax",
+            secure=True,
+            samesite="none",
             max_age=7 * 24 * 60 * 60  # 7 days
         )
         
@@ -85,8 +85,8 @@ async def refresh_token(
             key="access_token",
             value=access_token,
             httponly=True,
-            secure=False,
-            samesite="lax",
+            secure=True,
+            samesite="none",
             max_age=30 * 60
         )
         
@@ -94,8 +94,8 @@ async def refresh_token(
             key="refresh_token",
             value=refresh_token,
             httponly=True,
-            secure=False,
-            samesite="lax",
+            secure=True,
+            samesite="none",
             max_age=7 * 24 * 60 * 60
         )
         
@@ -115,8 +115,8 @@ async def refresh_token(
 @router.post("/logout")
 async def logout(response: Response):
     """Logout user by clearing cookies."""
-    response.delete_cookie(key="access_token")
-    response.delete_cookie(key="refresh_token")
+    response.delete_cookie(key="access_token", samesite="none")
+    response.delete_cookie(key="refresh_token", samesite="none")
     return {"message": "Successfully logged out"}
 
 @router.get("/me", response_model=UserResponse)

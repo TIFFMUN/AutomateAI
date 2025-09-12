@@ -13,6 +13,8 @@ from db import (
     save_chat_message, update_user_state_timestamp, calculate_points_for_task
 )
 from routers.auth import router as auth_router
+from middleware.auth_middleware import get_current_active_user
+from models.user import User
 import os
 from dotenv import load_dotenv
 from database import create_tables
@@ -90,7 +92,7 @@ def on_startup() -> None:
     create_tables()
 
 @app.get("/api/user/{user_id}/state")
-def get_user_state_endpoint(user_id: str, db: Session = Depends(get_db)):
+def get_user_state_endpoint(user_id: str, current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)):
     user_state = get_user_state(db, user_id)
     if not user_state:
         user_state = create_user_state(db, user_id)
@@ -115,7 +117,7 @@ def get_user_state_endpoint(user_id: str, db: Session = Depends(get_db)):
     )
 
 @app.get("/api/leaderboard", response_model=LeaderboardResponse)
-def get_leaderboard(limit: int = 10, db: Session = Depends(get_db)):
+def get_leaderboard(limit: int = 10, current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)):
     # Top N users by total_points desc
     top_users = (
         db.query(UserState)
@@ -130,7 +132,7 @@ def get_leaderboard(limit: int = 10, db: Session = Depends(get_db)):
     return LeaderboardResponse(entries=entries)
 
 @app.get("/api/user/{user_id}/rank", response_model=UserRankResponse)
-def get_user_rank(user_id: str, db: Session = Depends(get_db)):
+def get_user_rank(user_id: str, current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)):
     user_state = get_user_state(db, user_id)
     if not user_state:
         user_state = create_user_state(db, user_id)
@@ -141,7 +143,7 @@ def get_user_rank(user_id: str, db: Session = Depends(get_db)):
     return UserRankResponse(user_id=user_id, total_points=user_points, rank=rank)
 
 @app.post("/api/user/{user_id}/chat")
-def handle_chat(user_id: str, request: ChatRequest, db: Session = Depends(get_db)):
+def handle_chat(user_id: str, request: ChatRequest, current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)):
     print(f"Received chat request for user {user_id}: {request}")
     # Ensure user state exists
     user_state = get_user_state(db, user_id)

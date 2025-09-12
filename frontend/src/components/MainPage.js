@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import axios from 'axios';
 import './MainPage/MainPage.css';
 
 function MainPage() {
@@ -15,17 +16,16 @@ function MainPage() {
       try {
         const userId = user?.id || user?.username;
         if (!userId) return;
-        const apiBase = process.env.REACT_APP_API_URL || 'http://localhost:8000';
         const [stateRes, rankRes] = await Promise.all([
-          fetch(`${apiBase}/api/user/${userId}/state`),
-          fetch(`${apiBase}/api/user/${userId}/rank`)
+          axios.get(`/api/user/${userId}/state`),
+          axios.get(`/api/user/${userId}/rank`)
         ]);
-        if (stateRes.ok) {
-          const data = await stateRes.json();
+        if (stateRes.status === 200) {
+          const data = stateRes.data;
           if (typeof data.total_points === 'number') setTotalPoints(data.total_points);
         }
-        if (rankRes.ok) {
-          const r = await rankRes.json();
+        if (rankRes.status === 200) {
+          const r = rankRes.data;
           if (typeof r.rank === 'number') setRank(r.rank);
         }
       } catch (_) {
