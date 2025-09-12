@@ -61,7 +61,22 @@ function Performance() {
       // Start polling for feedback updates (every 10 seconds)
       const interval = setInterval(async () => {
         if (currentUserId && hasSelectedRole) {
-          await checkForNewFeedback();
+          try {
+            let currentFeedbacks = [];
+            
+            if (isManagerView) {
+              currentFeedbacks = await loadManagerFeedbacks();
+            } else {
+              currentFeedbacks = await loadEmployeeFeedbacks();
+            }
+            
+            // Check if feedback count has changed
+            if (currentFeedbacks.length !== lastFeedbackCount) {
+              console.log(`New feedback detected! Count changed from ${lastFeedbackCount} to ${currentFeedbacks.length}`);
+            }
+          } catch (err) {
+            console.error('Error checking for new feedback:', err);
+          }
         }
       }, 10000); // 10 seconds
       
@@ -75,7 +90,7 @@ function Performance() {
         setPollingInterval(null);
       }
     };
-  }, [isManagerView, currentUserId, hasSelectedRole, loadDirectReports, loadEmployeeFeedbacks, loadGoalsFromBackend, loadLatestInsight, loadManagerFeedbacks, checkForNewFeedback]);
+  }, [isManagerView, currentUserId, hasSelectedRole, loadDirectReports, loadEmployeeFeedbacks, loadGoalsFromBackend, loadLatestInsight, loadManagerFeedbacks]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
