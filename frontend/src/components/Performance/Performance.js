@@ -90,7 +90,7 @@ function Performance() {
         setPollingInterval(null);
       }
     };
-  }, [isManagerView, currentUserId, hasSelectedRole, loadDirectReports, loadEmployeeFeedbacks, loadGoalsFromBackend, loadLatestInsight, loadManagerFeedbacks]);
+  }, [isManagerView, currentUserId, hasSelectedRole]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
