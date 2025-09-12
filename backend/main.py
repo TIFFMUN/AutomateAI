@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Dict, Any, List, Optional
@@ -15,7 +15,11 @@ from db import (
     create_performance_feedback, get_performance_feedback_by_employee,
     get_performance_feedback_by_manager, update_performance_feedback,
     update_performance_feedback_ai_analysis, update_user_personal_goals,
-    get_user_personal_goals, calculate_goal_progress_from_onboarding
+    get_user_personal_goals, calculate_goal_progress_from_onboarding,
+    # Performance database imports
+    get_performance_db, create_performance_tables, PerformanceUser, PerformanceGoal,
+    create_performance_user, create_performance_goal, get_performance_user_by_id,
+    get_performance_summary, get_performance_direct_reports, get_performance_goals_by_employee
 )
 
 app = FastAPI(title="SAP HR Assistant", version="1.0.0")
@@ -33,6 +37,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 # HR Agent
 hr_agent = LangGraphConnection(settings.OPENAI_API_KEY)
@@ -102,6 +107,43 @@ class ProgressUpdateRequest(BaseModel):
 
 class PersonalGoalsResponse(BaseModel):
     goals: List[Dict[str, Any]]
+
+# Performance Testing Models
+class PerformanceUserResponse(BaseModel):
+    id: int
+    user_id: str
+    name: str
+    email: str
+    role: str
+    manager_id: Optional[int] = None
+    department: Optional[str] = None
+    position: Optional[str] = None
+    hire_date: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+
+class PerformanceGoalResponse(BaseModel):
+    id: int
+    employee_id: int
+    manager_id: int
+    goal_title: str
+    goal_description: Optional[str] = None
+    goal_category: Optional[str] = None
+    target_value: Optional[float] = None
+    current_value: Optional[float] = None
+    unit_of_measure: Optional[str] = None
+    start_date: Optional[str] = None
+    target_date: Optional[str] = None
+    status: str
+    priority: str
+    created_at: datetime
+    updated_at: datetime
+
+class CreatePerformanceGoalRequest(BaseModel):
+    employee_id: int
+    goal_title: str
+    goal_description: Optional[str] = None
+    target_value: Optional[float] = None
 
 # All database functions are now in db.py
 
@@ -688,6 +730,159 @@ def update_goals_from_onboarding(user_id: str, db: Session = Depends(get_db)):
         return PersonalGoalsResponse(goals=updated_goals["goals"])
     except Exception as e:
         return {"error": f"Failed to update goals from onboarding: {str(e)}"}
+
+# =============================================================================
+# PERFORMANCE TESTING API ENDPOINTS
+# =============================================================================
+
+@app.get("/api/performance/users", response_model=List[PerformanceUserResponse])
+def get_all_performance_users(db: Session = Depends(get_performance_db)):
+    """Get all performance testing users"""
+    users = db.query(PerformanceUser).all()
+    return [
+        PerformanceUserResponse(
+            id=user.id,
+            user_id=user.user_id,
+            name=user.name,
+            email=user.email,
+            role=user.role,
+            manager_id=user.manager_id,
+            department=user.department,
+            position=user.position,
+            hire_date=user.hire_date.isoformat() if user.hire_date else None,
+            created_at=user.created_at,
+            updated_at=user.updated_at
+        ) for user in users
+    ]
+
+@app.get("/api/performance/users/{user_id}", response_model=PerformanceUserResponse)
+def get_performance_user_by_id_endpoint(user_id: str, db: Session = Depends(get_performance_db)):
+    """Get a specific performance user by user_id"""
+    user = get_performance_user_by_id(db, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    return PerformanceUserResponse(
+        id=user.id,
+        user_id=user.user_id,
+        name=user.name,
+        email=user.email,
+        role=user.role,
+        manager_id=user.manager_id,
+        department=user.department,
+        position=user.position,
+        hire_date=user.hire_date.isoformat() if user.hire_date else None,
+        created_at=user.created_at,
+        updated_at=user.updated_at
+    )
+
+@app.get("/api/performance/users/{user_id}/profile", response_model=PerformanceUserResponse)
+def get_performance_user_profile(user_id: str, db: Session = Depends(get_performance_db)):
+    """Get performance user profile (alias for get_performance_user_by_id)"""
+    return get_performance_user_by_id_endpoint(user_id, db)
+
+@app.get("/api/performance/users/{user_id}/direct-reports", response_model=List[PerformanceUserResponse])
+def get_performance_direct_reports_endpoint(user_id: str, db: Session = Depends(get_performance_db)):
+    """Get direct reports for a performance manager"""
+    user = get_performance_user_by_id(db, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    if user.role != "Manager":
+        raise HTTPException(status_code=400, detail="User is not a manager")
+    
+    direct_reports = get_performance_direct_reports(db, user.id)
+    return [
+        PerformanceUserResponse(
+            id=report.id,
+            user_id=report.user_id,
+            name=report.name,
+            email=report.email,
+            role=report.role,
+            manager_id=report.manager_id,
+            department=report.department,
+            position=report.position,
+            hire_date=report.hire_date.isoformat() if report.hire_date else None,
+            created_at=report.created_at,
+            updated_at=report.updated_at
+        ) for report in direct_reports
+    ]
+
+@app.get("/api/performance/users/{user_id}/goals", response_model=List[PerformanceGoalResponse])
+def get_performance_user_goals(user_id: str, db: Session = Depends(get_performance_db)):
+    """Get performance goals for a user"""
+    user = get_performance_user_by_id(db, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    goals = get_performance_goals_by_employee(db, user.id)
+    return [
+        PerformanceGoalResponse(
+            id=goal.id,
+            employee_id=goal.employee_id,
+            manager_id=goal.manager_id,
+            goal_title=goal.goal_title,
+            goal_description=goal.goal_description,
+            goal_category=goal.goal_category,
+            target_value=float(goal.target_value) if goal.target_value else None,
+            current_value=float(goal.current_value) if goal.current_value else None,
+            unit_of_measure=goal.unit_of_measure,
+            start_date=goal.start_date.isoformat() if goal.start_date else None,
+            target_date=goal.target_date.isoformat() if goal.target_date else None,
+            status=goal.status,
+            priority=goal.priority,
+            created_at=goal.created_at,
+            updated_at=goal.updated_at
+        ) for goal in goals
+    ]
+
+@app.post("/api/performance/managers/{user_id}/goals", response_model=PerformanceGoalResponse)
+def create_performance_goal_endpoint(user_id: str, request: CreatePerformanceGoalRequest, db: Session = Depends(get_performance_db)):
+    """Create new performance goal"""
+    manager = get_performance_user_by_id(db, user_id)
+    if not manager:
+        raise HTTPException(status_code=404, detail="Manager not found")
+    
+    if manager.role != "Manager":
+        raise HTTPException(status_code=400, detail="User is not a manager")
+    
+    # Verify employee exists
+    employee = db.query(PerformanceUser).filter(PerformanceUser.id == request.employee_id).first()
+    if not employee:
+        raise HTTPException(status_code=404, detail="Employee not found")
+    
+    goal = create_performance_goal(
+        db, request.employee_id, manager.id, request.goal_title, 
+        request.goal_description, request.target_value
+    )
+    
+    return PerformanceGoalResponse(
+        id=goal.id,
+        employee_id=goal.employee_id,
+        manager_id=goal.manager_id,
+        goal_title=goal.goal_title,
+        goal_description=goal.goal_description,
+        goal_category=goal.goal_category,
+        target_value=float(goal.target_value) if goal.target_value else None,
+        current_value=float(goal.current_value) if goal.current_value else None,
+        unit_of_measure=goal.unit_of_measure,
+        start_date=goal.start_date.isoformat() if goal.start_date else None,
+        target_date=goal.target_date.isoformat() if goal.target_date else None,
+        status=goal.status,
+        priority=goal.priority,
+        created_at=goal.created_at,
+        updated_at=goal.updated_at
+    )
+
+@app.get("/api/performance/users/{user_id}/summary")
+def get_performance_user_summary(user_id: str, db: Session = Depends(get_performance_db)):
+    """Get comprehensive performance summary for a user"""
+    user = get_performance_user_by_id(db, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    summary = get_performance_summary(db, user.id)
+    return summary
 
 if __name__ == "__main__":
     import uvicorn

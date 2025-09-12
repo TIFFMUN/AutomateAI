@@ -1,14 +1,19 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, JSON, ForeignKey, create_engine, Boolean
+from sqlalchemy import Column, Integer, String, Text, DateTime, JSON, ForeignKey, create_engine, Boolean, DECIMAL, Date
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship, Session
-from datetime import datetime
+from datetime import datetime, date
 from typing import Optional, List
 from config import settings
 
-# Database setup
+# Main Database setup
 Base = declarative_base()
 engine = create_engine(settings.DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+# Performance Database setup
+PerformanceBase = declarative_base()
+performance_engine = create_engine(settings.PERFORMANCE_DATABASE_URL)
+PerformanceSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=performance_engine)
 
 # Database Models
 class User(Base):
@@ -91,7 +96,121 @@ class ChatMessage(Base):
     # Relationship back to user state
     user_state = relationship("UserState", back_populates="chat_messages")
 
-# Database Functions
+# =============================================================================
+# PERFORMANCE DATABASE MODELS
+# =============================================================================
+
+class PerformanceUser(PerformanceBase):
+    __tablename__ = "performance_users"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(String, unique=True, index=True, nullable=False)
+    name = Column(String, nullable=False)
+    email = Column(String, nullable=False)
+    role = Column(String, nullable=False)  # 'employee' or 'manager'
+    manager_id = Column(Integer, ForeignKey("performance_users.id"), nullable=True)
+    department = Column(String, nullable=True)
+    position = Column(String, nullable=True)
+    hire_date = Column(Date, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    manager = relationship("PerformanceUser", remote_side=[id], backref="direct_reports")
+    feedbacks_given = relationship("PerformanceFeedback", foreign_keys="PerformanceFeedback.manager_id", back_populates="manager")
+    feedbacks_received = relationship("PerformanceFeedback", foreign_keys="PerformanceFeedback.employee_id", back_populates="employee")
+
+class PerformanceFeedback(PerformanceBase):
+    __tablename__ = "performance_feedbacks"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    employee_id = Column(Integer, ForeignKey("performance_users.id"), nullable=False)
+    manager_id = Column(Integer, ForeignKey("performance_users.id"), nullable=False)
+    feedback_text = Column(Text, nullable=False)
+    
+    # AI Analysis fields
+    ai_summary = Column(Text, nullable=True)
+    strengths = Column(Text, nullable=True)
+    areas_for_improvement = Column(Text, nullable=True)
+    next_steps = Column(Text, nullable=True)
+    ai_quality_score = Column(DECIMAL(3, 2), nullable=True)
+    
+    # Rating system
+    overall_rating = Column(Integer, nullable=True)  # 1-5 scale
+    rating_breakdown = Column(JSON, nullable=True)  # Detailed ratings
+    
+    # Categorization
+    feedback_categories = Column(JSON, nullable=True)  # ['technical', 'communication', 'leadership']
+    tags = Column(JSON, nullable=True)  # ['positive', 'needs_improvement', 'urgent']
+    
+    # Review period
+    review_period = Column(String(50), default='quarterly')
+    review_year = Column(Integer, default=lambda: datetime.now().year)
+    review_quarter = Column(Integer, default=lambda: (datetime.now().month - 1) // 3 + 1)
+    
+    # Workflow status
+    status = Column(String(20), default='draft')  # draft, submitted, acknowledged, completed
+    employee_acknowledged_at = Column(DateTime, nullable=True)
+    employee_response = Column(Text, nullable=True)
+    
+    # Goal integration
+    goals_reviewed = Column(JSON, nullable=True)
+    goals_achieved = Column(JSON, nullable=True)
+    goals_set = Column(JSON, nullable=True)
+    
+    # Quality metrics
+    feedback_length = Column(Integer, nullable=True)
+    has_specific_examples = Column(Boolean, default=False)
+    has_actionable_items = Column(Boolean, default=False)
+    
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    employee = relationship("PerformanceUser", foreign_keys=[employee_id], back_populates="feedbacks_received")
+    manager = relationship("PerformanceUser", foreign_keys=[manager_id], back_populates="feedbacks_given")
+
+class PerformanceGoal(PerformanceBase):
+    __tablename__ = "performance_goals"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    employee_id = Column(Integer, ForeignKey("performance_users.id"), nullable=False)
+    manager_id = Column(Integer, ForeignKey("performance_users.id"), nullable=False)
+    goal_title = Column(String(200), nullable=False)
+    goal_description = Column(Text, nullable=True)
+    goal_category = Column(String(50), nullable=True)
+    target_value = Column(DECIMAL(10, 2), nullable=True)
+    current_value = Column(DECIMAL(10, 2), default=0)
+    unit_of_measure = Column(String(50), nullable=True)
+    start_date = Column(Date, nullable=True)
+    target_date = Column(Date, nullable=True)
+    status = Column(String(20), default='active')  # active, completed, cancelled, overdue
+    priority = Column(String(10), default='medium')  # low, medium, high
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    employee = relationship("PerformanceUser", foreign_keys=[employee_id])
+    manager = relationship("PerformanceUser", foreign_keys=[manager_id])
+
+class PerformanceMetric(PerformanceBase):
+    __tablename__ = "performance_metrics"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    employee_id = Column(Integer, ForeignKey("performance_users.id"), nullable=False)
+    metric_name = Column(String(100), nullable=False)
+    metric_value = Column(DECIMAL(10, 2), nullable=True)
+    metric_unit = Column(String(50), nullable=True)
+    measurement_date = Column(Date, default=date.today)
+    source = Column(String(50), nullable=True)  # system, manual, survey
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    employee = relationship("PerformanceUser")
+
+# =============================================================================
+# DATABASE FUNCTIONS
+# =============================================================================
 def get_db():
     """Dependency to get database session"""
     db = SessionLocal()
@@ -104,7 +223,21 @@ def create_tables():
     """Create all database tables"""
     Base.metadata.create_all(bind=engine)
 
-# Database CRUD Functions
+def get_performance_db():
+    """Dependency to get performance database session"""
+    db = PerformanceSessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+def create_performance_tables():
+    """Create all performance database tables"""
+    PerformanceBase.metadata.create_all(bind=performance_engine)
+
+# =============================================================================
+# MAIN DATABASE CRUD FUNCTIONS
+# =============================================================================
 def get_user_state(db: Session, user_id: str) -> Optional[UserState]:
     """Get user state by user_id"""
     return db.query(UserState).filter(UserState.user_id == user_id).first()
@@ -334,3 +467,156 @@ def calculate_goal_progress_from_onboarding(node_tasks: dict, current_node: str)
         goals["goals"][0]["progress"] = 20  # Basic training started
     
     return goals
+
+# =============================================================================
+# PERFORMANCE DATABASE CRUD FUNCTIONS
+# =============================================================================
+
+def create_performance_user(db: Session, user_id: str, name: str, email: str, role: str, manager_id: Optional[int] = None) -> PerformanceUser:
+    """Create a new performance user"""
+    user = PerformanceUser(user_id=user_id, name=name, email=email, role=role, manager_id=manager_id)
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return user
+
+def get_performance_user_by_id(db: Session, user_id: str) -> Optional[PerformanceUser]:
+    """Get performance user by user_id"""
+    return db.query(PerformanceUser).filter(PerformanceUser.user_id == user_id).first()
+
+def get_performance_user_by_db_id(db: Session, db_id: int) -> Optional[PerformanceUser]:
+    """Get performance user by database ID"""
+    return db.query(PerformanceUser).filter(PerformanceUser.id == db_id).first()
+
+def get_performance_users_by_role(db: Session, role: str) -> List[PerformanceUser]:
+    """Get all performance users by role"""
+    return db.query(PerformanceUser).filter(PerformanceUser.role == role).all()
+
+def get_performance_direct_reports(db: Session, manager_id: int) -> List[PerformanceUser]:
+    """Get direct reports for a manager"""
+    return db.query(PerformanceUser).filter(PerformanceUser.manager_id == manager_id).all()
+
+def create_performance_feedback(db: Session, employee_id: int, manager_id: int, feedback_text: str) -> PerformanceFeedback:
+    """Create a new performance feedback"""
+    feedback = PerformanceFeedback(
+        employee_id=employee_id,
+        manager_id=manager_id,
+        feedback_text=feedback_text
+    )
+    db.add(feedback)
+    db.commit()
+    db.refresh(feedback)
+    return feedback
+
+def get_performance_feedback_by_employee(db: Session, employee_id: int) -> List[PerformanceFeedback]:
+    """Get all feedback for an employee"""
+    return db.query(PerformanceFeedback).filter(PerformanceFeedback.employee_id == employee_id).order_by(PerformanceFeedback.created_at.desc()).all()
+
+def get_performance_feedback_by_manager(db: Session, manager_id: int) -> List[PerformanceFeedback]:
+    """Get all feedback given by a manager"""
+    return db.query(PerformanceFeedback).filter(PerformanceFeedback.manager_id == manager_id).order_by(PerformanceFeedback.created_at.desc()).all()
+
+def get_performance_feedback_by_id(db: Session, feedback_id: int) -> Optional[PerformanceFeedback]:
+    """Get performance feedback by ID"""
+    return db.query(PerformanceFeedback).filter(PerformanceFeedback.id == feedback_id).first()
+
+def update_performance_feedback(db: Session, feedback_id: int, feedback_text: str) -> Optional[PerformanceFeedback]:
+    """Update performance feedback text"""
+    feedback = get_performance_feedback_by_id(db, feedback_id)
+    if feedback:
+        feedback.feedback_text = feedback_text
+        feedback.updated_at = datetime.utcnow()
+        db.commit()
+        db.refresh(feedback)
+    return feedback
+
+def update_performance_feedback_ai_analysis(db: Session, feedback_id: int, ai_summary: str = None, 
+                                           strengths: str = None, areas_for_improvement: str = None, 
+                                           next_steps: str = None, ai_quality_score: float = None) -> Optional[PerformanceFeedback]:
+    """Update performance feedback with AI analysis"""
+    feedback = get_performance_feedback_by_id(db, feedback_id)
+    if feedback:
+        if ai_summary is not None:
+            feedback.ai_summary = ai_summary
+        if strengths is not None:
+            feedback.strengths = strengths
+        if areas_for_improvement is not None:
+            feedback.areas_for_improvement = areas_for_improvement
+        if next_steps is not None:
+            feedback.next_steps = next_steps
+        if ai_quality_score is not None:
+            feedback.ai_quality_score = ai_quality_score
+        
+        feedback.updated_at = datetime.utcnow()
+        db.commit()
+        db.refresh(feedback)
+    return feedback
+
+def create_performance_goal(db: Session, employee_id: int, manager_id: int, goal_title: str, 
+                           goal_description: str = None, goal_category: str = None) -> PerformanceGoal:
+    """Create a new performance goal"""
+    goal = PerformanceGoal(
+        employee_id=employee_id,
+        manager_id=manager_id,
+        goal_title=goal_title,
+        goal_description=goal_description,
+        goal_category=goal_category
+    )
+    db.add(goal)
+    db.commit()
+    db.refresh(goal)
+    return goal
+
+def get_performance_goals_by_employee(db: Session, employee_id: int) -> List[PerformanceGoal]:
+    """Get all goals for an employee"""
+    return db.query(PerformanceGoal).filter(PerformanceGoal.employee_id == employee_id).all()
+
+def update_performance_goal_progress(db: Session, goal_id: int, current_value: float) -> Optional[PerformanceGoal]:
+    """Update goal progress"""
+    goal = db.query(PerformanceGoal).filter(PerformanceGoal.id == goal_id).first()
+    if goal:
+        goal.current_value = current_value
+        goal.updated_at = datetime.utcnow()
+        db.commit()
+        db.refresh(goal)
+    return goal
+
+def create_performance_metric(db: Session, employee_id: int, metric_name: str, 
+                             metric_value: float = None, metric_unit: str = None, 
+                             source: str = None) -> PerformanceMetric:
+    """Create a new performance metric"""
+    metric = PerformanceMetric(
+        employee_id=employee_id,
+        metric_name=metric_name,
+        metric_value=metric_value,
+        metric_unit=metric_unit,
+        source=source
+    )
+    db.add(metric)
+    db.commit()
+    db.refresh(metric)
+    return metric
+
+def get_performance_metrics_by_employee(db: Session, employee_id: int) -> List[PerformanceMetric]:
+    """Get all metrics for an employee"""
+    return db.query(PerformanceMetric).filter(PerformanceMetric.employee_id == employee_id).all()
+
+def get_performance_summary(db: Session, employee_id: int) -> dict:
+    """Get comprehensive performance summary for an employee"""
+    feedbacks = db.query(PerformanceFeedback).filter(PerformanceFeedback.employee_id == employee_id).all()
+    goals = db.query(PerformanceGoal).filter(PerformanceGoal.employee_id == employee_id).all()
+    
+    total_feedbacks = len(feedbacks)
+    avg_rating = sum(f.overall_rating for f in feedbacks if f.overall_rating) / len([f for f in feedbacks if f.overall_rating]) if feedbacks else 0
+    completed_goals = len([g for g in goals if g.status == 'completed'])
+    active_goals = len([g for g in goals if g.status == 'active'])
+    
+    return {
+        'total_feedbacks': total_feedbacks,
+        'average_rating': round(avg_rating, 2) if avg_rating else None,
+        'completed_goals': completed_goals,
+        'active_goals': active_goals,
+        'total_goals': len(goals),
+        'last_feedback_date': max([f.created_at for f in feedbacks]) if feedbacks else None,
+        'recent_feedbacks': feedbacks[:3]
+    }

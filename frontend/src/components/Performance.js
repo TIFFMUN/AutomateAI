@@ -31,12 +31,12 @@ function Performance() {
   const [aiStatus, setAiStatus] = useState('ready'); // AI status: ready, processing, error
   const [currentFeedbackIndex, setCurrentFeedbackIndex] = useState(0); // Carousel current index
 
-  // Available users for testing
+  // Available users from performance testing database
   const availableUsers = [
-    { id: "manager001", name: "Sarah Johnson", role: "Manager" },
-    { id: "employee001", name: "John Smith", role: "Employee" },
-    { id: "employee002", name: "Emily Davis", role: "Employee" },
-    { id: "employee003", name: "Michael Brown", role: "Employee" }
+    { id: "perf_manager001", name: "Alex Thompson", role: "Manager" },
+    { id: "perf_employee001", name: "Sarah Chen", role: "Employee" },
+    { id: "perf_employee002", name: "David Rodriguez", role: "Employee" },
+    { id: "perf_employee003", name: "Lisa Park", role: "Employee" }
   ];
 
   useEffect(() => {
@@ -67,7 +67,7 @@ function Performance() {
 
   const loadUserProfile = async () => {
     try {
-      const response = await fetch(`http://localhost:8000/api/user/${currentUserId}/profile`);
+      const response = await fetch(`http://localhost:8000/api/performance/users/${currentUserId}/profile`);
       if (response.ok) {
         const profile = await response.json();
         setUserProfile(profile);
@@ -79,7 +79,7 @@ function Performance() {
 
   const loadDirectReports = async () => {
     try {
-      const response = await fetch(`http://localhost:8000/api/user/${currentUserId}/direct-reports`);
+      const response = await fetch(`http://localhost:8000/api/performance/users/${currentUserId}/direct-reports`);
       if (response.ok) {
         const reports = await response.json();
         setDirectReports(Array.isArray(reports) ? reports : []);
@@ -95,7 +95,7 @@ function Performance() {
 
   const loadEmployeeFeedbacks = async () => {
     try {
-      const response = await fetch(`http://localhost:8000/api/user/${currentUserId}/feedback`);
+      const response = await fetch(`http://localhost:8000/api/performance/users/${currentUserId}/feedback`);
       if (response.ok) {
         const feedbacks = await response.json();
         setFeedbacks(Array.isArray(feedbacks) ? feedbacks : []);
@@ -111,7 +111,7 @@ function Performance() {
 
   const loadManagerFeedbacks = async () => {
     try {
-      const response = await fetch(`http://localhost:8000/api/manager/${currentUserId}/feedback`);
+      const response = await fetch(`http://localhost:8000/api/performance/managers/${currentUserId}/feedback`);
       if (response.ok) {
         const feedbacks = await response.json();
         setFeedbacks(Array.isArray(feedbacks) ? feedbacks : []);
@@ -145,7 +145,7 @@ function Performance() {
     setError(null);
 
     try {
-      const response = await fetch(`http://localhost:8000/api/manager/${currentUserId}/feedback`, {
+      const response = await fetch(`http://localhost:8000/api/performance/managers/${currentUserId}/feedback`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -416,7 +416,7 @@ function Performance() {
                 <div className="role-selection">
                   <button 
                     className="role-btn employee-btn"
-                    onClick={() => handleUserChange("employee001")}
+                    onClick={() => handleUserChange("perf_employee001")}
                   >
                     <span className="role-icon">👨‍💼</span>
                     <span className="role-title">View as Employee</span>
@@ -424,7 +424,7 @@ function Performance() {
                   </button>
                   <button 
                     className="role-btn manager-btn"
-                    onClick={() => handleUserChange("manager001")}
+                    onClick={() => handleUserChange("perf_manager001")}
                   >
                     <span className="role-icon">👩‍💼</span>
                     <span className="role-title">View as Manager</span>
@@ -1014,7 +1014,7 @@ function PersonalGoalsSection() {
   const loadGoalsFromBackend = async () => {
     try {
       setLoadingGoals(true);
-      const response = await fetch('http://localhost:8000/api/user/test_user/goals');
+      const response = await fetch(`http://localhost:8000/api/performance/users/${currentUserId}/goals`);
       if (response.ok) {
         const data = await response.json();
         if (data.goals) {
@@ -1055,7 +1055,7 @@ function PersonalGoalsSection() {
           setGoals(result.goals);
           
           // Save updated goals to backend
-          await fetch('http://localhost:8000/api/user/test_user/goals', {
+          await fetch(`http://localhost:8000/api/performance/users/${currentUserId}/goals`, {
             method: 'PUT',
             headers: {
               'Content-Type': 'application/json',
@@ -1141,7 +1141,7 @@ function PersonalGoalsSection() {
             value={progressUpdate}
             onChange={(e) => setProgressUpdate(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder="I finished module 2 of training and had my first onboarding call..."
+            placeholder="I finished my first training course..."
             className="progress-update-input"
             rows={3}
             disabled={isUpdating}
