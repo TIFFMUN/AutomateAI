@@ -25,13 +25,15 @@ services:
       - ./backend:/app
     environment:
       - DATABASE_URL=postgresql://postgres:password123@postgres:5432/sap_onboarding
+      - PERFORMANCE_DATABASE_URL=postgresql://postgres:password123@postgres_performance:5432/performance_testing
       - GEMINI_API_KEY=${GEMINI_API_KEY}
     depends_on:
       - postgres
+      - postgres_performance
     networks:
       - automate-ai-network
 
-  # PostgreSQL Database
+  # PostgreSQL Database (Main)
   postgres:
     image: postgres:15
     environment:
@@ -42,6 +44,20 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - automate-ai-network
+
+  # PostgreSQL Database (Performance Testing)
+  postgres_performance:
+    image: postgres:15
+    environment:
+      - POSTGRES_DB=performance_testing
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password123
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_performance_data:/var/lib/postgresql/data
     networks:
       - automate-ai-network
 
@@ -60,6 +76,7 @@ services:
 
 volumes:
   postgres_data:
+  postgres_performance_data:
 
 networks:
   automate-ai-network:
