@@ -7,6 +7,7 @@ from datetime import datetime
 from config import settings
 from langgraph_connection import LangGraphConnection
 from prompts import PERFORMANCE_FEEDBACK_ANALYSIS, PERFORMANCE_FEEDBACK_ANALYSIS_PROMPT, REAL_TIME_FEEDBACK_SUGGESTIONS_PROMPT
+from langchain_core.messages import HumanMessage
 from db import (
     get_db, create_tables, UserState, ChatMessage, User, PerformanceFeedback,
     get_user_state, create_user_state, get_chat_messages,
@@ -17,9 +18,10 @@ from db import (
     update_performance_feedback_ai_analysis, update_user_personal_goals,
     get_user_personal_goals, calculate_goal_progress_from_onboarding,
     # Performance database imports
-    get_performance_db, create_performance_tables, PerformanceUser, PerformanceGoal,
+    get_performance_db, create_performance_tables, PerformanceUser, PerformanceGoal, ProgressUpdate,
     create_performance_user, create_performance_goal, get_performance_user_by_id,
-    get_performance_summary, get_performance_direct_reports, get_performance_goals_by_employee
+    get_performance_summary, get_performance_direct_reports, get_performance_goals_by_employee,
+    save_progress_update_performance, get_latest_progress_goals_performance, get_progress_history_performance
 )
 
 app = FastAPI(title="SAP HR Assistant", version="1.0.0")
@@ -28,6 +30,7 @@ app = FastAPI(title="SAP HR Assistant", version="1.0.0")
 @app.on_event("startup")
 def startup_event():
     create_tables()
+    create_performance_tables()
 
 # CORS
 app.add_middleware(
@@ -595,63 +598,82 @@ def get_realtime_suggestions(request: RealTimeFeedbackRequest, db: Session = Dep
     except Exception as e:
         return {"error": f"Failed to get suggestions: {str(e)}"}
 
-@app.post("/api/progress/update")
-def update_progress(request: ProgressUpdateRequest, db: Session = Depends(get_db)):
-    """Update employee progress using LangGraph chain-of-experts"""
+@app.post("/api/progress/update/{user_id}")
+def update_progress(user_id: str, request: ProgressUpdateRequest, db: Session = Depends(get_performance_db)):
+    """Update employee progress using GPT-4 with intelligent goal analysis"""
     try:
-        # Get user state to understand current onboarding progress
-        user_state = get_user_state(db, "test_user")  # Using test_user for now
-        onboarding_context = ""
-        if user_state:
-            onboarding_context = f"""
-Current Onboarding Status:
-- Current Node: {user_state.current_node}
-- Node Tasks: {user_state.node_tasks}
-- Total Points: {user_state.total_points}
-"""
+        # Create an intelligent progress analysis prompt for GPT-4
+        smart_progress_prompt = f"""
+You are an expert HR analyst and performance coach with deep understanding of employee development and goal tracking. Your task is to intelligently analyze employee progress updates and provide accurate goal assessments.
 
-        # Create the chain-of-experts prompt
-        chain_of_experts_prompt = f"""
-You are a Chain of Experts system for processing employee progress updates. You must output ONLY valid JSON in the exact format specified below.
+EMPLOYEE PROGRESS UPDATE: "{request.progress_text}"
 
-Input: "{request.progress_text}"
-Current Goals: {request.current_goals}
-{onboarding_context}
+CURRENT GOAL STATUS: {request.current_goals}
 
-Expert 1 - Progress Parser: Analyze the natural language input and extract structured progress data.
-Expert 2 - Chart Generator: Generate chart configuration data for visualization.
-Expert 3 - Insight Generator: Create a friendly, encouraging comment about the progress.
+ANALYSIS FRAMEWORK:
+As an expert analyst, you must:
 
-Rules for Goal Updates:
-1. If the input mentions completing onboarding tasks (video, policies, quiz, forms), update the "Onboarding" goal
-2. If the input mentions training, courses, or learning, update the "Training" goal
-3. Progress should be realistic and incremental (typically 10-30% increases)
-4. Consider the onboarding context when updating goals
+1. **CONTEXTUAL UNDERSTANDING**: Analyze the progress text for:
+   - Specific achievements mentioned
+   - Skills developed or demonstrated
+   - Tasks completed or milestones reached
+   - Learning activities undertaken
+   - Challenges overcome or areas of improvement
 
-Output Format (JSON only, no additional text):
+2. **GOAL MAPPING**: Intelligently map progress to the two available goals:
+   - **TRAINING GOAL**: Any learning, skill development, course completion, certification, knowledge acquisition, professional development activities
+   - **ONBOARDING GOAL**: Company-specific tasks, policy understanding, system access, orientation activities, company culture integration, administrative tasks
+
+3. **PROGRESS CALCULATION**: Calculate realistic progress increases:
+   - Small achievements: 5-15% increase
+   - Moderate achievements: 15-30% increase  
+   - Major milestones: 30-50% increase
+   - Never exceed 100% or decrease progress
+   - Consider current progress levels when calculating increases
+
+4. **INTELLIGENT INSIGHTS**: Generate personalized, encouraging insights that:
+   - Acknowledge specific achievements mentioned
+   - Provide constructive feedback
+   - Suggest next steps or areas for continued growth
+   - Maintain an encouraging, professional tone
+
+OUTPUT REQUIREMENTS:
+You must respond with ONLY valid JSON in this exact format:
+
 {{
   "goals": [
-    {{"id": 1, "name": "Training", "progress": 40, "target": 100}},
-    {{"id": 2, "name": "Onboarding", "progress": 60, "target": 100}}
+    {{"id": 1, "name": "Training", "progress": [calculated_progress], "target": 100}},
+    {{"id": 2, "name": "Onboarding", "progress": [calculated_progress], "target": 100}}
   ],
   "chart_data": {{
     "type": "bar",
     "labels": ["Training", "Onboarding"],
     "datasets": [{{
       "label": "Progress %",
-      "data": [40, 60],
+      "data": [training_progress, onboarding_progress],
       "backgroundColor": ["#3498db", "#2980b9"]
     }}]
   }},
-  "insight": "Great progress! You've completed key onboarding tasks and are making solid progress on training."
+  "insight": "[Personalized, encouraging insight based on the specific achievements mentioned]"
 }}
 
-Output ONLY the JSON, no explanations or additional text.
+CRITICAL: Output ONLY the JSON response, no additional text or explanations.
 """
 
-        # Use the HR agent to process the chain-of-experts prompt
-        result = hr_agent.process_chat(chain_of_experts_prompt, f"progress_update_{hash(request.progress_text)}", [], {})
-        ai_response = result["agent_response"]
+        # Use GPT-4 directly for better analysis
+        from langchain_openai import ChatOpenAI
+        import json
+        
+        # Initialize GPT-4 model for performance analysis
+        gpt4_model = ChatOpenAI(
+            model=settings.PERFORMANCE_OPENAI_MODEL,  # Uses GPT-4
+            temperature=0.2,  # Lower temperature for more consistent analysis
+            openai_api_key=settings.OPENAI_API_KEY
+        )
+        
+        # Get AI response
+        response = gpt4_model.invoke([HumanMessage(content=smart_progress_prompt)])
+        ai_response = response.content
         
         # Try to parse JSON response
         try:
@@ -660,10 +682,27 @@ Output ONLY the JSON, no explanations or additional text.
             
             # Validate the response structure
             if "goals" in progress_data and "chart_data" in progress_data and "insight" in progress_data:
-                # Update goals in database if user state exists
-                if user_state:
-                    update_user_personal_goals(db, "test_user", {"goals": progress_data["goals"]})
+                # Save progress update to performance database
+                try:
+                    print(f"Attempting to save progress update for user: {user_id}")
+                    print(f"Progress text: {request.progress_text}")
+                    print(f"Updated goals: {progress_data['goals']}")
+                    
+                    saved_update = save_progress_update_performance(
+                        db=db,
+                        user_id=user_id,
+                        progress_text=request.progress_text,
+                        updated_goals=progress_data["goals"],
+                        ai_insight=progress_data["insight"]
+                    )
+                    print(f"Successfully saved progress update with ID: {saved_update.id}")
+                except Exception as db_error:
+                    print(f"Database save failed: {db_error}")
+                    import traceback
+                    traceback.print_exc()
+                    # Continue even if database save fails
                 
+                # Return the progress data - frontend will handle state updates
                 return progress_data
             else:
                 raise ValueError("Invalid response structure")
@@ -678,14 +717,96 @@ Output ONLY the JSON, no explanations or additional text.
                     "datasets": [{
                         "label": "Progress %",
                         "data": [goal["progress"] for goal in request.current_goals],
-                        "backgroundColor": ["#3498db", "#2980b9", "#1f5f8b", "#34495e"]
+                        "backgroundColor": ["#3498db", "#2980b9"]
                     }]
                 },
                 "insight": "Progress update received! Keep up the great work on your goals."
             }
         
     except Exception as e:
-        return {"error": f"Failed to update progress: {str(e)}"}
+        print(f"AI API failed: {str(e)}")
+        # Fallback: Simple progress calculation without AI
+        try:
+            # Simple progress calculation based on keywords
+            progress_text_lower = request.progress_text.lower()
+            updated_goals = request.current_goals.copy()
+            
+            # Check for training-related keywords
+            training_keywords = ['course', 'training', 'learn', 'study', 'python', 'programming', 'skill']
+            onboarding_keywords = ['onboard', 'company', 'policy', 'system', 'access', 'orientation']
+            
+            training_increase = 0
+            onboarding_increase = 0
+            
+            for keyword in training_keywords:
+                if keyword in progress_text_lower:
+                    training_increase = 20  # 20% increase for training activities
+                    break
+            
+            for keyword in onboarding_keywords:
+                if keyword in progress_text_lower:
+                    onboarding_increase = 15  # 15% increase for onboarding activities
+                    break
+            
+            # Update goals
+            for goal in updated_goals:
+                if goal['name'] == 'Training':
+                    goal['progress'] = min(100, goal['progress'] + training_increase)
+                elif goal['name'] == 'Onboarding':
+                    goal['progress'] = min(100, goal['progress'] + onboarding_increase)
+            
+            # Save progress update to database
+            try:
+                saved_update = save_progress_update_performance(
+                    db=db,
+                    user_id=user_id,
+                    progress_text=request.progress_text,
+                    updated_goals=updated_goals,
+                    ai_insight="Progress updated successfully! Keep up the great work."
+                )
+                print(f"Successfully saved progress update with ID: {saved_update.id}")
+            except Exception as db_error:
+                print(f"Database save failed: {db_error}")
+            
+            return {
+                "goals": updated_goals,
+                "chart_data": {
+                    "type": "bar",
+                    "labels": [goal["name"] for goal in updated_goals],
+                    "datasets": [{
+                        "label": "Progress %",
+                        "data": [goal["progress"] for goal in updated_goals],
+                        "backgroundColor": ["#3498db", "#2980b9"]
+                    }]
+                },
+                "insight": "Progress update received! Keep up the great work on your goals."
+            }
+        except Exception as fallback_error:
+            return {"error": f"Failed to update progress: {str(fallback_error)}"}
+
+@app.get("/api/performance/users/{user_id}/goals")
+def get_performance_user_goals(user_id: str, db: Session = Depends(get_performance_db)):
+    """Get the latest progress goals for a performance user"""
+    try:
+        goals = get_latest_progress_goals_performance(db, user_id)
+        return {"goals": goals}
+    except Exception as e:
+        return {"error": f"Failed to get goals: {str(e)}"}
+
+@app.get("/api/performance/users/{user_id}/latest-insight")
+def get_latest_ai_insight(user_id: str, db: Session = Depends(get_performance_db)):
+    """Get the latest AI insight for a performance user"""
+    try:
+        latest_update = db.query(ProgressUpdate).filter(
+            ProgressUpdate.user_id == user_id
+        ).order_by(ProgressUpdate.created_at.desc()).first()
+        
+        if latest_update and latest_update.ai_insight:
+            return {"insight": latest_update.ai_insight}
+        else:
+            return {"insight": None}
+    except Exception as e:
+        return {"error": f"Failed to get insight: {str(e)}"}
 
 @app.get("/api/user/{user_id}/goals")
 def get_user_goals(user_id: str, db: Session = Depends(get_db)):
@@ -804,9 +925,9 @@ def get_performance_direct_reports_endpoint(user_id: str, db: Session = Depends(
         ) for report in direct_reports
     ]
 
-@app.get("/api/performance/users/{user_id}/goals", response_model=List[PerformanceGoalResponse])
-def get_performance_user_goals(user_id: str, db: Session = Depends(get_performance_db)):
-    """Get performance goals for a user"""
+@app.get("/api/performance/users/{user_id}/performance-goals", response_model=List[PerformanceGoalResponse])
+def get_performance_user_performance_goals(user_id: str, db: Session = Depends(get_performance_db)):
+    """Get performance goals for a user (different from progress goals)"""
     user = get_performance_user_by_id(db, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
