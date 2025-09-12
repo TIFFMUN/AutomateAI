@@ -36,53 +36,8 @@ app = FastAPI(
     description="AI-powered employee development platform",
     version="1.0.0"
 )
-    create_performance_tables()
-    
-    # Create performance users if they don't exist
-    try:
-        db_gen = get_performance_db()
-        db = next(db_gen)
-        
-        # Check if users already exist
-        existing_users = db.query(PerformanceUser).count()
-        if existing_users == 0:
-            print("Creating performance users...")
-            
-            # Create manager (Alex Thompson)
-            manager = create_performance_user(
-                db=db,
-                user_id="perf_manager001",
-                name="Alex Thompson",
-                email="alex.thompson@company.com",
-                role="Manager"
-            )
-            print(f"Created manager: {manager.name} (ID: {manager.id})")
-            
-            # Create employees
-            employees = [
-                ("perf_employee001", "Sarah Chen", "sarah.chen@company.com", "Employee"),
-                ("perf_employee002", "David Rodriguez", "david.rodriguez@company.com", "Employee"),
-                ("perf_employee003", "Lisa Park", "lisa.park@company.com", "Employee")
-            ]
-            
-            for user_id, name, email, role in employees:
-                employee = create_performance_user(
-                    db=db,
-                    user_id=user_id,
-                    name=name,
-                    email=email,
-                    role=role,
-                    manager_id=manager.id  # Set Alex as their manager
-                )
-                print(f"Created employee: {employee.name} (ID: {employee.id})")
-            
-            print("Performance users created successfully!")
-        else:
-            print(f"Performance database already has {existing_users} users.")
-        
-        db.close()
-    except Exception as e:
-        print(f"Error creating performance users: {e}")
+
+# Performance initialization will be done in startup event
 
 @app.get("/api/performance/debug/users")
 def debug_performance_users(db: Session = Depends(get_performance_db)):
@@ -166,7 +121,6 @@ hr_agent = LangGraphConnection(settings.OPENAI_API_KEY)
 
 # Models
 class ChatRequest(BaseModel):
-    user_id: str
     message: str
 
 class ChatMessageResponse(BaseModel):
@@ -294,6 +248,55 @@ def health_check():
 @app.on_event("startup")
 def on_startup() -> None:
     create_tables()
+    
+    # Initialize performance tables
+    create_performance_tables()
+    
+    # Create performance users if they don't exist
+    try:
+        db_gen = get_performance_db()
+        db = next(db_gen)
+        
+        # Check if users already exist
+        existing_users = db.query(PerformanceUser).count()
+        if existing_users == 0:
+            print("Creating performance users...")
+            
+            # Create manager (Alex Thompson)
+            manager = create_performance_user(
+                db=db,
+                user_id="perf_manager001",
+                name="Alex Thompson",
+                email="alex.thompson@company.com",
+                role="Manager"
+            )
+            print(f"Created manager: {manager.name} (ID: {manager.id})")
+            
+            # Create employees
+            employees = [
+                ("perf_employee001", "Sarah Chen", "sarah.chen@company.com", "Employee"),
+                ("perf_employee002", "David Rodriguez", "david.rodriguez@company.com", "Employee"),
+                ("perf_employee003", "Lisa Park", "lisa.park@company.com", "Employee")
+            ]
+            
+            for user_id, name, email, role in employees:
+                employee = create_performance_user(
+                    db=db,
+                    user_id=user_id,
+                    name=name,
+                    email=email,
+                    role=role,
+                    manager_id=manager.id  # Set Alex as their manager
+                )
+                print(f"Created employee: {employee.name} (ID: {employee.id})")
+            
+            print("Performance users created successfully!")
+        else:
+            print(f"Performance database already has {existing_users} users.")
+        
+        db.close()
+    except Exception as e:
+        print(f"Error creating performance users: {e}")
 
 @app.get("/api/user/{user_id}/state")
 def get_user_state_endpoint(user_id: str, db: Session = Depends(get_db)):
