@@ -28,6 +28,7 @@ app = FastAPI(
 )
 
 # CORS middleware
+print(f"Configuring CORS with allowed origins: {settings.ALLOWED_ORIGINS}")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.ALLOWED_ORIGINS,
@@ -151,11 +152,20 @@ def get_user_rank(user_id: str, current_user: User = Depends(get_current_active_
 
 @app.post("/api/user/{user_id}/chat")
 def handle_chat(user_id: str, request: ChatRequest, current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)):
-    print(f"Received chat request for user {user_id}: {request}")
-    # Ensure user state exists
-    user_state = get_user_state(db, user_id)
-    if not user_state:
-        user_state = create_user_state(db, user_id)
+    try:
+        print(f"Received chat request for user {user_id}: {request}")
+        print(f"Current user: {current_user}")
+        print(f"Request data: user_id={request.user_id}, message='{request.message}'")
+        
+        # Validate that the user_id in the URL matches the request
+        if request.user_id != user_id:
+            print(f"User ID mismatch: URL={user_id}, Request={request.user_id}")
+            raise HTTPException(status_code=400, detail="User ID mismatch")
+        
+        # Ensure user state exists
+        user_state = get_user_state(db, user_id)
+        if not user_state:
+            user_state = create_user_state(db, user_id)
     
     # Get existing chat messages
     existing_messages = get_chat_messages(db, user_id)
@@ -239,20 +249,42 @@ def handle_chat(user_id: str, request: ChatRequest, current_user: User = Depends
         ) for msg in updated_messages
     ]
     
-    return {
-        "messages": chat_message_responses,
-        "agent_response": result["agent_response"],
-        "agent_messages": agent_messages,
-        "current_node": result["current_node"],
-        "node_tasks": result["node_tasks"],
-        "chat_history": result["chat_history"],
-        "points_earned": points_earned,
-        "total_points": user_state.total_points
-    }
+        return {
+            "messages": chat_message_responses,
+            "agent_response": result["agent_response"],
+            "agent_messages": agent_messages,
+            "current_node": result["current_node"],
+            "node_tasks": result["node_tasks"],
+            "chat_history": result["chat_history"],
+            "points_earned": points_earned,
+            "total_points": user_state.total_points
+        }
+    except Exception as e:
+        print(f"Error in handle_chat: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 @app.get("/api/health")
 def api_health_check():
     return {"status": "healthy", "service": "AutomateAI API"}
+
+@app.get("/api/cors-test")
+def cors_test():
+    """Test CORS configuration"""
+    return {
+        "status": "CORS test successful",
+        "message": "If you can see this, CORS is working",
+        "allowed_origins": settings.ALLOWED_ORIGINS
+    }
+
+@app.post("/api/test-chat-request")
+def test_chat_request(request: ChatRequest):
+    """Test chat request validation without authentication"""
+    return {
+        "status": "Chat request validation successful",
+        "received_user_id": request.user_id,
+        "received_message": request.message,
+        "message_length": len(request.message)
+    }
 
 @app.get("/api/db-health")
 def database_health_check():
@@ -261,8 +293,9 @@ def database_health_check():
         print("Testing database connection...")
         db = SessionLocal()
         try:
-            # Test basic query
-            result = db.execute("SELECT 1 as test").fetchone()
+            # Test basic query using text() for SQLAlchemy 2.0 compatibility
+            from sqlalchemy import text
+            result = db.execute(text("SELECT 1 as test")).fetchone()
             print(f"Database test result: {result}")
             if result and result[0] == 1:
                 return {

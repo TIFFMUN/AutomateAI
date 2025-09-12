@@ -70,6 +70,12 @@ def create_user_state(db: Session, user_id: str) -> UserState:
     except Exception as e:
         print(f"Error creating user state: {e}")
         db.rollback()
+        # If it's a unique constraint violation, try to get the existing user state
+        if "duplicate key value violates unique constraint" in str(e):
+            print(f"User state already exists for user_id: {user_id}, fetching existing one")
+            existing_state = get_user_state(db, user_id)
+            if existing_state:
+                return existing_state
         raise
 
 def get_chat_messages(db: Session, user_id: str) -> List[ChatMessage]:
