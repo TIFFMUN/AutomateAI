@@ -205,22 +205,6 @@ function Performance() {
   }, [currentUserId]);
 
   // Polling functions for real-time updates
-  const startPolling = useCallback(() => {
-    // Clear any existing polling
-    if (pollingInterval) {
-      clearInterval(pollingInterval);
-    }
-    
-    // Start new polling interval (every 10 seconds)
-    const interval = setInterval(async () => {
-      if (currentUserId && hasSelectedRole) {
-        await checkForNewFeedback();
-      }
-    }, 10000); // 10 seconds
-    
-    setPollingInterval(interval);
-  }, [currentUserId, hasSelectedRole, pollingInterval]);
-
   const checkForNewFeedback = async () => {
     try {
       let currentFeedbacks = [];
@@ -239,6 +223,22 @@ function Performance() {
       console.error('Error checking for new feedback:', err);
     }
   };
+
+  const startPolling = useCallback(() => {
+    // Clear any existing polling
+    if (pollingInterval) {
+      clearInterval(pollingInterval);
+    }
+    
+    // Start new polling interval (every 10 seconds)
+    const interval = setInterval(async () => {
+      if (currentUserId && hasSelectedRole) {
+        await checkForNewFeedback();
+      }
+    }, 10000); // 10 seconds
+    
+    setPollingInterval(interval);
+  }, [currentUserId, hasSelectedRole, pollingInterval, isManagerView, loadManagerFeedbacks, loadEmployeeFeedbacks, lastFeedbackCount]);
 
 
   const handleUserChange = (userId) => {
