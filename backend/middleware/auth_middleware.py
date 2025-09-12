@@ -6,15 +6,22 @@ from services.auth_service import AuthService
 
 async def get_current_user(request: Request):
     """Get current authenticated user from token."""
+    print(f"Auth middleware called for URL: {request.url}")
+    print(f"Request headers: {dict(request.headers)}")
+    print(f"Request cookies: {dict(request.cookies)}")
+    
     # Try to get token from Authorization header first
     authorization = request.headers.get("Authorization")
     if authorization and authorization.startswith("Bearer "):
         token = authorization.split(" ")[1]
+        print(f"Token from Authorization header: {token[:10]}...")
     else:
         # Try to get token from cookies
         token = request.cookies.get("access_token")
+        print(f"Token from cookies: {token[:10] if token else 'None'}...")
     
     if not token:
+        print("No token found, raising 401")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Not authenticated",
