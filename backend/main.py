@@ -72,6 +72,27 @@ app.add_middleware(
     ],
 )
 
+# Add explicit CORS handler for all routes
+@app.middleware("http")
+async def add_cors_headers(request, call_next):
+    """Ensure CORS headers are present on all responses"""
+    response = await call_next(request)
+    
+    # Add CORS headers
+    origin = request.headers.get("origin")
+    if origin in [
+        "https://automate-ai-chi.vercel.app",
+        "https://automateai-56bf.onrender.com", 
+        "http://localhost:3000",
+        "http://localhost:3001"
+    ]:
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+        response.headers["Access-Control-Allow-Headers"] = "Accept, Accept-Language, Content-Language, Content-Type, Authorization, X-Requested-With, Origin"
+    
+    return response
+
 # Performance initialization will be done in startup event
 
 @app.get("/api/performance/debug/users")
@@ -382,12 +403,17 @@ def on_startup() -> None:
 def get_user_state_endpoint(user_id: str, current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)):
     try:
         print(f"Getting user state for user_id: {user_id}, current_user: {current_user.username}")
+        print(f"Current user details: {current_user}")
+        
         user_state = get_user_state(db, user_id)
         if not user_state:
             print(f"Creating new user state for user_id: {user_id}")
             user_state = create_user_state(db, user_id)
+            print(f"Created user state: {user_state}")
         
         chat_messages = get_chat_messages(db, user_id)
+        print(f"Found {len(chat_messages)} chat messages")
+        
         chat_message_responses = [
             ChatMessageResponse(
                 role=msg.role,
@@ -396,7 +422,7 @@ def get_user_state_endpoint(user_id: str, current_user: User = Depends(get_curre
             ) for msg in chat_messages
         ]
         
-        return UserStateResponse(
+        response_data = UserStateResponse(
             user_id=user_state.user_id,
             current_node=user_state.current_node,
             total_points=user_state.total_points,
@@ -405,8 +431,14 @@ def get_user_state_endpoint(user_id: str, current_user: User = Depends(get_curre
             created_at=user_state.created_at,
             updated_at=user_state.updated_at
         )
+        
+        print(f"Returning user state response: {response_data}")
+        return response_data
+        
     except Exception as e:
         print(f"Error in get_user_state_endpoint: {str(e)}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 @app.get("/api/leaderboard", response_model=LeaderboardResponse)
