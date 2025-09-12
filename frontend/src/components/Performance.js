@@ -30,6 +30,13 @@ function Performance() {
   const [aiModelInfo, setAiModelInfo] = useState({ model: 'GPT-4', version: '2024-01-01' }); // AI model info
   const [aiStatus, setAiStatus] = useState('ready'); // AI status: ready, processing, error
   const [currentFeedbackIndex, setCurrentFeedbackIndex] = useState(0); // Carousel current index
+  const [insight, setInsight] = useState(''); // AI insight state
+  const [chartData, setChartData] = useState(null); // Chart data state
+  const [goals, setGoals] = useState([
+    { id: 1, name: 'Training', progress: 0, target: 100 },
+    { id: 2, name: 'Onboarding', progress: 0, target: 100 }
+  ]); // Goals state
+  const [loadingGoals, setLoadingGoals] = useState(true); // Loading goals state
 
   // Available users from performance testing database
   const availableUsers = [
@@ -42,6 +49,8 @@ function Performance() {
   useEffect(() => {
     if (currentUserId && hasSelectedRole) {
       loadUserProfile();
+      loadLatestInsight();
+      loadGoalsFromBackend();
       if (isManagerView) {
         loadDirectReports();
         loadManagerFeedbacks();
@@ -125,6 +134,57 @@ function Performance() {
     }
   };
 
+  const loadLatestInsight = async () => {
+    try {
+      const response = await fetch(`http://localhost:8000/api/performance/users/${currentUserId}/latest-insight`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.insight) {
+          setInsight(data.insight);
+          console.log('Loaded AI insight from backend:', data.insight);
+        } else {
+          setInsight(''); // Clear insight if none available
+        }
+      } else {
+        console.error('Failed to load AI insight from backend');
+      }
+    } catch (err) {
+      console.error('Error loading AI insight:', err);
+    }
+  };
+
+  const loadGoalsFromBackend = async () => {
+    try {
+      setLoadingGoals(true);
+      const response = await fetch(`http://localhost:8000/api/performance/users/${currentUserId}/goals`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.goals) {
+          setGoals(data.goals);
+          console.log('Loaded goals from backend:', data.goals);
+          
+          // Update chart data when goals are loaded
+          const chartData = {
+            type: "bar",
+            labels: data.goals.map(goal => goal.name),
+            datasets: [{
+              label: "Progress %",
+              data: data.goals.map(goal => goal.progress),
+              backgroundColor: ["#3498db", "#2980b9"]
+            }]
+          };
+          setChartData(chartData);
+        }
+      } else {
+        console.error('Failed to load goals from backend');
+      }
+    } catch (err) {
+      console.error('Error loading goals:', err);
+    } finally {
+      setLoadingGoals(false);
+    }
+  };
+
   const handleUserChange = (userId) => {
     setCurrentUserId(userId);
     const selectedUser = availableUsers.find(user => user.id === userId);
@@ -133,6 +193,15 @@ function Performance() {
     setFeedbackText('');
     setEditingFeedback(null);
     setHasSelectedRole(true); // Mark that user has selected a role
+    
+    // Clear user-specific data when switching users
+    setInsight('');
+    setChartData(null);
+    setGoals([
+      { id: 1, name: 'Training', progress: 0, target: 100 },
+      { id: 2, name: 'Onboarding', progress: 0, target: 100 }
+    ]);
+    setLoadingGoals(true);
   };
 
   const handleCreateFeedback = async () => {
@@ -468,6 +537,14 @@ function Performance() {
               showAIAnalysis={showAIAnalysis}
               setShowAIAnalysis={setShowAIAnalysis}
               onGenerateAISummary={handleGenerateAISummary}
+              currentUserId={currentUserId}
+              insight={insight}
+              setInsight={setInsight}
+              chartData={chartData}
+              setChartData={setChartData}
+              goals={goals}
+              setGoals={setGoals}
+              loadingGoals={loadingGoals}
             />
           )}
         </div>
@@ -866,7 +943,7 @@ function ManagerView({
 }
 
 // Employee View Component
-function EmployeeView({ userProfile, feedbacks, loading, showAIAnalysis, setShowAIAnalysis, onGenerateAISummary }) {
+function EmployeeView({ userProfile, feedbacks, loading, showAIAnalysis, setShowAIAnalysis, onGenerateAISummary, currentUserId, insight, setInsight, chartData, setChartData, goals, setGoals, loadingGoals }) {
   // Ensure feedbacks is always an array
   const safeFeedbacks = Array.isArray(feedbacks) ? feedbacks : [];
   
@@ -874,7 +951,16 @@ function EmployeeView({ userProfile, feedbacks, loading, showAIAnalysis, setShow
     <div className="employee-view">
       <div className="employee-dashboard">
         {/* Personal Goals Section - Left Sidebar */}
-        <PersonalGoalsSection />
+        <PersonalGoalsSection 
+          currentUserId={currentUserId} 
+          insight={insight}
+          setInsight={setInsight}
+          chartData={chartData}
+          setChartData={setChartData}
+          goals={goals}
+          setGoals={setGoals}
+          loadingGoals={loadingGoals}
+        />
         
         {/* Manager Feedback Section - Right Side */}
         <div className="manager-feedback-section">
@@ -993,42 +1079,27 @@ function EmployeeView({ userProfile, feedbacks, loading, showAIAnalysis, setShow
 }
 
 // Personal Goals Section Component
-function PersonalGoalsSection() {
+function PersonalGoalsSection({ currentUserId, insight, setInsight, chartData, setChartData, goals, setGoals, loadingGoals }) {
   const [progressUpdate, setProgressUpdate] = useState('');
-  const [goals, setGoals] = useState([
-    { id: 1, name: 'Training', progress: 0, target: 100 },
-    { id: 2, name: 'Onboarding', progress: 0, target: 100 },
-    { id: 3, name: 'Project Delivery', progress: 0, target: 100 },
-    { id: 4, name: 'Skill Development', progress: 0, target: 100 }
-  ]);
-  const [insight, setInsight] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
-  const [chartData, setChartData] = useState(null);
-  const [loadingGoals, setLoadingGoals] = useState(true);
 
-  // Load goals from backend on component mount
+  // Update chart data when goals change
   useEffect(() => {
-    loadGoalsFromBackend();
-  }, []);
-
-  const loadGoalsFromBackend = async () => {
-    try {
-      setLoadingGoals(true);
-      const response = await fetch(`http://localhost:8000/api/performance/users/${currentUserId}/goals`);
-      if (response.ok) {
-        const data = await response.json();
-        if (data.goals) {
-          setGoals(data.goals);
-        }
-      } else {
-        console.error('Failed to load goals from backend');
-      }
-    } catch (err) {
-      console.error('Error loading goals:', err);
-    } finally {
-      setLoadingGoals(false);
+    if (goals && goals.length > 0) {
+      const chartData = {
+        type: "bar",
+        labels: goals.map(goal => goal.name),
+        datasets: [{
+          label: "Progress %",
+          data: goals.map(goal => goal.progress),
+          backgroundColor: ["#3498db", "#2980b9"]
+        }]
+      };
+      setChartData(chartData);
     }
-  };
+  }, [goals]);
+
+
 
   const handleProgressUpdate = async () => {
     if (!progressUpdate.trim()) return;
@@ -1036,7 +1107,7 @@ function PersonalGoalsSection() {
     setIsUpdating(true);
     
     try {
-      const response = await fetch('http://localhost:8000/api/progress/update', {
+      const response = await fetch(`http://localhost:8000/api/progress/update/${currentUserId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1053,17 +1124,7 @@ function PersonalGoalsSection() {
         // Update goals with new progress
         if (result.goals) {
           setGoals(result.goals);
-          
-          // Save updated goals to backend
-          await fetch(`http://localhost:8000/api/performance/users/${currentUserId}/goals`, {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              goals: result.goals
-            }),
-          });
+          console.log('Updated goals from progress update:', result.goals);
         }
         
         // Update insight
@@ -1073,7 +1134,10 @@ function PersonalGoalsSection() {
         
         // Update chart data
         if (result.chart_data) {
+          console.log('Setting chart data from LLM:', result.chart_data);
           setChartData(result.chart_data);
+        } else {
+          console.log('No chart_data in result:', result);
         }
         
         // Clear input
@@ -1183,7 +1247,9 @@ function PersonalGoalsSection() {
 
 // Progress Chart Component
 function ProgressChart({ data }) {
-  if (!data || !data.chart_data) {
+  console.log('ProgressChart received data:', data);
+  
+  if (!data) {
     return (
       <div className="chart-container">
         <div className="chart-placeholder">
@@ -1226,7 +1292,7 @@ function ProgressChart({ data }) {
   return (
     <div className="chart-container">
       <div className="chart-wrapper">
-        <Bar data={data.chart_data} options={chartOptions} />
+        <Bar data={data} options={chartOptions} />
       </div>
     </div>
   );

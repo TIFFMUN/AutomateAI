@@ -30,26 +30,8 @@ class User(Base):
     
     # Relationships
     manager = relationship("User", remote_side=[id], backref="direct_reports")
-    performance_feedbacks_given = relationship("PerformanceFeedback", foreign_keys="PerformanceFeedback.manager_id", back_populates="manager")
-    performance_feedbacks_received = relationship("PerformanceFeedback", foreign_keys="PerformanceFeedback.employee_id", back_populates="employee")
 
-class PerformanceFeedback(Base):
-    __tablename__ = "performance_feedbacks"
-    
-    id = Column(Integer, primary_key=True, index=True)
-    employee_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    manager_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    feedback_text = Column(Text, nullable=False)
-    ai_summary = Column(Text, nullable=True)  # AI-generated summary
-    strengths = Column(Text, nullable=True)  # AI-extracted strengths
-    areas_for_improvement = Column(Text, nullable=True)  # AI-extracted improvement areas
-    next_steps = Column(Text, nullable=True)  # AI-suggested next steps
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
-    # Relationships
-    employee = relationship("User", foreign_keys=[employee_id], back_populates="performance_feedbacks_received")
-    manager = relationship("User", foreign_keys=[manager_id], back_populates="performance_feedbacks_given")
+# PerformanceFeedback moved to performance database section below
 
 class UserState(Base):
     __tablename__ = "user_states"
@@ -81,6 +63,7 @@ class UserState(Base):
     
     # Relationship to chat messages
     chat_messages = relationship("ChatMessage", back_populates="user_state", cascade="all, delete-orphan")
+
 
 class ChatMessage(Base):
     __tablename__ = "chat_messages"
@@ -146,27 +129,19 @@ class PerformanceFeedback(PerformanceBase):
     review_year = Column(Integer, default=lambda: datetime.now().year)
     review_quarter = Column(Integer, default=lambda: (datetime.now().month - 1) // 3 + 1)
     
-    # Workflow status
-    status = Column(String(20), default='draft')  # draft, submitted, acknowledged, completed
-    employee_acknowledged_at = Column(DateTime, nullable=True)
-    employee_response = Column(Text, nullable=True)
-    
-    # Goal integration
-    goals_reviewed = Column(JSON, nullable=True)
-    goals_achieved = Column(JSON, nullable=True)
-    goals_set = Column(JSON, nullable=True)
-    
-    # Quality metrics
-    feedback_length = Column(Integer, nullable=True)
-    has_specific_examples = Column(Boolean, default=False)
-    has_actionable_items = Column(Boolean, default=False)
-    
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
     # Relationships
     employee = relationship("PerformanceUser", foreign_keys=[employee_id], back_populates="feedbacks_received")
     manager = relationship("PerformanceUser", foreign_keys=[manager_id], back_populates="feedbacks_given")
+
+class ProgressUpdate(PerformanceBase):
+    __tablename__ = "progress_updates"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(String, index=True, nullable=False)
+    progress_text = Column(Text, nullable=False)
+    updated_goals = Column(JSON, nullable=False)  # The goals after update
+    ai_insight = Column(Text, nullable=True)  # AI-generated insight
+    created_at = Column(DateTime, default=datetime.utcnow)
 
 class PerformanceGoal(PerformanceBase):
     __tablename__ = "performance_goals"
@@ -346,49 +321,7 @@ def get_user_direct_reports(db: Session, manager_id: int) -> List[User]:
     """Get all direct reports for a manager"""
     return db.query(User).filter(User.manager_id == manager_id).all()
 
-# Performance Feedback CRUD Functions
-def create_performance_feedback(db: Session, employee_id: int, manager_id: int, feedback_text: str) -> PerformanceFeedback:
-    """Create a new performance feedback"""
-    feedback = PerformanceFeedback(
-        employee_id=employee_id,
-        manager_id=manager_id,
-        feedback_text=feedback_text
-    )
-    db.add(feedback)
-    db.commit()
-    db.refresh(feedback)
-    return feedback
-
-def get_performance_feedback_by_employee(db: Session, employee_id: int) -> List[PerformanceFeedback]:
-    """Get all performance feedbacks for an employee"""
-    return db.query(PerformanceFeedback).filter(PerformanceFeedback.employee_id == employee_id).order_by(PerformanceFeedback.created_at.desc()).all()
-
-def get_performance_feedback_by_manager(db: Session, manager_id: int) -> List[PerformanceFeedback]:
-    """Get all performance feedbacks given by a manager"""
-    return db.query(PerformanceFeedback).filter(PerformanceFeedback.manager_id == manager_id).order_by(PerformanceFeedback.created_at.desc()).all()
-
-def update_performance_feedback(db: Session, feedback_id: int, feedback_text: str) -> Optional[PerformanceFeedback]:
-    """Update performance feedback text"""
-    feedback = db.query(PerformanceFeedback).filter(PerformanceFeedback.id == feedback_id).first()
-    if feedback:
-        feedback.feedback_text = feedback_text
-        feedback.updated_at = datetime.utcnow()
-        db.commit()
-        db.refresh(feedback)
-    return feedback
-
-def update_performance_feedback_ai_analysis(db: Session, feedback_id: int, ai_summary: str, strengths: str, areas_for_improvement: str, next_steps: str) -> Optional[PerformanceFeedback]:
-    """Update performance feedback with AI analysis"""
-    feedback = db.query(PerformanceFeedback).filter(PerformanceFeedback.id == feedback_id).first()
-    if feedback:
-        feedback.ai_summary = ai_summary
-        feedback.strengths = strengths
-        feedback.areas_for_improvement = areas_for_improvement
-        feedback.next_steps = next_steps
-        feedback.updated_at = datetime.utcnow()
-        db.commit()
-        db.refresh(feedback)
-    return feedback
+# Performance Feedback CRUD Functions (removed duplicates - using performance database functions)
 
 # Personal Goals CRUD Functions
 def update_user_personal_goals(db: Session, user_id: str, personal_goals: dict) -> Optional[UserState]:
@@ -614,3 +547,38 @@ def get_performance_summary(db: Session, employee_id: int) -> dict:
         'last_feedback_date': max([f.created_at for f in feedbacks]) if feedbacks else None,
         'recent_feedbacks': feedbacks[:3]
     }
+
+# Progress Update Functions (Performance Database)
+def save_progress_update_performance(db: Session, user_id: str, progress_text: str, updated_goals: list, ai_insight: str = None) -> ProgressUpdate:
+    """Save a progress update to the performance database"""
+    progress_update = ProgressUpdate(
+        user_id=user_id,
+        progress_text=progress_text,
+        updated_goals=updated_goals,
+        ai_insight=ai_insight
+    )
+    db.add(progress_update)
+    db.commit()
+    db.refresh(progress_update)
+    return progress_update
+
+def get_latest_progress_goals_performance(db: Session, user_id: str) -> list:
+    """Get the latest progress goals for a user from performance database"""
+    latest_update = db.query(ProgressUpdate).filter(
+        ProgressUpdate.user_id == user_id
+    ).order_by(ProgressUpdate.created_at.desc()).first()
+    
+    if latest_update:
+        return latest_update.updated_goals
+    else:
+        # Return default goals if no progress updates found
+        return [
+            {"id": 1, "name": "Training", "progress": 0, "target": 100},
+            {"id": 2, "name": "Onboarding", "progress": 0, "target": 100}
+        ]
+
+def get_progress_history_performance(db: Session, user_id: str, limit: int = 10) -> List[ProgressUpdate]:
+    """Get progress update history for a user from performance database"""
+    return db.query(ProgressUpdate).filter(
+        ProgressUpdate.user_id == user_id
+    ).order_by(ProgressUpdate.created_at.desc()).limit(limit).all()
