@@ -73,9 +73,7 @@ class UserState(Base):
     personal_goals = Column(JSON, default=lambda: {
         "goals": [
             {"id": 1, "name": "Training", "progress": 0, "target": 100},
-            {"id": 2, "name": "Onboarding", "progress": 0, "target": 100},
-            {"id": 3, "name": "Project Delivery", "progress": 0, "target": 100},
-            {"id": 4, "name": "Skill Development", "progress": 0, "target": 100}
+            {"id": 2, "name": "Onboarding", "progress": 0, "target": 100}
         ]
     })
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -413,9 +411,7 @@ def get_user_personal_goals(db: Session, user_id: str) -> dict:
         return {
             "goals": [
                 {"id": 1, "name": "Training", "progress": 0, "target": 100},
-                {"id": 2, "name": "Onboarding", "progress": 0, "target": 100},
-                {"id": 3, "name": "Project Delivery", "progress": 0, "target": 100},
-                {"id": 4, "name": "Skill Development", "progress": 0, "target": 100}
+                {"id": 2, "name": "Onboarding", "progress": 0, "target": 100}
             ]
         }
 
@@ -424,9 +420,7 @@ def calculate_goal_progress_from_onboarding(node_tasks: dict, current_node: str)
     goals = {
         "goals": [
             {"id": 1, "name": "Training", "progress": 0, "target": 100},
-            {"id": 2, "name": "Onboarding", "progress": 0, "target": 100},
-            {"id": 3, "name": "Project Delivery", "progress": 0, "target": 100},
-            {"id": 4, "name": "Skill Development", "progress": 0, "target": 100}
+            {"id": 2, "name": "Onboarding", "progress": 0, "target": 100}
         ]
     }
     
