@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  # Frontend React App - Production
+  frontend:
+    build: 
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+    ports:
+      - "3001:80"
+    depends_on:
+      - backend
+    networks:
+      - automate-ai-network
+
+  # Backend API
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+    environment:
+      - DATABASE_URL=postgresql://postgres:password123@postgres:5432/sap_onboarding
+      - PERFORMANCE_DATABASE_URL=postgresql://postgres:password123@postgres_performance:5432/performance_testing
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    depends_on:
+      - postgres
+      - postgres_performance
+    networks:
+      - automate-ai-network
+
+  # PostgreSQL Database (Main)
+  postgres:
+    image: postgres:15
+    environment:
+      - POSTGRES_DB=sap_onboarding
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - automate-ai-network
+
+  # PostgreSQL Database (Performance Testing)
+  postgres_performance:
+    image: postgres:15
+    environment:
+      - POSTGRES_DB=performance_testing
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password123
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_performance_data:/var/lib/postgresql/data
+    networks:
+      - automate-ai-network
+
+volumes:
+  postgres_data:
+  postgres_performance_data:
+
+networks:
+  automate-ai-network:
+    driver: bridge
