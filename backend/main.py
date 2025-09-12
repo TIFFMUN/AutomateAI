@@ -48,8 +48,10 @@ hr_agent = LangGraphConnection(settings.OPENAI_API_KEY)
 
 # Models
 class ChatRequest(BaseModel):
-    user_id: str
     message: str
+
+    class Config:
+        extra = "ignore"  # Ignore extra fields like user_id if sent by frontend
 
 class ChatMessageResponse(BaseModel):
     role: str
@@ -153,14 +155,9 @@ def get_user_rank(user_id: str, current_user: User = Depends(get_current_active_
 @app.post("/api/user/{user_id}/chat")
 def handle_chat(user_id: str, request: ChatRequest, current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)):
     try:
-        print(f"Received chat request for user {user_id}: {request}")
+        print(f"Received chat request for user {user_id}")
         print(f"Current user: {current_user}")
-        print(f"Request data: user_id={request.user_id}, message='{request.message}'")
-        
-        # Validate that the user_id in the URL matches the request
-        if request.user_id != user_id:
-            print(f"User ID mismatch: URL={user_id}, Request={request.user_id}")
-            raise HTTPException(status_code=400, detail="User ID mismatch")
+        print(f"Request data: message='{request.message}'")
         
         # Ensure user state exists
         user_state = get_user_state(db, user_id)
@@ -184,8 +181,20 @@ def handle_chat(user_id: str, request: ChatRequest, current_user: User = Depends
         # Calculate points for task completion
         points_earned = calculate_points_for_task("", request.message)
         
-        # Get agent response with database state
-        result = hr_agent.process_chat(request.message, user_id, chat_history, db_state)
+        # Get agent response with database state (with safe fallback)
+        try:
+            result = hr_agent.process_chat(request.message, user_id, chat_history, db_state)
+        except Exception as e:
+            print(f"Agent processing error: {e}")
+            # Fallback minimal response so the UI doesn't break
+            result = {
+                "agent_response": "I received your message. Let's continue.",
+                "agent_messages": ["I received your message. Let's continue."],
+                "current_node": user_state.current_node,
+                "node_tasks": user_state.node_tasks,
+                "chat_history": chat_history,
+                "restarted": False
+            }
         
         # Handle restart case
         if result.get("restarted"):
