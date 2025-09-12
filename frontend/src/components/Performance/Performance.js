@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
+import LoadingSpinner from '../LoadingSpinner';
 import './Performance.css';
 
 // Register Chart.js components
@@ -1242,10 +1243,7 @@ function PersonalGoalsSection({ currentUserId, insight, setInsight, chartData, s
         <h3>Goal Progress</h3>
         <div className="chart-wrapper">
           {loadingGoals ? (
-            <div className="chart-loading">
-              <div className="loading-spinner"></div>
-              <p>Loading goals...</p>
-            </div>
+            <LoadingSpinner text="Loading goals..." size="medium" />
           ) : chartData ? (
             <ProgressChart data={chartData} />
           ) : (

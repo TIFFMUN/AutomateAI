@@ -561,7 +561,19 @@
   color: rgba(255, 255, 255, 0.7);
 }
 
-.chart-loading p {
+/* Standardized loading components */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.loading-text {
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
   animation: none !important;
   transform: none !important;
 }
@@ -573,13 +585,61 @@
   border-top: 3px solid var(--primary-blue);
   border-radius: 50%;
   animation: spin 1s linear infinite;
-  margin-bottom: 1rem;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.loading-spinner-small {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid var(--primary-blue);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.loading-spinner-large {
+  width: 48px;
+  height: 48px;
+  border: 4px solid rgba(255, 255, 255, 0.3);
+  border-top: 4px solid var(--primary-blue);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
   display: inline-block;
   flex-shrink: 0;
 }
 
 .loading-spinner * {
   animation: none !important;
+}
+
+/* Button loading states */
+.btn .loading-container {
+  padding: 0;
+  flex-direction: row;
+  gap: 0.5rem;
+}
+
+.btn .loading-text {
+  margin-top: 0;
+  font-size: 0.85rem;
+}
+
+/* Legacy chart loading - now uses standardized component */
+.chart-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.chart-loading p {
+  animation: none !important;
+  transform: none !important;
 }
 
 @keyframes spin {
