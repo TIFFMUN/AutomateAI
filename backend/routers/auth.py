@@ -42,8 +42,8 @@ async def login(
             key="access_token",
             value=access_token,
             httponly=True,
-            secure=True,
-            samesite="none",
+            secure=False,  # Set to True in production with HTTPS
+            samesite="lax",
             max_age=30 * 60  # 30 minutes
         )
         
@@ -51,15 +51,21 @@ async def login(
             key="refresh_token", 
             value=refresh_token,
             httponly=True,
-            secure=True,
-            samesite="none",
+            secure=False,  # Set to True in production with HTTPS
+            samesite="lax",
             max_age=7 * 24 * 60 * 60  # 7 days
         )
         
         return {
             "access_token": access_token,
             "refresh_token": refresh_token,
-            "token_type": "bearer"
+            "token_type": "bearer",
+            "user": {
+                "id": user.id,
+                "username": user.username,
+                "email": user.email,
+                "full_name": user.full_name
+            }
         }
     except HTTPException:
         raise
@@ -85,8 +91,8 @@ async def refresh_token(
             key="access_token",
             value=access_token,
             httponly=True,
-            secure=True,
-            samesite="none",
+            secure=False,
+            samesite="lax",
             max_age=30 * 60
         )
         
@@ -94,8 +100,8 @@ async def refresh_token(
             key="refresh_token",
             value=refresh_token,
             httponly=True,
-            secure=True,
-            samesite="none",
+            secure=False,
+            samesite="lax",
             max_age=7 * 24 * 60 * 60
         )
         
@@ -115,8 +121,8 @@ async def refresh_token(
 @router.post("/logout")
 async def logout(response: Response):
     """Logout user by clearing cookies."""
-    response.delete_cookie(key="access_token", samesite="none")
-    response.delete_cookie(key="refresh_token", samesite="none")
+    response.delete_cookie(key="access_token")
+    response.delete_cookie(key="refresh_token")
     return {"message": "Successfully logged out"}
 
 @router.get("/me", response_model=UserResponse)

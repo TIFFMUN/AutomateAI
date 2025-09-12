@@ -1,20 +1,15 @@
-from fastapi import Request, HTTPException, status, Depends
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi import Request, HTTPException, status
 from sqlalchemy.orm import Session
 from database import get_db, SessionLocal
 from auth.auth_utils import verify_token
 from services.auth_service import AuthService
 
-security = HTTPBearer()
-
-async def get_current_user(
-    request: Request,
-    credentials: HTTPAuthorizationCredentials = Depends(security)
-):
+async def get_current_user(request: Request):
     """Get current authenticated user from token."""
     # Try to get token from Authorization header first
-    if credentials:
-        token = credentials.credentials
+    authorization = request.headers.get("Authorization")
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization.split(" ")[1]
     else:
         # Try to get token from cookies
         token = request.cookies.get("access_token")

@@ -48,19 +48,40 @@ class ChatMessage(Base):
 # Database CRUD Functions
 def get_user_state(db: Session, user_id: str) -> Optional[UserState]:
     """Get user state by user_id"""
-    return db.query(UserState).filter(UserState.user_id == user_id).first()
+    try:
+        print(f"Querying user state for user_id: {user_id}")
+        result = db.query(UserState).filter(UserState.user_id == user_id).first()
+        print(f"User state query result: {result}")
+        return result
+    except Exception as e:
+        print(f"Error getting user state: {e}")
+        raise
 
 def create_user_state(db: Session, user_id: str) -> UserState:
     """Create a new user state"""
-    user_state = UserState(user_id=user_id)
-    db.add(user_state)
-    db.commit()
-    db.refresh(user_state)
-    return user_state
+    try:
+        print(f"Creating user state for user_id: {user_id}")
+        user_state = UserState(user_id=user_id)
+        db.add(user_state)
+        db.commit()
+        db.refresh(user_state)
+        print(f"User state created successfully: {user_state}")
+        return user_state
+    except Exception as e:
+        print(f"Error creating user state: {e}")
+        db.rollback()
+        raise
 
 def get_chat_messages(db: Session, user_id: str) -> List[ChatMessage]:
     """Get all chat messages for a user"""
-    return db.query(ChatMessage).filter(ChatMessage.user_id == user_id).order_by(ChatMessage.timestamp).all()
+    try:
+        print(f"Querying chat messages for user_id: {user_id}")
+        result = db.query(ChatMessage).filter(ChatMessage.user_id == user_id).order_by(ChatMessage.timestamp).all()
+        print(f"Found {len(result)} chat messages")
+        return result
+    except Exception as e:
+        print(f"Error getting chat messages: {e}")
+        raise
 
 def save_chat_message(db: Session, user_id: str, role: str, content: str) -> ChatMessage:
     """Save a chat message"""

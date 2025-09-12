@@ -28,8 +28,11 @@ function MainPage() {
           const r = rankRes.data;
           if (typeof r.rank === 'number') setRank(r.rank);
         }
-      } catch (_) {
-        // ignore errors for now
+      } catch (error) {
+        console.error('Error loading user stats:', error);
+        // Set default values if API calls fail
+        setTotalPoints(0);
+        setRank(0);
       }
     };
     loadUserStats();
