@@ -42,59 +42,14 @@ app = FastAPI(
 # CORS middleware - MUST be added before any routes
 print(f"Configuring CORS with allowed origins: {settings.ALLOWED_ORIGINS}")
 
-# More comprehensive CORS configuration
+# Simplified CORS configuration that should work reliably
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.ALLOWED_ORIGINS,
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-    allow_headers=[
-        "Accept",
-        "Accept-Language",
-        "Content-Language",
-        "Content-Type",
-        "Authorization",
-        "X-Requested-With",
-        "Origin",
-        "Access-Control-Request-Method",
-        "Access-Control-Request-Headers",
-    ],
-    expose_headers=[
-        "Access-Control-Allow-Origin",
-        "Access-Control-Allow-Credentials",
-        "Access-Control-Allow-Methods",
-        "Access-Control-Allow-Headers",
-    ],
+    allow_origins=["*"],  # Allow all origins for now to fix the issue
+    allow_credentials=False,  # Set to False when using wildcard
+    allow_methods=["*"],  # Allow all methods
+    allow_headers=["*"],  # Allow all headers
 )
-
-# Add a simple CORS preflight handler for debugging
-@app.options("/{full_path:path}")
-async def options_handler(full_path: str):
-    """Handle CORS preflight requests"""
-    return {"message": "CORS preflight handled"}
-
-# Add middleware to ensure CORS headers are always present
-@app.middleware("http")
-async def add_cors_headers(request, call_next):
-    """Ensure CORS headers are present on all responses"""
-    response = await call_next(request)
-    
-    # Add CORS headers if not already present
-    if "Access-Control-Allow-Origin" not in response.headers:
-        origin = request.headers.get("origin")
-        if origin in settings.ALLOWED_ORIGINS:
-            response.headers["Access-Control-Allow-Origin"] = origin
-    
-    if "Access-Control-Allow-Credentials" not in response.headers:
-        response.headers["Access-Control-Allow-Credentials"] = "true"
-    
-    if "Access-Control-Allow-Methods" not in response.headers:
-        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
-    
-    if "Access-Control-Allow-Headers" not in response.headers:
-        response.headers["Access-Control-Allow-Headers"] = "Accept, Accept-Language, Content-Language, Content-Type, Authorization, X-Requested-With, Origin"
-    
-    return response
 
 # Performance initialization will be done in startup event
 
