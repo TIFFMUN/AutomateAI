@@ -26,7 +26,7 @@ function Performance() {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiProcessingSteps, setAiProcessingSteps] = useState([]);
   const [aiConfidence, setAiConfidence] = useState(null);
-  const [aiModelInfo] = useState({ model: 'GPT-4', version: '2024-01-01' });
+  const [aiModelInfo, setAiModelInfo] = useState({ model: 'GPT-4', version: '2024-01-01' });
   const [aiStatus, setAiStatus] = useState('ready');
   const [currentFeedbackIndex, setCurrentFeedbackIndex] = useState(0);
   const [insight, setInsight] = useState('');
@@ -59,28 +59,7 @@ function Performance() {
       }
       
       // Start polling for feedback updates (every 10 seconds)
-      const interval = setInterval(async () => {
-        if (currentUserId && hasSelectedRole) {
-          try {
-            let currentFeedbacks = [];
-            
-            if (isManagerView) {
-              currentFeedbacks = await loadManagerFeedbacks();
-            } else {
-              currentFeedbacks = await loadEmployeeFeedbacks();
-            }
-            
-            // Check if feedback count has changed
-            if (currentFeedbacks.length !== lastFeedbackCount) {
-              console.log(`New feedback detected! Count changed from ${lastFeedbackCount} to ${currentFeedbacks.length}`);
-            }
-          } catch (err) {
-            console.error('Error checking for new feedback:', err);
-          }
-        }
-      }, 10000); // 10 seconds
-      
-      setPollingInterval(interval);
+      startPolling();
     }
     
     // Cleanup polling when component unmounts or dependencies change
@@ -107,7 +86,7 @@ function Performance() {
   }, [dropdownOpen]);
 
 
-  const loadDirectReports = useCallback(async () => {
+  const loadDirectReports = async () => {
     try {
       const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://automateai-56bf.onrender.com'}/api/performance/users/${currentUserId}/direct-reports`);
       if (response.ok) {
@@ -122,9 +101,9 @@ function Performance() {
       console.error('Error loading direct reports:', err);
       setDirectReports([]);
     }
-  }, [currentUserId]);
+  };
 
-  const loadEmployeeFeedbacks = useCallback(async () => {
+  const loadEmployeeFeedbacks = async () => {
     try {
       const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://automateai-56bf.onrender.com'}/api/user/${currentUserId}/feedback`);
       if (response.ok) {
@@ -148,9 +127,9 @@ function Performance() {
       setLastFeedbackCount(0);
       return [];
     }
-  }, [currentUserId]);
+  };
 
-  const loadManagerFeedbacks = useCallback(async () => {
+  const loadManagerFeedbacks = async () => {
     try {
       const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://automateai-56bf.onrender.com'}/api/manager/${currentUserId}/feedback`);
       if (response.ok) {
@@ -174,9 +153,9 @@ function Performance() {
       setLastFeedbackCount(0);
       return [];
     }
-  }, [currentUserId]);
+  };
 
-  const loadLatestInsight = useCallback(async () => {
+  const loadLatestInsight = async () => {
     try {
       const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://automateai-56bf.onrender.com'}/api/performance/users/${currentUserId}/latest-insight`);
       if (response.ok) {
@@ -192,9 +171,9 @@ function Performance() {
     } catch (err) {
       console.error('Error loading AI insight:', err);
     }
-  }, [currentUserId]);
+  };
 
-  const loadGoalsFromBackend = useCallback(async () => {
+  const loadGoalsFromBackend = async () => {
     try {
       setLoadingGoals(true);
       const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://automateai-56bf.onrender.com'}/api/performance/users/${currentUserId}/goals`);
@@ -223,10 +202,26 @@ function Performance() {
     } finally {
       setLoadingGoals(false);
     }
-  }, [currentUserId]);
+  };
 
   // Polling functions for real-time updates
-  const checkForNewFeedback = useCallback(async () => {
+  const startPolling = () => {
+    // Clear any existing polling
+    if (pollingInterval) {
+      clearInterval(pollingInterval);
+    }
+    
+    // Start new polling interval (every 10 seconds)
+    const interval = setInterval(async () => {
+      if (currentUserId && hasSelectedRole) {
+        await checkForNewFeedback();
+      }
+    }, 10000); // 10 seconds
+    
+    setPollingInterval(interval);
+  };
+
+  const checkForNewFeedback = async () => {
     try {
       let currentFeedbacks = [];
       
@@ -243,23 +238,7 @@ function Performance() {
     } catch (err) {
       console.error('Error checking for new feedback:', err);
     }
-  }, [isManagerView, loadManagerFeedbacks, loadEmployeeFeedbacks, lastFeedbackCount]);
-
-  const startPolling = useCallback(() => {
-    // Clear any existing polling
-    if (pollingInterval) {
-      clearInterval(pollingInterval);
-    }
-    
-    // Start new polling interval (every 10 seconds)
-    const interval = setInterval(async () => {
-      if (currentUserId && hasSelectedRole) {
-        await checkForNewFeedback();
-      }
-    }, 10000); // 10 seconds
-    
-    setPollingInterval(interval);
-  }, [currentUserId, hasSelectedRole, pollingInterval, isManagerView, loadManagerFeedbacks, loadEmployeeFeedbacks, lastFeedbackCount]);
+  };
 
 
   const handleUserChange = (userId) => {
