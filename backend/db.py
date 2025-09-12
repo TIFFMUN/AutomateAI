@@ -4,6 +4,7 @@ from sqlalchemy.orm import sessionmaker, relationship, Session, joinedload
 from datetime import datetime, date
 from typing import Optional, List
 from config import settings
+from models.user import User
 
 # Main Database setup
 Base = declarative_base()
@@ -15,21 +16,7 @@ PerformanceBase = declarative_base()
 performance_engine = create_engine(settings.PERFORMANCE_DATABASE_URL)
 PerformanceSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=performance_engine)
 
-# Database Models
-class User(Base):
-    __tablename__ = "users"
-    
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(String, unique=True, index=True, nullable=False)
-    name = Column(String, nullable=False)
-    email = Column(String, nullable=False)
-    role = Column(String, nullable=False)  # 'employee' or 'manager'
-    manager_id = Column(Integer, ForeignKey("users.id"), nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
-    # Relationships
-    manager = relationship("User", remote_side=[id], backref="direct_reports")
+# Database Models - User model moved to models/user.py to avoid conflicts
 
 # PerformanceFeedback moved to performance database section below
 
