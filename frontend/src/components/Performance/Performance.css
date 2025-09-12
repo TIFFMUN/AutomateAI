@@ -224,7 +224,7 @@
 /* Manager View Styles */
 .manager-view {
   display: grid;
-  grid-template-columns: 2fr 1fr;
+  grid-template-columns: 1.5fr 1fr;
   gap: 2rem;
   overflow: visible;
 }
@@ -1804,7 +1804,7 @@
   }
 
   .manager-view {
-    grid-template-columns: 3fr 1fr;
+    grid-template-columns: 2fr 1fr;
   }
 
   .manager-view.ai-disabled {
@@ -1831,7 +1831,7 @@
   }
 
   .manager-view {
-    grid-template-columns: 1.5fr 1fr;
+    grid-template-columns: 1.3fr 1fr;
   }
 
   .manager-view.ai-disabled {
