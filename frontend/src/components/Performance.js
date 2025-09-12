@@ -10,7 +10,6 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend)
 function Performance() {
   const navigate = useNavigate();
   const [isManagerView, setIsManagerView] = useState(false);
-  const [userProfile, setUserProfile] = useState(null);
   const [directReports, setDirectReports] = useState([]);
   const [feedbacks, setFeedbacks] = useState([]);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
@@ -20,25 +19,25 @@ function Performance() {
   const [error, setError] = useState(null);
   const [currentUserId, setCurrentUserId] = useState(null); // Start with no user selected
   const [hasSelectedRole, setHasSelectedRole] = useState(false); // Track if user has selected a role
-  const [showAIAnalysis, setShowAIAnalysis] = useState(true); // Toggle for AI analysis visibility
+  const [showAIAnalysis, setShowAIAnalysis] = useState(true);
   const [dropdownOpen, setDropdownOpen] = useState(false); // Custom dropdown state
-  const [aiAssistantEnabled, setAiAssistantEnabled] = useState(true); // AI assistant toggle
-  const [aiAnalysis, setAiAnalysis] = useState(null); // AI analysis data
-  const [aiLoading, setAiLoading] = useState(false); // AI loading state
-  const [aiProcessingSteps, setAiProcessingSteps] = useState([]); // AI processing steps
-  const [aiConfidence, setAiConfidence] = useState(null); // AI confidence score
-  const [aiModelInfo, setAiModelInfo] = useState({ model: 'GPT-4', version: '2024-01-01' }); // AI model info
-  const [aiStatus, setAiStatus] = useState('ready'); // AI status: ready, processing, error
-  const [currentFeedbackIndex, setCurrentFeedbackIndex] = useState(0); // Carousel current index
-  const [insight, setInsight] = useState(''); // AI insight state
-  const [chartData, setChartData] = useState(null); // Chart data state
+  const [aiAssistantEnabled, setAiAssistantEnabled] = useState(true);
+  const [aiAnalysis, setAiAnalysis] = useState(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiProcessingSteps, setAiProcessingSteps] = useState([]);
+  const [aiConfidence, setAiConfidence] = useState(null);
+  const [aiModelInfo, setAiModelInfo] = useState({ model: 'GPT-4', version: '2024-01-01' });
+  const [aiStatus, setAiStatus] = useState('ready');
+  const [currentFeedbackIndex, setCurrentFeedbackIndex] = useState(0);
+  const [insight, setInsight] = useState('');
+  const [chartData, setChartData] = useState(null);
   const [goals, setGoals] = useState([
     { id: 1, name: 'Training', progress: 0, target: 100 },
     { id: 2, name: 'Onboarding', progress: 0, target: 100 }
-  ]); // Goals state
-  const [loadingGoals, setLoadingGoals] = useState(true); // Loading goals state
-  const [lastFeedbackCount, setLastFeedbackCount] = useState(0); // Track feedback count for polling
-  const [pollingInterval, setPollingInterval] = useState(null); // Polling interval reference
+  ]);
+  const [loadingGoals, setLoadingGoals] = useState(true);
+  const [lastFeedbackCount, setLastFeedbackCount] = useState(0);
+  const [pollingInterval, setPollingInterval] = useState(null);
 
   // Available users from performance testing database
   const availableUsers = [
@@ -50,7 +49,6 @@ function Performance() {
 
   useEffect(() => {
     if (currentUserId && hasSelectedRole) {
-      loadUserProfile();
       loadLatestInsight();
       loadGoalsFromBackend();
       if (isManagerView) {
@@ -87,17 +85,6 @@ function Performance() {
     };
   }, [dropdownOpen]);
 
-  const loadUserProfile = async () => {
-    try {
-      const response = await fetch(`http://localhost:8000/api/performance/users/${currentUserId}/profile`);
-      if (response.ok) {
-        const profile = await response.json();
-        setUserProfile(profile);
-      }
-    } catch (err) {
-      console.error('Error loading user profile:', err);
-    }
-  };
 
   const loadDirectReports = async () => {
     try {
@@ -577,7 +564,6 @@ function Performance() {
             </div>
           ) : isManagerView ? (
             <ManagerView
-              userProfile={userProfile}
               directReports={directReports}
               feedbacks={feedbacks}
               selectedEmployee={selectedEmployee}
@@ -604,7 +590,6 @@ function Performance() {
             />
           ) : (
             <EmployeeView
-              userProfile={userProfile}
               feedbacks={feedbacks}
               loading={loading}
               showAIAnalysis={showAIAnalysis}
@@ -628,7 +613,6 @@ function Performance() {
 
 // Manager View Component
 function ManagerView({
-  userProfile,
   directReports,
   feedbacks,
   selectedEmployee,
@@ -1028,7 +1012,7 @@ function ManagerView({
 }
 
 // Employee View Component
-function EmployeeView({ userProfile, feedbacks, loading, showAIAnalysis, setShowAIAnalysis, onGenerateAISummary, currentUserId, insight, setInsight, chartData, setChartData, goals, setGoals, loadingGoals }) {
+function EmployeeView({ feedbacks, loading, showAIAnalysis, setShowAIAnalysis, onGenerateAISummary, currentUserId, insight, setInsight, chartData, setChartData, goals, setGoals, loadingGoals }) {
   // Ensure feedbacks is always an array
   const safeFeedbacks = Array.isArray(feedbacks) ? feedbacks : [];
   
