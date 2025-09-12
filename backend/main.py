@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from typing import Dict, Any, List, Optional
 from sqlalchemy.orm import Session
 from datetime import datetime
+import json
 from config import settings
 from langgraph_connection import LangGraphConnection
 from prompts import PERFORMANCE_FEEDBACK_ANALYSIS, PERFORMANCE_FEEDBACK_ANALYSIS_PROMPT, REAL_TIME_FEEDBACK_SUGGESTIONS_PROMPT
@@ -31,6 +32,114 @@ app = FastAPI(title="SAP HR Assistant", version="1.0.0")
 def startup_event():
     create_tables()
     create_performance_tables()
+    
+    # Create performance users if they don't exist
+    try:
+        db_gen = get_performance_db()
+        db = next(db_gen)
+        
+        # Check if users already exist
+        existing_users = db.query(PerformanceUser).count()
+        if existing_users == 0:
+            print("Creating performance users...")
+            
+            # Create manager (Alex Thompson)
+            manager = create_performance_user(
+                db=db,
+                user_id="perf_manager001",
+                name="Alex Thompson",
+                email="alex.thompson@company.com",
+                role="Manager"
+            )
+            print(f"Created manager: {manager.name} (ID: {manager.id})")
+            
+            # Create employees
+            employees = [
+                ("perf_employee001", "Sarah Chen", "sarah.chen@company.com", "Employee"),
+                ("perf_employee002", "David Rodriguez", "david.rodriguez@company.com", "Employee"),
+                ("perf_employee003", "Lisa Park", "lisa.park@company.com", "Employee")
+            ]
+            
+            for user_id, name, email, role in employees:
+                employee = create_performance_user(
+                    db=db,
+                    user_id=user_id,
+                    name=name,
+                    email=email,
+                    role=role,
+                    manager_id=manager.id  # Set Alex as their manager
+                )
+                print(f"Created employee: {employee.name} (ID: {employee.id})")
+            
+            print("Performance users created successfully!")
+        else:
+            print(f"Performance database already has {existing_users} users.")
+        
+        db.close()
+    except Exception as e:
+        print(f"Error creating performance users: {e}")
+
+@app.get("/api/performance/debug/users")
+def debug_performance_users(db: Session = Depends(get_performance_db)):
+    """Debug endpoint to see what users exist in performance database"""
+    try:
+        from sqlalchemy import text
+        
+        # Get all columns in the table
+        columns_result = db.execute(text("""
+            SELECT column_name 
+            FROM information_schema.columns 
+            WHERE table_name = 'performance_users'
+            ORDER BY ordinal_position
+        """))
+        
+        columns = [row[0] for row in columns_result.fetchall()]
+        
+        # Get basic user data using only existing columns
+        users_result = db.execute(text("""
+            SELECT id, user_id, name, email, role, created_at
+            FROM performance_users
+        """))
+        
+        users = []
+        for row in users_result.fetchall():
+            users.append({
+                "id": row[0],
+                "user_id": row[1], 
+                "name": row[2],
+                "email": row[3],
+                "role": row[4],
+                "created_at": str(row[5]) if row[5] else None
+            })
+        
+        return {
+            "total_users": len(users),
+            "existing_columns": columns,
+            "users": users
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error querying users: {str(e)}")
+
+@app.post("/api/performance/setup-manager-relationships")
+def setup_manager_relationships(db: Session = Depends(get_performance_db)):
+    """Set up manager-employee relationships"""
+    try:
+        from sqlalchemy import text
+        
+        # Set Alex Thompson (ID: 1) as manager for all employees (IDs: 2, 3, 4)
+        db.execute(text("""
+            UPDATE performance_users 
+            SET manager_id = 1 
+            WHERE id IN (2, 3, 4)
+        """))
+        
+        db.commit()
+        
+        return {"message": "Successfully set up manager-employee relationships"}
+        
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Setup failed: {str(e)}")
 
 # CORS
 app.add_middleware(
@@ -333,9 +442,9 @@ def get_direct_reports(user_id: str, db: Session = Depends(get_db)):
     ]
 
 @app.get("/api/user/{user_id}/feedback")
-def get_user_feedback(user_id: str, db: Session = Depends(get_db)):
+def get_user_feedback(user_id: str, db: Session = Depends(get_performance_db)):
     """Get performance feedback for a user (as employee)"""
-    user = get_user_by_user_id(db, user_id)
+    user = get_performance_user_by_id(db, user_id)
     if not user:
         return {"error": "User not found"}
     
@@ -366,10 +475,10 @@ def get_user_feedback(user_id: str, db: Session = Depends(get_db)):
     ]
 
 @app.get("/api/manager/{user_id}/feedback")
-def get_manager_feedback(user_id: str, db: Session = Depends(get_db)):
+def get_manager_feedback(user_id: str, db: Session = Depends(get_performance_db)):
     """Get performance feedback given by a manager"""
-    user = get_user_by_user_id(db, user_id)
-    if not user or user.role != "manager":
+    user = get_performance_user_by_id(db, user_id)
+    if not user or user.role != "Manager":
         return {"error": "User not found or not a manager"}
     
     feedbacks = get_performance_feedback_by_manager(db, user.id)
@@ -399,14 +508,14 @@ def get_manager_feedback(user_id: str, db: Session = Depends(get_db)):
     ]
 
 @app.post("/api/manager/{user_id}/feedback")
-def create_feedback(user_id: str, request: CreateFeedbackRequest, db: Session = Depends(get_db)):
+def create_feedback(user_id: str, request: CreateFeedbackRequest, db: Session = Depends(get_performance_db)):
     """Create new performance feedback"""
-    manager = get_user_by_user_id(db, user_id)
-    if not manager or manager.role != "manager":
+    manager = get_performance_user_by_id(db, user_id)
+    if not manager or manager.role != "Manager":
         return {"error": "User not found or not a manager"}
     
     # Verify the employee exists and is a direct report
-    employee = db.query(User).filter(User.id == request.employee_id).first()
+    employee = db.query(PerformanceUser).filter(PerformanceUser.id == request.employee_id).first()
     if not employee or employee.manager_id != manager.id:
         return {"error": "Employee not found or not a direct report"}
     
@@ -422,11 +531,31 @@ def create_feedback(user_id: str, request: CreateFeedbackRequest, db: Session = 
         areas_for_improvement=feedback.areas_for_improvement,
         next_steps=feedback.next_steps,
         created_at=feedback.created_at,
-        updated_at=feedback.updated_at
+        updated_at=feedback.updated_at,
+        employee=UserResponse(
+            id=employee.id,
+            user_id=employee.user_id,
+            name=employee.name,
+            email=employee.email,
+            role=employee.role,
+            manager_id=employee.manager_id,
+            created_at=employee.created_at,
+            updated_at=employee.updated_at
+        ),
+        manager=UserResponse(
+            id=manager.id,
+            user_id=manager.user_id,
+            name=manager.name,
+            email=manager.email,
+            role=manager.role,
+            manager_id=manager.manager_id,
+            created_at=manager.created_at,
+            updated_at=manager.updated_at
+        )
     )
 
 @app.put("/api/feedback/{feedback_id}")
-def update_feedback(feedback_id: int, request: UpdateFeedbackRequest, db: Session = Depends(get_db)):
+def update_feedback(feedback_id: int, request: UpdateFeedbackRequest, db: Session = Depends(get_performance_db)):
     """Update performance feedback"""
     feedback = update_performance_feedback(db, feedback_id, request.feedback_text)
     if not feedback:
@@ -446,7 +575,7 @@ def update_feedback(feedback_id: int, request: UpdateFeedbackRequest, db: Sessio
     )
 
 @app.post("/api/feedback/{feedback_id}/ai-summary")
-def generate_ai_summary(feedback_id: int, db: Session = Depends(get_db)):
+def generate_ai_summary(feedback_id: int, db: Session = Depends(get_performance_db)):
     """Generate AI summary for performance feedback"""
     feedback = db.query(PerformanceFeedback).filter(PerformanceFeedback.id == feedback_id).first()
     if not feedback:
@@ -514,7 +643,7 @@ def generate_ai_summary(feedback_id: int, db: Session = Depends(get_db)):
         return {"error": f"Failed to generate AI summary: {str(e)}"}
 
 @app.post("/api/feedback/analyze")
-def analyze_feedback(request: FeedbackAnalysisRequest, db: Session = Depends(get_db)):
+def analyze_feedback(request: FeedbackAnalysisRequest, db: Session = Depends(get_performance_db)):
     """Analyze feedback text and provide AI-powered suggestions"""
     try:
         # Use the existing HR agent to analyze feedback
@@ -525,7 +654,6 @@ def analyze_feedback(request: FeedbackAnalysisRequest, db: Session = Depends(get
         
         # Try to parse JSON response
         try:
-            import json
             analysis_data = json.loads(ai_response)
             return analysis_data
         except json.JSONDecodeError:
@@ -559,7 +687,7 @@ def analyze_feedback(request: FeedbackAnalysisRequest, db: Session = Depends(get
         return {"error": f"Failed to analyze feedback: {str(e)}"}
 
 @app.post("/api/feedback/realtime-suggestions")
-def get_realtime_suggestions(request: RealTimeFeedbackRequest, db: Session = Depends(get_db)):
+def get_realtime_suggestions(request: RealTimeFeedbackRequest, db: Session = Depends(get_performance_db)):
     """Get real-time suggestions as manager types feedback"""
     try:
         # Use the existing HR agent for real-time suggestions
@@ -570,7 +698,6 @@ def get_realtime_suggestions(request: RealTimeFeedbackRequest, db: Session = Dep
         
         # Try to parse JSON response
         try:
-            import json
             suggestions_data = json.loads(ai_response)
             return suggestions_data
         except json.JSONDecodeError:
@@ -662,7 +789,6 @@ CRITICAL: Output ONLY the JSON response, no additional text or explanations.
 
         # Use GPT-4 directly for better analysis
         from langchain_openai import ChatOpenAI
-        import json
         
         # Initialize GPT-4 model for performance analysis
         gpt4_model = ChatOpenAI(
@@ -677,7 +803,6 @@ CRITICAL: Output ONLY the JSON response, no additional text or explanations.
         
         # Try to parse JSON response
         try:
-            import json
             progress_data = json.loads(ai_response)
             
             # Validate the response structure

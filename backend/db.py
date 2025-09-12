@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, Text, DateTime, JSON, ForeignKey, create_engine, Boolean, DECIMAL, Date
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, relationship, Session
+from sqlalchemy.orm import sessionmaker, relationship, Session, joinedload
 from datetime import datetime, date
 from typing import Optional, List
 from config import settings
@@ -128,6 +128,10 @@ class PerformanceFeedback(PerformanceBase):
     review_period = Column(String(50), default='quarterly')
     review_year = Column(Integer, default=lambda: datetime.now().year)
     review_quarter = Column(Integer, default=lambda: (datetime.now().month - 1) // 3 + 1)
+    
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relationships
     employee = relationship("PerformanceUser", foreign_keys=[employee_id], back_populates="feedbacks_received")
@@ -437,11 +441,17 @@ def create_performance_feedback(db: Session, employee_id: int, manager_id: int, 
 
 def get_performance_feedback_by_employee(db: Session, employee_id: int) -> List[PerformanceFeedback]:
     """Get all feedback for an employee"""
-    return db.query(PerformanceFeedback).filter(PerformanceFeedback.employee_id == employee_id).order_by(PerformanceFeedback.created_at.desc()).all()
+    return db.query(PerformanceFeedback).options(
+        joinedload(PerformanceFeedback.employee),
+        joinedload(PerformanceFeedback.manager)
+    ).filter(PerformanceFeedback.employee_id == employee_id).order_by(PerformanceFeedback.created_at.desc()).all()
 
 def get_performance_feedback_by_manager(db: Session, manager_id: int) -> List[PerformanceFeedback]:
     """Get all feedback given by a manager"""
-    return db.query(PerformanceFeedback).filter(PerformanceFeedback.manager_id == manager_id).order_by(PerformanceFeedback.created_at.desc()).all()
+    return db.query(PerformanceFeedback).options(
+        joinedload(PerformanceFeedback.employee),
+        joinedload(PerformanceFeedback.manager)
+    ).filter(PerformanceFeedback.manager_id == manager_id).order_by(PerformanceFeedback.created_at.desc()).all()
 
 def get_performance_feedback_by_id(db: Session, feedback_id: int) -> Optional[PerformanceFeedback]:
     """Get performance feedback by ID"""
