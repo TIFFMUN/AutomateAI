@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement } from 'chart.js';
-import { Bar, Doughnut } from 'react-chartjs-2';
+import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
+import { Bar } from 'react-chartjs-2';
 import './Performance.css';
 
 // Register Chart.js components
-ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement);
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 function Performance() {
   const navigate = useNavigate();
@@ -18,7 +18,8 @@ function Performance() {
   const [editingFeedback, setEditingFeedback] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [currentUserId, setCurrentUserId] = useState("manager001"); // Current user ID
+  const [currentUserId, setCurrentUserId] = useState(null); // Start with no user selected
+  const [hasSelectedRole, setHasSelectedRole] = useState(false); // Track if user has selected a role
   const [showAIAnalysis, setShowAIAnalysis] = useState(true); // Toggle for AI analysis visibility
   const [dropdownOpen, setDropdownOpen] = useState(false); // Custom dropdown state
   const [aiAssistantEnabled, setAiAssistantEnabled] = useState(true); // AI assistant toggle
@@ -39,14 +40,16 @@ function Performance() {
   ];
 
   useEffect(() => {
-    loadUserProfile();
-    if (isManagerView) {
-      loadDirectReports();
-      loadManagerFeedbacks();
-    } else {
-      loadEmployeeFeedbacks();
+    if (currentUserId && hasSelectedRole) {
+      loadUserProfile();
+      if (isManagerView) {
+        loadDirectReports();
+        loadManagerFeedbacks();
+      } else {
+        loadEmployeeFeedbacks();
+      }
     }
-  }, [isManagerView, currentUserId]);
+  }, [isManagerView, currentUserId, hasSelectedRole]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -129,6 +132,7 @@ function Performance() {
     setSelectedEmployee(null);
     setFeedbackText('');
     setEditingFeedback(null);
+    setHasSelectedRole(true); // Mark that user has selected a role
   };
 
   const handleCreateFeedback = async () => {
@@ -363,31 +367,33 @@ function Performance() {
         <div className="performance-header">
           <h1>Performance Feedback</h1>
           <div className="header-actions">
-            <div className="user-selector">
-              <label>View as:</label>
-              <div className="custom-dropdown">
-                <div className="dropdown-selected" onClick={() => setDropdownOpen(!dropdownOpen)}>
-                  <span>{availableUsers.find(user => user.id === currentUserId)?.name} ({availableUsers.find(user => user.id === currentUserId)?.role})</span>
-                  <span className={`dropdown-arrow ${dropdownOpen ? 'open' : ''}`}>▼</span>
-                </div>
-                {dropdownOpen && (
-                  <div className="dropdown-options">
-                    {availableUsers.map(user => (
-                      <div 
-                        key={user.id} 
-                        className={`dropdown-option ${user.id === currentUserId ? 'selected' : ''}`}
-                        onClick={() => {
-                          handleUserChange(user.id);
-                          setDropdownOpen(false);
-                        }}
-                      >
-                        {user.name} ({user.role})
-                      </div>
-                    ))}
+            {hasSelectedRole && (
+              <div className="user-selector">
+                <label>View as:</label>
+                <div className="custom-dropdown">
+                  <div className="dropdown-selected" onClick={() => setDropdownOpen(!dropdownOpen)}>
+                    <span>{availableUsers.find(user => user.id === currentUserId)?.name} ({availableUsers.find(user => user.id === currentUserId)?.role})</span>
+                    <span className={`dropdown-arrow ${dropdownOpen ? 'open' : ''}`}>▼</span>
                   </div>
-                )}
+                  {dropdownOpen && (
+                    <div className="dropdown-options">
+                      {availableUsers.map(user => (
+                        <div 
+                          key={user.id} 
+                          className={`dropdown-option ${user.id === currentUserId ? 'selected' : ''}`}
+                          onClick={() => {
+                            handleUserChange(user.id);
+                            setDropdownOpen(false);
+                          }}
+                        >
+                          {user.name} ({user.role})
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
             <button className="btn btn-primary" onClick={handleBack}>
               Back to Main
             </button>
@@ -401,7 +407,33 @@ function Performance() {
             </div>
           )}
 
-          {isManagerView ? (
+          {!hasSelectedRole ? (
+            <div className="empty-state">
+              <div className="empty-state-content">
+                <div className="empty-state-icon">👤</div>
+                <h2>Select Your Role</h2>
+                <p>Choose how you'd like to view the Performance Feedback section:</p>
+                <div className="role-selection">
+                  <button 
+                    className="role-btn employee-btn"
+                    onClick={() => handleUserChange("employee001")}
+                  >
+                    <span className="role-icon">👨‍💼</span>
+                    <span className="role-title">View as Employee</span>
+                    <span className="role-description">See feedback received from your manager</span>
+                  </button>
+                  <button 
+                    className="role-btn manager-btn"
+                    onClick={() => handleUserChange("manager001")}
+                  >
+                    <span className="role-icon">👩‍💼</span>
+                    <span className="role-title">View as Manager</span>
+                    <span className="role-description">Write and manage feedback for your team</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : isManagerView ? (
             <ManagerView
               userProfile={userProfile}
               directReports={directReports}
@@ -1068,13 +1100,6 @@ function PersonalGoalsSection() {
       <div className="goals-header">
         <h2>Personal Goals</h2>
         <div className="goals-subtitle">Track your progress and achievements</div>
-        <button 
-          className="refresh-goals-btn"
-          onClick={loadGoalsFromBackend}
-          disabled={loadingGoals}
-        >
-          {loadingGoals ? '⏳' : '🔄'} Refresh from Onboarding
-        </button>
       </div>
 
       {/* Progress Chart */}
@@ -1198,54 +1223,10 @@ function ProgressChart({ data }) {
     }
   };
 
-  const doughnutOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        position: 'bottom',
-      },
-      title: {
-        display: true,
-        text: 'Progress Distribution',
-        font: {
-          size: 16,
-          weight: 'bold'
-        }
-      },
-    }
-  };
-
   return (
     <div className="chart-container">
-      <div className="chart-tabs">
-        <div className="chart-tab active">Bar Chart</div>
-        <div className="chart-tab">Doughnut Chart</div>
-      </div>
-      
-      <div className="chart-content">
-        <div className="chart-wrapper">
-          <Bar data={data.chart_data} options={chartOptions} />
-        </div>
-        
-        <div className="chart-wrapper">
-          <Doughnut 
-            data={{
-              ...data.chart_data,
-              datasets: [{
-                ...data.chart_data.datasets[0],
-                backgroundColor: [
-                  'var(--primary-blue)',
-                  'var(--secondary-blue)', 
-                  'var(--dark-blue)',
-                  'var(--dark-gray)',
-                  'var(--darker-gray)'
-                ]
-              }]
-            }} 
-            options={doughnutOptions} 
-          />
-        </div>
+      <div className="chart-wrapper">
+        <Bar data={data.chart_data} options={chartOptions} />
       </div>
     </div>
   );
@@ -1306,39 +1287,10 @@ function DefaultProgressChart({ goals }) {
     }
   };
 
-  const doughnutOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        position: 'bottom',
-      },
-      title: {
-        display: true,
-        text: 'Progress Distribution',
-        font: {
-          size: 16,
-          weight: 'bold'
-        }
-      },
-    }
-  };
-
   return (
     <div className="chart-container">
-      <div className="chart-tabs">
-        <div className="chart-tab active">Bar Chart</div>
-        <div className="chart-tab">Doughnut Chart</div>
-      </div>
-      
-      <div className="chart-content">
-        <div className="chart-wrapper">
-          <Bar data={chartData} options={chartOptions} />
-        </div>
-        
-        <div className="chart-wrapper">
-          <Doughnut data={chartData} options={doughnutOptions} />
-        </div>
+      <div className="chart-wrapper">
+        <Bar data={chartData} options={chartOptions} />
       </div>
     </div>
   );
