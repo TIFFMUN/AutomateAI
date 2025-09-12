@@ -59,7 +59,13 @@ function Performance() {
       }
       
       // Start polling for feedback updates (every 10 seconds)
-      startPolling();
+      const interval = setInterval(async () => {
+        if (currentUserId && hasSelectedRole) {
+          await checkForNewFeedback();
+        }
+      }, 10000); // 10 seconds
+      
+      setPollingInterval(interval);
     }
     
     // Cleanup polling when component unmounts or dependencies change
@@ -69,7 +75,7 @@ function Performance() {
         setPollingInterval(null);
       }
     };
-  }, [isManagerView, currentUserId, hasSelectedRole, loadDirectReports, loadEmployeeFeedbacks, loadGoalsFromBackend, loadLatestInsight, loadManagerFeedbacks, pollingInterval, startPolling]);
+  }, [isManagerView, currentUserId, hasSelectedRole, loadDirectReports, loadEmployeeFeedbacks, loadGoalsFromBackend, loadLatestInsight, loadManagerFeedbacks, checkForNewFeedback]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -205,7 +211,7 @@ function Performance() {
   }, [currentUserId]);
 
   // Polling functions for real-time updates
-  const checkForNewFeedback = async () => {
+  const checkForNewFeedback = useCallback(async () => {
     try {
       let currentFeedbacks = [];
       
@@ -222,7 +228,7 @@ function Performance() {
     } catch (err) {
       console.error('Error checking for new feedback:', err);
     }
-  };
+  }, [isManagerView, loadManagerFeedbacks, loadEmployeeFeedbacks, lastFeedbackCount]);
 
   const startPolling = useCallback(() => {
     // Clear any existing polling
