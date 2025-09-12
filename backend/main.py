@@ -166,89 +166,89 @@ def handle_chat(user_id: str, request: ChatRequest, current_user: User = Depends
         user_state = get_user_state(db, user_id)
         if not user_state:
             user_state = create_user_state(db, user_id)
-    
-    # Get existing chat messages
-    existing_messages = get_chat_messages(db, user_id)
-    chat_history = [{"role": msg.role, "content": msg.content} for msg in existing_messages]
-    
-    # Prepare database state for agent
-    db_state = {
-        'current_node': user_state.current_node,
-        'node_tasks': user_state.node_tasks,
-        'chat_history': chat_history
-    }
-    
-    # Save user message
-    save_chat_message(db, user_id, "user", request.message)
-    
-    # Calculate points for task completion
-    points_earned = calculate_points_for_task("", request.message)
-    
-    # Get agent response with database state
-    result = hr_agent.process_chat(request.message, user_id, chat_history, db_state)
-    
-    # Handle restart case
-    if result.get("restarted"):
-        # Clear existing messages for restart
-        db.query(ChatMessage).filter(ChatMessage.user_id == user_id).delete()
-        db.commit()
         
-        # Reset user state
-        user_state.current_node = "welcome_overview"
-        user_state.total_points = 0
-        user_state.node_tasks = {
-            "welcome_overview": {
-                "welcome_video": False,
-                "company_policies": False,
-                "culture_quiz": False
-            },
-            "account_setup": {
-                "email_setup": False,
-                "sap_access": False,
-                "permissions": False
+        # Get existing chat messages
+        existing_messages = get_chat_messages(db, user_id)
+        chat_history = [{"role": msg.role, "content": msg.content} for msg in existing_messages]
+        
+        # Prepare database state for agent
+        db_state = {
+            'current_node': user_state.current_node,
+            'node_tasks': user_state.node_tasks,
+            'chat_history': chat_history
+        }
+        
+        # Save user message
+        save_chat_message(db, user_id, "user", request.message)
+        
+        # Calculate points for task completion
+        points_earned = calculate_points_for_task("", request.message)
+        
+        # Get agent response with database state
+        result = hr_agent.process_chat(request.message, user_id, chat_history, db_state)
+        
+        # Handle restart case
+        if result.get("restarted"):
+            # Clear existing messages for restart
+            db.query(ChatMessage).filter(ChatMessage.user_id == user_id).delete()
+            db.commit()
+            
+            # Reset user state
+            user_state.current_node = "welcome_overview"
+            user_state.total_points = 0
+            user_state.node_tasks = {
+                "welcome_overview": {
+                    "welcome_video": False,
+                    "company_policies": False,
+                    "culture_quiz": False
+                },
+                "account_setup": {
+                    "email_setup": False,
+                    "sap_access": False,
+                    "permissions": False
+                }
             }
-        }
+            db.commit()
+            
+            # Save the restart message
+            save_chat_message(db, user_id, "assistant", result["agent_response"])
+            
+            return {
+                "agent_response": result["agent_response"],
+                "agent_messages": result.get("agent_messages", [result["agent_response"]]),
+                "current_node": result["current_node"],
+                "node_tasks": result["node_tasks"],
+                "chat_history": []
+            }
+        
+        # Update user state with new information
+        user_state.current_node = result["current_node"]
+        user_state.node_tasks = result["node_tasks"]
+        
+        # Add points if earned
+        if points_earned > 0:
+            user_state.total_points += points_earned
+        
         db.commit()
         
-        # Save the restart message
-        save_chat_message(db, user_id, "assistant", result["agent_response"])
+        # Save agent messages (multiple messages if split)
+        agent_messages = result.get("agent_messages", [result["agent_response"]])
+        for message in agent_messages:
+            save_chat_message(db, user_id, "assistant", message)
         
-        return {
-            "agent_response": result["agent_response"],
-            "agent_messages": result.get("agent_messages", [result["agent_response"]]),
-            "current_node": result["current_node"],
-            "node_tasks": result["node_tasks"],
-            "chat_history": []
-        }
-    
-    # Update user state with new information
-    user_state.current_node = result["current_node"]
-    user_state.node_tasks = result["node_tasks"]
-    
-    # Add points if earned
-    if points_earned > 0:
-        user_state.total_points += points_earned
-    
-    db.commit()
-    
-    # Save agent messages (multiple messages if split)
-    agent_messages = result.get("agent_messages", [result["agent_response"]])
-    for message in agent_messages:
-        save_chat_message(db, user_id, "assistant", message)
-    
-    # Update user state timestamp
-    update_user_state_timestamp(db, user_id)
-    
-    # Get updated chat messages
-    updated_messages = get_chat_messages(db, user_id)
-    chat_message_responses = [
-        ChatMessageResponse(
-            role=msg.role,
-            content=msg.content,
-            timestamp=msg.timestamp
-        ) for msg in updated_messages
-    ]
-    
+        # Update user state timestamp
+        update_user_state_timestamp(db, user_id)
+        
+        # Get updated chat messages
+        updated_messages = get_chat_messages(db, user_id)
+        chat_message_responses = [
+            ChatMessageResponse(
+                role=msg.role,
+                content=msg.content,
+                timestamp=msg.timestamp
+            ) for msg in updated_messages
+        ]
+        
         return {
             "messages": chat_message_responses,
             "agent_response": result["agent_response"],
