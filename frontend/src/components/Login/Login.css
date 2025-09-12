@@ -6,7 +6,8 @@
   min-height: 100vh;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   padding: 20px;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
+    sans-serif;
 }
 
 .login-card {
@@ -14,9 +15,7 @@
   backdrop-filter: blur(10px);
   padding: 50px 40px;
   border-radius: 20px;
-  box-shadow: 
-    0 20px 40px rgba(0, 0, 0, 0.1),
-    0 0 0 1px rgba(255, 255, 255, 0.2);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(255, 255, 255, 0.2);
   width: 100%;
   max-width: 450px;
   position: relative;
@@ -30,39 +29,39 @@
   color: #2d3748;
 }
 
-/* Sign-in (black-based) */
+/* Sign-in (white-based) */
 .login-card.sign-in {
-  background: rgba(26, 32, 44, 0.95);
-  color: #e2e8f0;
+  background: rgba(255, 255, 255, 0.95);
+  color: #2d3748;
 }
 
 .login-card.sign-in .login-title {
   -webkit-text-fill-color: initial;
   background: none;
-  color: #e2e8f0;
+  color: #2d3748;
 }
 
 .login-card.sign-in .form-group label {
-  color: #cbd5e0;
+  color: #4a5568;
 }
 
 .login-card.sign-in .form-group input {
-  background: #2d3748;
-  border-color: #4a5568;
-  color: #e2e8f0;
+  background: #f8fafc;
+  border-color: #e2e8f0;
+  color: #2d3748;
 }
 
 .login-card.sign-in .form-group input:focus {
-  background: #1a202c;
+  background: white;
   border-color: #667eea;
 }
 
 .login-card.sign-in .auth-toggle {
-  background: #2d3748;
+  background: #f7fafc;
 }
 
 .login-card::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
@@ -73,8 +72,7 @@
 
 .login-card:hover {
   transform: translateY(-5px);
-  box-shadow: 
-    0 25px 50px rgba(0, 0, 0, 0.15),
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15),
     0 0 0 1px rgba(255, 255, 255, 0.3);
 }
 
@@ -209,13 +207,18 @@
 }
 
 .btn-primary::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
   transition: left 0.5s;
 }
 
@@ -293,8 +296,12 @@
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .loading-container p {
@@ -321,22 +328,22 @@
   .login-container {
     padding: 10px;
   }
-  
+
   .login-card {
     padding: 30px 20px;
     border-radius: 16px;
   }
-  
+
   .login-title {
     font-size: 28px;
     margin-bottom: 30px;
   }
-  
+
   .form-group input {
     padding: 14px 16px;
     font-size: 16px;
   }
-  
+
   .btn {
     padding: 14px 20px;
     font-size: 16px;
@@ -350,11 +357,21 @@
   transform: translateY(20px);
 }
 
-.form-group:nth-child(1) { animation-delay: 0.1s; }
-.form-group:nth-child(2) { animation-delay: 0.2s; }
-.form-group:nth-child(3) { animation-delay: 0.3s; }
-.form-group:nth-child(4) { animation-delay: 0.4s; }
-.form-group:nth-child(5) { animation-delay: 0.5s; }
+.form-group:nth-child(1) {
+  animation-delay: 0.1s;
+}
+.form-group:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.form-group:nth-child(3) {
+  animation-delay: 0.3s;
+}
+.form-group:nth-child(4) {
+  animation-delay: 0.4s;
+}
+.form-group:nth-child(5) {
+  animation-delay: 0.5s;
+}
 
 @keyframes fadeInUp {
   to {
@@ -402,26 +419,26 @@ input:focus {
     background: rgba(26, 32, 44, 0.95);
     color: #e2e8f0;
   }
-  
+
   .login-title {
     color: #e2e8f0;
   }
-  
+
   .form-group label {
     color: #a0aec0;
   }
-  
+
   .form-group input {
     background: #2d3748;
     border-color: #4a5568;
     color: #e2e8f0;
   }
-  
+
   .form-group input:focus {
     background: #1a202c;
     border-color: #667eea;
   }
-  
+
   .auth-toggle {
     background: #2d3748;
   }
