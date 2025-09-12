@@ -40,8 +40,8 @@ async def login(
             key="access_token",
             value=access_token,
             httponly=True,
-            secure=False,  # Set to True in production with HTTPS
-            samesite="lax",
+            secure=True,
+            samesite="none",
             max_age=30 * 60  # 30 minutes
         )
         
@@ -49,8 +49,8 @@ async def login(
             key="refresh_token", 
             value=refresh_token,
             httponly=True,
-            secure=False,  # Set to True in production with HTTPS
-            samesite="lax",
+            secure=True,
+            samesite="none",
             max_age=7 * 24 * 60 * 60  # 7 days
         )
         
@@ -77,20 +77,26 @@ async def login(
 async def refresh_token(
     refresh_request: RefreshTokenRequest,
     response: Response,
+    request: Request,
     db: Session = Depends(get_db)
 ):
     """Refresh access token using refresh token."""
     auth_service = AuthService(db)
     try:
-        access_token, refresh_token = auth_service.refresh_access_token(refresh_request.refresh_token)
+        # Prefer token from body, else from cookie
+        token_from_body = getattr(refresh_request, "refresh_token", None)
+        token = token_from_body or request.cookies.get("refresh_token")
+        if not token:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing refresh token")
+        access_token, refresh_token = auth_service.refresh_access_token(token)
         
         # Update cookies
         response.set_cookie(
             key="access_token",
             value=access_token,
             httponly=True,
-            secure=False,
-            samesite="lax",
+            secure=True,
+            samesite="none",
             max_age=30 * 60
         )
         
@@ -98,8 +104,8 @@ async def refresh_token(
             key="refresh_token",
             value=refresh_token,
             httponly=True,
-            secure=False,
-            samesite="lax",
+            secure=True,
+            samesite="none",
             max_age=7 * 24 * 60 * 60
         )
         
