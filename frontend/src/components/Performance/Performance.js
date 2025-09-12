@@ -41,10 +41,10 @@ function Performance() {
 
   // Available users from performance testing database
   const availableUsers = [
-    { id: "user002", name: "Sarah Johnson", role: "Manager" },
-    { id: "user001", name: "John Smith", role: "Employee" },
-    { id: "user003", name: "Mike Davis", role: "Employee" },
-    { id: "user004", name: "Emily Wilson", role: "Employee" }
+    { id: "perf_manager001", name: "Alex Thompson", role: "Manager" },
+    { id: "perf_employee001", name: "Sarah Chen", role: "Employee" },
+    { id: "perf_employee002", name: "David Rodriguez", role: "Employee" },
+    { id: "perf_employee003", name: "Lisa Park", role: "Employee" }
   ];
 
   useEffect(() => {
@@ -545,7 +545,7 @@ function Performance() {
                 <div className="role-selection">
                   <button 
                     className="role-btn employee-btn"
-                    onClick={() => handleUserChange("user001")}
+                    onClick={() => handleUserChange("perf_employee001")}
                   >
                     <span className="role-icon">👨‍💼</span>
                     <span className="role-title">View as Employee</span>
@@ -553,7 +553,7 @@ function Performance() {
                   </button>
                   <button 
                     className="role-btn manager-btn"
-                    onClick={() => handleUserChange("user002")}
+                    onClick={() => handleUserChange("perf_manager001")}
                   >
                     <span className="role-icon">👩‍💼</span>
                     <span className="role-title">View as Manager</span>
