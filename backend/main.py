@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends 
+from fastapi import FastAPI, Depends, HTTPException 
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Dict, Any, List
@@ -32,8 +32,9 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 # Include authentication router
@@ -93,28 +94,34 @@ def on_startup() -> None:
 
 @app.get("/api/user/{user_id}/state")
 def get_user_state_endpoint(user_id: str, current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)):
-    user_state = get_user_state(db, user_id)
-    if not user_state:
-        user_state = create_user_state(db, user_id)
-    
-    chat_messages = get_chat_messages(db, user_id)
-    chat_message_responses = [
-        ChatMessageResponse(
-            role=msg.role,
-            content=msg.content,
-            timestamp=msg.timestamp
-        ) for msg in chat_messages
-    ]
-    
-    return UserStateResponse(
-        user_id=user_state.user_id,
-        current_node=user_state.current_node,
-        total_points=user_state.total_points,
-        node_tasks=user_state.node_tasks,
-        chat_messages=chat_message_responses,
-        created_at=user_state.created_at,
-        updated_at=user_state.updated_at
-    )
+    try:
+        print(f"Getting user state for user_id: {user_id}, current_user: {current_user.username}")
+        user_state = get_user_state(db, user_id)
+        if not user_state:
+            print(f"Creating new user state for user_id: {user_id}")
+            user_state = create_user_state(db, user_id)
+        
+        chat_messages = get_chat_messages(db, user_id)
+        chat_message_responses = [
+            ChatMessageResponse(
+                role=msg.role,
+                content=msg.content,
+                timestamp=msg.timestamp
+            ) for msg in chat_messages
+        ]
+        
+        return UserStateResponse(
+            user_id=user_state.user_id,
+            current_node=user_state.current_node,
+            total_points=user_state.total_points,
+            node_tasks=user_state.node_tasks,
+            chat_messages=chat_message_responses,
+            created_at=user_state.created_at,
+            updated_at=user_state.updated_at
+        )
+    except Exception as e:
+        print(f"Error in get_user_state_endpoint: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 @app.get("/api/leaderboard", response_model=LeaderboardResponse)
 def get_leaderboard(limit: int = 10, current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)):
@@ -246,6 +253,11 @@ def handle_chat(user_id: str, request: ChatRequest, current_user: User = Depends
 @app.get("/api/health")
 def api_health_check():
     return {"status": "healthy", "service": "AutomateAI API"}
+
+@app.options("/api/{path:path}")
+def options_handler(path: str):
+    """Handle preflight OPTIONS requests for CORS"""
+    return {"message": "OK"}
 
 if __name__ == "__main__":
     import uvicorn
