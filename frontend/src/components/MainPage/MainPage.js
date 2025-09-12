@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import axios from 'axios';
-import './MainPage/MainPage.css';
+import { useAuth } from '../../contexts/AuthContext';
+import './MainPage.css';
 
 function MainPage() {
   const navigate = useNavigate();

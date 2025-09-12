@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import './Login/Login.css';
+import { useAuth } from '../../contexts/AuthContext';
+import './Login.css';
 
 // Icons (using Unicode symbols for simplicity)
 const UserIcon = () => <span style={{ fontSize: '20px', marginRight: '8px' }}>👤</span>;
