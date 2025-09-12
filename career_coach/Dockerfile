@@ -3,19 +3,12 @@
 # -----------------------------
 FROM node:18-alpine AS frontend-builder
 
-# Set working directory
 WORKDIR /app
 
-# Copy frontend package files
 COPY frontend/package*.json ./
-
-# Install frontend dependencies
 RUN npm install
 
-# Copy frontend source code
 COPY frontend/ ./
-
-# Build React app
 RUN npm run build
 
 # -----------------------------
@@ -23,7 +16,6 @@ RUN npm run build
 # -----------------------------
 FROM python:3.11-slim
 
-# Set working directory
 WORKDIR /app
 
 # Install backend dependencies
@@ -36,7 +28,7 @@ COPY backend/ ./backend
 # Copy frontend build from previous stage
 COPY --from=frontend-builder /app/build ./backend/frontend/build
 
-# Expose FastAPI port
+# Expose port
 EXPOSE 8000
 
 # Start FastAPI

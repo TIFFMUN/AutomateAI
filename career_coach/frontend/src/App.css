@@ -1,0 +1,46 @@
+.container {
+  padding: 20px;
+  font-family: sans-serif;
+}
+
+.question-block {
+  margin-bottom: 15px;
+  padding: 10px;
+  border-radius: 8px;
+  background-color: #e6f2ff; /* Light blue shade */
+}
+
+.option-label {
+  display: block;
+  margin: 5px 0;
+  padding: 5px;
+  border-radius: 6px;
+  background-color: #cce6ff; /* Slightly darker light blue */
+  cursor: pointer;
+}
+
+.option-label input {
+  margin-right: 10px;
+}
+
+button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  background-color: #66b2ff; /* Blue button */
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+button:disabled {
+  background-color: #a3cfff;
+  cursor: not-allowed;
+}
+
+.result {
+  margin-top: 20px;
+  padding: 15px;
+  border-radius: 8px;
+  background-color: #e6f2ff;
+}
