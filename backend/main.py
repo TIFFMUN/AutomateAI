@@ -625,26 +625,22 @@ Expert 3 - Insight Generator: Create a friendly, encouraging comment about the p
 Rules for Goal Updates:
 1. If the input mentions completing onboarding tasks (video, policies, quiz, forms), update the "Onboarding" goal
 2. If the input mentions training, courses, or learning, update the "Training" goal
-3. If the input mentions projects, deliverables, or work completion, update the "Project Delivery" goal
-4. If the input mentions skills, certifications, or development, update the "Skill Development" goal
-5. Progress should be realistic and incremental (typically 10-30% increases)
-6. Consider the onboarding context when updating goals
+3. Progress should be realistic and incremental (typically 10-30% increases)
+4. Consider the onboarding context when updating goals
 
 Output Format (JSON only, no additional text):
 {{
   "goals": [
     {{"id": 1, "name": "Training", "progress": 40, "target": 100}},
-    {{"id": 2, "name": "Onboarding", "progress": 60, "target": 100}},
-    {{"id": 3, "name": "Project Delivery", "progress": 25, "target": 100}},
-    {{"id": 4, "name": "Skill Development", "progress": 30, "target": 100}}
+    {{"id": 2, "name": "Onboarding", "progress": 60, "target": 100}}
   ],
   "chart_data": {{
     "type": "bar",
-    "labels": ["Training", "Onboarding", "Project Delivery", "Skill Development"],
+    "labels": ["Training", "Onboarding"],
     "datasets": [{{
       "label": "Progress %",
-      "data": [40, 60, 25, 30],
-      "backgroundColor": ["#3498db", "#2980b9", "#1f5f8b", "#34495e"]
+      "data": [40, 60],
+      "backgroundColor": ["#3498db", "#2980b9"]
     }}]
   }},
   "insight": "Great progress! You've completed key onboarding tasks and are making solid progress on training."
