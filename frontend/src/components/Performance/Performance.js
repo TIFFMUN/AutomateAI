@@ -7,6 +7,12 @@ import './Performance.css';
 // Register Chart.js components
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
+// Helper function to build API URLs without double slashes
+const buildApiUrl = (endpoint) => {
+  const baseUrl = process.env.REACT_APP_API_URL || 'https://automateai-56bf.onrender.com';
+  return `${baseUrl.replace(/\/$/, '')}${endpoint}`;
+};
+
 function Performance() {
   const navigate = useNavigate();
   const [isManagerView, setIsManagerView] = useState(false);
@@ -38,12 +44,6 @@ function Performance() {
   const [loadingGoals, setLoadingGoals] = useState(true);
   const [lastFeedbackCount, setLastFeedbackCount] = useState(0);
   const [pollingInterval, setPollingInterval] = useState(null);
-
-  // Helper function to build API URLs without double slashes
-  const buildApiUrl = (endpoint) => {
-    const baseUrl = process.env.REACT_APP_API_URL || 'https://automateai-56bf.onrender.com';
-    return `${baseUrl.replace(/\/$/, '')}${endpoint}`;
-  };
 
   // Available users from performance testing database
   const availableUsers = [
