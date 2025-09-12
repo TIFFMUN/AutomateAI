@@ -42,13 +42,34 @@ app = FastAPI(
 # CORS middleware - MUST be added before any routes
 print(f"Configuring CORS with allowed origins: {settings.ALLOWED_ORIGINS}")
 
-# Simplified CORS configuration that should work reliably
+# CORS configuration that works with credentials
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins for now to fix the issue
-    allow_credentials=False,  # Set to False when using wildcard
-    allow_methods=["*"],  # Allow all methods
-    allow_headers=["*"],  # Allow all headers
+    allow_origins=[
+        "https://automate-ai-chi.vercel.app",
+        "https://automateai-56bf.onrender.com", 
+        "http://localhost:3000",
+        "http://localhost:3001"
+    ],
+    allow_credentials=True,  # Must be True for credentials
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+    allow_headers=[
+        "Accept",
+        "Accept-Language", 
+        "Content-Language",
+        "Content-Type",
+        "Authorization",
+        "X-Requested-With",
+        "Origin",
+        "Access-Control-Request-Method",
+        "Access-Control-Request-Headers",
+    ],
+    expose_headers=[
+        "Access-Control-Allow-Origin",
+        "Access-Control-Allow-Credentials",
+        "Access-Control-Allow-Methods", 
+        "Access-Control-Allow-Headers",
+    ],
 )
 
 # Performance initialization will be done in startup event
