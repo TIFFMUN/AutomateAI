@@ -12,8 +12,11 @@ class Settings:
     POSTGRES_USER = os.getenv("POSTGRES_USER", "postgres")
     POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD", "password123")
     
-    # Performance Testing Database
-    PERFORMANCE_DATABASE_URL = os.getenv("PERFORMANCE_DATABASE_URL", "postgresql://postgres:password123@localhost:5433/performance_testing")
+    # Performance Testing Database (defaults to main DATABASE_URL if not provided)
+    PERFORMANCE_DATABASE_URL = os.getenv(
+        "PERFORMANCE_DATABASE_URL",
+        os.getenv("DATABASE_URL", "postgresql://postgres:password123@localhost:5432/sap_onboarding")
+    )
     PERFORMANCE_POSTGRES_HOST = os.getenv("PERFORMANCE_POSTGRES_HOST", "localhost")
     PERFORMANCE_POSTGRES_PORT = int(os.getenv("PERFORMANCE_POSTGRES_PORT", "5433"))
     PERFORMANCE_POSTGRES_DB = os.getenv("PERFORMANCE_POSTGRES_DB", "performance_testing")
