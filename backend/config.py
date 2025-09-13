@@ -22,7 +22,7 @@ class Settings:
     
     # OpenAI Configuration
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
-    OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-3.5-turbo")
+    OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o")
     PERFORMANCE_OPENAI_MODEL = os.getenv("PERFORMANCE_OPENAI_MODEL", "gpt-4")
     
     # Gemini Configuration (fallback)

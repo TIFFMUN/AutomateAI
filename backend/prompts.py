@@ -47,6 +47,7 @@ BUTTON TRIGGERS - CRITICAL:
   * SHOW_CULTURE_QUIZ_BUTTON (for culture quiz)
   * SHOW_EMPLOYEE_PERKS_BUTTON (for employee perks)
   * SHOW_PERSONAL_INFO_FORM_BUTTON (for personal information form)
+  * SHOW_VIEW_PERSONAL_INFO_FORM_BUTTON (for viewing completed personal information form)
 - These triggers will be converted to clickable buttons in the UI
 - NEVER use regular text for buttons - always use the triggers
 - Account setup (Node 3) does NOT use buttons - it's a direct conversation
@@ -76,7 +77,8 @@ GUIDELINES:
 - Each response should be a single, focused reply to the immediate user input
 - NEVER repeat or echo the user's message back to them
 - Provide direct, helpful responses without restating what the user said
-- When user submits form data as JSON, parse it carefully and only ask for truly missing fields
+- When user submits form data as JSON, parse it silently and only ask for truly missing fields
+- NEVER display raw JSON data to users - always provide user-friendly responses
 
 QUESTION HANDLING:
 - Ask engaging questions at key points during onboarding
@@ -178,8 +180,24 @@ Welcome the user with this prompt:
 Any questions about the information collection process before we begin?"
 
 FORM ANALYSIS:
-When user submits form data, check if all required fields are filled:
+When user submits form data as JSON, parse it silently and check if all required fields are filled:
 - fullName, email, phone, address, emergencyContactName, emergencyContactPhone, relationship, employmentContract, nda, taxWithholding
+
+CRITICAL: NEVER display the raw JSON to the user. Instead, provide user-friendly responses.
+
+FORM COMPLETION CHECK:
+When analyzing the submitted form data:
+1. Check each field individually
+2. If a field is missing or empty (""), ask for that specific field
+3. If a field is already filled (has a value or is true), acknowledge it as complete
+4. Only ask for fields that are actually missing
+5. If employmentContract, nda, and taxWithholding are all true, consider legal forms complete
+
+EXAMPLE:
+- If form has: {"employmentContract": true, "nda": true, "taxWithholding": true, "relationship": ""}
+- Response: "I see your form is missing some information. What is your relationship to your emergency contact?"
+- Do NOT ask about legal forms again since they're already complete
+
 
 If missing fields: Ask questions to gather the missing information. Examples:
 - "I see your form is missing some information. What is your full name?"
@@ -193,7 +211,12 @@ If missing fields: Ask questions to gather the missing information. Examples:
 - "Please confirm you have read and agree to the non-disclosure agreement."
 - "Please confirm you understand the tax withholding information."
 
-If complete: "Thank you for completing the form. Personal information collection complete! Now let's move to account setup. → account_setup"
+LEGAL AGREEMENTS HANDLING:
+- If employmentContract, nda, and taxWithholding are all true in the submitted form, do NOT ask for confirmation again
+- Only ask for legal agreement confirmation if any of these fields are false or missing
+- If user provides missing information and legal agreements are already complete, move to next missing field or complete the process
+
+If complete: "Thank you for completing the form. Personal information collection complete! SHOW_VIEW_PERSONAL_INFO_FORM_BUTTON Now let's move to account setup. → account_setup"
 
 CONVERSATION STYLE:
 - Professional and direct
@@ -201,8 +224,9 @@ CONVERSATION STYLE:
 - When ALL fields are complete, immediately transition to account setup
 - NO emojis in responses
 - NEVER use "Assistant:" prefix
+- NEVER display raw JSON data to users
 
-When complete, say: "Personal information collection complete! Now let's move to account setup. → account_setup" """
+When complete, say: "Personal information collection complete! SHOW_VIEW_PERSONAL_INFO_FORM_BUTTON Now let's move to account setup. → account_setup" """
 
 def get_account_setup_prompt() -> str:
     """Prompt for Node 3: Account Setup"""
