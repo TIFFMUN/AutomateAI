@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Career.css';
+import apiConfig from '../../utils/apiConfig';
 
 
 function Career() {
@@ -10,6 +11,9 @@ function Career() {
   const [quizAnswers, setQuizAnswers] = useState({});
   const [showResults, setShowResults] = useState(false);
   const [jobsToShow, setJobsToShow] = useState(4);
+  const [isLoading, setIsLoading] = useState(false);
+  const [careerResponse, setCareerResponse] = useState(null);
+  const [error, setError] = useState(null);
 
 
   // Career Coach AI Quiz Data
@@ -125,11 +129,13 @@ function Career() {
   };
 
 
-  const nextQuizStep = () => {
+  const nextQuizStep = async () => {
     if (quizStep < quizQuestions.length - 1) {
       setQuizStep(quizStep + 1);
     } else {
+      // Quiz completed, show results and get AI recommendations
       setShowResults(true);
+      await getCareerRecommendations();
     }
   };
 
@@ -145,6 +151,8 @@ function Career() {
     setQuizStep(0);
     setQuizAnswers({});
     setShowResults(false);
+    setCareerResponse(null);
+    setError(null);
   };
 
 
@@ -153,43 +161,33 @@ function Career() {
   };
 
 
-  const getCareerRecommendations = () => {
-    const answers = Object.values(quizAnswers);
-    const recommendations = [];
-
-
-    if (answers.includes('technical_expert')) {
-      recommendations.push({
-        title: "Technical Specialist Path",
-        description: "Focus on becoming a subject matter expert in SAP modules",
-        actions: ["Get advanced SAP certifications", "Lead technical implementations", "Mentor junior consultants"]
+  const getCareerRecommendations = async () => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const response = await fetch(`${apiConfig.BASE_URL}/api/career/coach`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          answers: quizAnswers
+        })
       });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      setCareerResponse(data);
+    } catch (err) {
+      console.error('Error fetching career recommendations:', err);
+      setError('Failed to get career recommendations. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
-
-
-    if (answers.includes('team_lead')) {
-      recommendations.push({
-        title: "Team Leadership Path",
-        description: "Develop leadership skills while maintaining technical expertise",
-        actions: ["Take on project leadership roles", "Develop team management skills", "Build cross-functional relationships"]
-      });
-    }
-
-
-    if (answers.includes('management')) {
-      recommendations.push({
-        title: "Management Track",
-        description: "Transition to management roles with focus on business outcomes",
-        actions: ["Develop business acumen", "Learn project portfolio management", "Build stakeholder relationships"]
-      });
-    }
-
-
-    return recommendations.length > 0 ? recommendations : [{
-      title: "General Career Development",
-      description: "Focus on continuous learning and skill development",
-      actions: ["Stay updated with SAP innovations", "Build professional network", "Seek mentorship opportunities"]
-    }];
   };
 
 
@@ -282,29 +280,47 @@ function Career() {
                   </div>
                 ) : (
                   <div className="quiz-results">
-                    <div className="results-header">
-                      <h3>Your Career Recommendations</h3>
-                      <p>Based on your answers, here are personalized career paths for you:</p>
-            </div>
-
-
-                    <div className="recommendations">
-                      {getCareerRecommendations().map((rec, index) => (
-                        <div key={index} className="recommendation-card">
-                          <h4>{rec.title}</h4>
-                          <p>{rec.description}</p>
-                          <div className="recommended-actions">
-                            <h5>Recommended Actions:</h5>
-                            <ul>
-                              {rec.actions.map((action, actionIndex) => (
-                                <li key={actionIndex}>{action}</li>
+                    {isLoading ? (
+                      <div className="loading-state">
+                        <div className="spinner"></div>
+                        <p>Getting your personalized career recommendations...</p>
+                      </div>
+                    ) : error ? (
+                      <div className="error-state">
+                        <p className="error-message">{error}</p>
+                        <button className="btn btn-primary" onClick={getCareerRecommendations}>
+                          Try Again
+                        </button>
+                      </div>
+                    ) : careerResponse ? (
+                      <div className="ai-recommendations">
+                        <div className="profile-summary">
+                          <h4>Your Profile Summary</h4>
+                          <p>{careerResponse.profile_summary.replace(/\*\*/g, '').replace(/^\d+\.\s*/gm, '').trim()}</p>
+                        </div>
+                        
+                        <div className="role-suggestions">
+                          <h4>Recommended SAP Roles</h4>
+                          <div className="suggestions-content">
+                            {careerResponse.suggestions
+                              .split('\n')
+                              .filter(line => line.trim() !== '')
+                              .map((line, index) => (
+                                <p key={index} className="suggestion-line">
+                                  {line.trim().replace(/\*\*/g, '')}
+                                </p>
                               ))}
-                            </ul>
                           </div>
                         </div>
-                      ))}
-                    </div>
-
+                      </div>
+                    ) : (
+                      <div className="no-results">
+                        <p>No recommendations available. Please try again.</p>
+                        <button className="btn btn-primary" onClick={getCareerRecommendations}>
+                          Get Recommendations
+                        </button>
+                      </div>
+                    )}
 
                     <div className="results-actions">
                       <button className="btn btn-primary" onClick={resetQuiz}>
