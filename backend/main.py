@@ -120,7 +120,7 @@ app.add_middleware(
 app.include_router(auth_router, prefix="/api")
 
 # Include skills router
-app.include_router(skills_router, prefix="/api")
+app.include_router(skills_router)
 
 # Include career router
 app.include_router(career_router)

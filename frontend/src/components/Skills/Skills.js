@@ -480,11 +480,11 @@ function Skills() {
                   rows="4"
                 />
                 <button 
-                  className="btn btn-primary"
                   onClick={getSkillRecommendations}
+                  className="recommendations-btn"
                   disabled={isLoadingRecommendations}
                 >
-                  {isLoadingRecommendations ? 'Getting Recommendations...' : 'Get Recommendations'}
+                  {isLoadingRecommendations ? 'Generating...' : 'Get Recommendations'}
                 </button>
               </div>
               
@@ -510,16 +510,23 @@ function Skills() {
                           </div>
                         </div>
                         
+                       
                         <div className="recommendation-resources">
                           <span className="resources-label">Recommended Resources:</span>
                           <div className="resources-list">
                             {rec.resources.map((resource, idx) => (
-                              <span key={idx} className="resource-item">{resource}</span>
+                              <a 
+                                key={idx} 
+                                href={resource.link} 
+                                target="_blank" 
+                                rel="noopener noreferrer" 
+                                className="resource-link"
+                              >
+                                {resource.title}
+                              </a>
                             ))}
                           </div>
                         </div>
-                        
-                        <button className="btn btn-secondary">Add to My Skills</button>
                       </div>
                     ))}
                   </div>
