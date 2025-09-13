@@ -33,6 +33,7 @@ function Onboarding() {
   const [showQuizPopup, setShowQuizPopup] = useState(false);
   const [showEmployeePerksPopup, setShowEmployeePerksPopup] = useState(false);
   const [showPersonalInfoFormPopup, setShowPersonalInfoFormPopup] = useState(false);
+  const [showViewPersonalInfoFormPopup, setShowViewPersonalInfoFormPopup] = useState(false);
   
   // Form state
   const [personalInfoForm, setPersonalInfoForm] = useState({
@@ -305,8 +306,10 @@ function Onboarding() {
         taxWithholding: personalInfoForm.taxWithholding
       };
       
-      // Send detailed form data to agent
-      handleUserMessage(`I've submitted the personal information form with the following details: ${JSON.stringify(formData)}`);
+      // Send form data to agent without displaying raw JSON to user
+      // The backend will parse this structured data silently
+      const formSubmissionMessage = `I've submitted the personal information form with the following details: ${JSON.stringify(formData)}`;
+      handleUserMessage(formSubmissionMessage);
     }, 2000);
   };
 
@@ -323,6 +326,95 @@ function Onboarding() {
     handleUserMessage("I skipped the personal information form");
   };
 
+  // Handle view personal info form popup
+  const handleShowViewPersonalInfoForm = () => {
+    setShowViewPersonalInfoFormPopup(true);
+  };
+
+  const handleCloseViewPersonalInfoForm = () => {
+    setShowViewPersonalInfoFormPopup(false);
+  };
+
+  // Function to update form data based on user input
+  const updateFormDataFromUserInput = (userMessage, currentNode) => {
+    if (currentNode === 'personal_info') {
+      const message = userMessage.toLowerCase().trim();
+      
+      // Check for relationship information
+      const relationshipWords = ['mother', 'father', 'spouse', 'sibling', 'parent', 'child', 'friend', 'cousin', 'uncle', 'aunt', 'brother', 'sister', 'wife', 'husband', 'partner', 'mom', 'dad'];
+      const foundRelationship = relationshipWords.find(rel => message.includes(rel));
+      if (foundRelationship) {
+        setPersonalInfoForm(prev => ({
+          ...prev,
+          relationship: foundRelationship
+        }));
+        console.log('Updated relationship to:', foundRelationship);
+        return;
+      }
+      
+      // Check for legal agreement confirmations
+      if (message.includes('yup') || message.includes('yes') || message.includes('agree') || message.includes('confirm') || message.includes('ok') || message.includes('sure')) {
+        // Check if this is in response to legal agreements
+        setPersonalInfoForm(prev => ({
+          ...prev,
+          employmentContract: true,
+          nda: true,
+          taxWithholding: true
+        }));
+        console.log('Updated legal agreements to true');
+        return;
+      }
+      
+      // Check for email pattern
+      const emailMatch = userMessage.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
+      if (emailMatch) {
+        setPersonalInfoForm(prev => ({
+          ...prev,
+          email: emailMatch[1]
+        }));
+        console.log('Updated email to:', emailMatch[1]);
+        return;
+      }
+      
+      // Check for phone pattern (8+ digits)
+      const phoneMatch = userMessage.match(/(\d{8,})/);
+      if (phoneMatch) {
+        setPersonalInfoForm(prev => ({
+          ...prev,
+          phone: phoneMatch[1]
+        }));
+        console.log('Updated phone to:', phoneMatch[1]);
+        return;
+      }
+      
+      // Check for name patterns
+      if (message.includes('my name is') || message.includes('i am')) {
+        const nameMatch = userMessage.match(/(?:my name is|i am)\s+([a-zA-Z\s]+)/i);
+        if (nameMatch) {
+          setPersonalInfoForm(prev => ({
+            ...prev,
+            fullName: nameMatch[1].trim()
+          }));
+          console.log('Updated full name to:', nameMatch[1].trim());
+          return;
+        }
+      }
+      
+      // Check for address patterns
+      if (message.includes('address') || message.includes('live at') || message.includes('live in')) {
+        const addressMatch = userMessage.match(/(?:address|live at|live in)\s+(.+)/i);
+        if (addressMatch) {
+          setPersonalInfoForm(prev => ({
+            ...prev,
+            address: addressMatch[1].trim()
+          }));
+          console.log('Updated address to:', addressMatch[1].trim());
+          return;
+        }
+      }
+    }
+  };
+
   // Handle user message
   const handleUserMessage = async (message) => {
     // Use user.id if available, otherwise fall back to username
@@ -334,14 +426,31 @@ function Onboarding() {
     
     console.log('Sending message:', message, 'for user:', userId);
     
-    // Add user message immediately
-    const userMessage = {
-      id: Date.now(),
-      type: 'user',
-      text: message,
-      timestamp: new Date()
-    };
-    setChatMessages(prev => [...prev, userMessage]);
+    // Update form data if user is providing missing information
+    updateFormDataFromUserInput(message, currentNode);
+    
+    // Add user message immediately, but handle form submissions specially
+    const isFormSubmission = message.includes('I\'ve submitted the personal information form with the following details:');
+    
+    if (!isFormSubmission) {
+      // Add regular user message to chat
+      const userMessage = {
+        id: Date.now(),
+        type: 'user',
+        text: message,
+        timestamp: new Date()
+      };
+      setChatMessages(prev => [...prev, userMessage]);
+    } else {
+      // For form submissions, add a clean message instead of raw JSON
+      const cleanUserMessage = {
+        id: Date.now(),
+        type: 'user',
+        text: 'I\'ve submitted the personal information form',
+        timestamp: new Date()
+      };
+      setChatMessages(prev => [...prev, cleanUserMessage]);
+    }
     setUserInput('');
     
     setIsProcessing(true);
@@ -484,6 +593,18 @@ function Onboarding() {
               timestamp: new Date(),
               current_node: data.current_node,
               showEmployeePerksButton: true
+            };
+            setChatMessages(prev => [...prev, aiResponse]);
+          } else if (messageText.includes('SHOW_VIEW_PERSONAL_INFO_FORM_BUTTON')) {
+            // Remove the trigger text and add view personal info form button
+            const cleanResponse = messageText.replace('SHOW_VIEW_PERSONAL_INFO_FORM_BUTTON', '');
+            const aiResponse = {
+              id: Date.now() + index + 1,
+              type: 'agent',
+              text: cleanResponse,
+              timestamp: new Date(),
+              current_node: data.current_node,
+              showViewPersonalInfoFormButton: true
             };
             setChatMessages(prev => [...prev, aiResponse]);
           } else {
@@ -631,6 +752,14 @@ function Onboarding() {
                     onClick={handleShowEmployeePerks}
                   >
                     🎁 Employee Perks
+                  </button>
+                )}
+                {message.showViewPersonalInfoFormButton && (
+                  <button 
+                    className="video-button"
+                    onClick={handleShowViewPersonalInfoForm}
+                  >
+                    👁️ View Personal Information Form
                   </button>
                 )}
               </div>
@@ -955,6 +1084,91 @@ function Onboarding() {
             <div className="video-popup-footer">
               <button className="btn-primary" onClick={handleClosePersonalInfoForm}>
                 Submit Information
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* View Personal Information Form Popup */}
+      {showViewPersonalInfoFormPopup && (
+        <div className="video-popup-overlay">
+          <div className="video-popup personal-info-popup">
+            <div className="video-popup-header">
+              <h3>Personal Information Form - Completed</h3>
+              <button className="close-btn" onClick={handleCloseViewPersonalInfoForm}>×</button>
+            </div>
+            <div className="video-content">
+              <div className="personal-info-form">
+                <div className="form-section">
+                  <h4>👤 Personal Information</h4>
+                  <div className="form-group">
+                    <label>Full Name:</label>
+                    <div className="form-display">{personalInfoForm.fullName || 'Not provided'}</div>
+                  </div>
+                  <div className="form-group">
+                    <label>Preferred Name:</label>
+                    <div className="form-display">{personalInfoForm.preferredName || 'Not provided'}</div>
+                  </div>
+                  <div className="form-group">
+                    <label>Email Address:</label>
+                    <div className="form-display">{personalInfoForm.email || 'Not provided'}</div>
+                  </div>
+                  <div className="form-group">
+                    <label>Phone Number:</label>
+                    <div className="form-display">{personalInfoForm.phone || 'Not provided'}</div>
+                  </div>
+                  <div className="form-group">
+                    <label>Home Address:</label>
+                    <div className="form-display">{personalInfoForm.address || 'Not provided'}</div>
+                  </div>
+                </div>
+                
+                <div className="form-section">
+                  <h4>🚨 Emergency Contact</h4>
+                  <div className="form-group">
+                    <label>Emergency Contact Name:</label>
+                    <div className="form-display">{personalInfoForm.emergencyContactName || 'Not provided'}</div>
+                  </div>
+                  <div className="form-group">
+                    <label>Emergency Contact Phone:</label>
+                    <div className="form-display">{personalInfoForm.emergencyContactPhone || 'Not provided'}</div>
+                  </div>
+                  <div className="form-group">
+                    <label>Relationship:</label>
+                    <div className="form-display">{personalInfoForm.relationship || 'Not provided'}</div>
+                  </div>
+                </div>
+                
+                <div className="form-section">
+                  <h4>📋 Legal/Compliance Forms</h4>
+                  <div className="form-group checkbox-group">
+                    <div className="form-display">
+                      <span className={`status ${personalInfoForm.employmentContract ? 'completed' : 'not-completed'}`}>
+                        {personalInfoForm.employmentContract ? '✅' : '❌'} Employment Contract
+                      </span>
+                    </div>
+                  </div>
+                  <div className="form-group checkbox-group">
+                    <div className="form-display">
+                      <span className={`status ${personalInfoForm.nda ? 'completed' : 'not-completed'}`}>
+                        {personalInfoForm.nda ? '✅' : '❌'} Non-Disclosure Agreement
+                      </span>
+                    </div>
+                  </div>
+                  <div className="form-group checkbox-group">
+                    <div className="form-display">
+                      <span className={`status ${personalInfoForm.taxWithholding ? 'completed' : 'not-completed'}`}>
+                        {personalInfoForm.taxWithholding ? '✅' : '❌'} Tax Withholding Requirements
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="video-popup-footer">
+              <button className="btn-primary" onClick={handleCloseViewPersonalInfoForm}>
+                Close
               </button>
             </div>
           </div>
