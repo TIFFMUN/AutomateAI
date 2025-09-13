@@ -26,6 +26,7 @@ from db import (
 )
 from routers.auth import router as auth_router
 from routers.skills import router as skills_router
+from routers.career import router as career_router
 import os
 from dotenv import load_dotenv
 from database import create_tables
@@ -120,6 +121,9 @@ app.include_router(auth_router, prefix="/api")
 
 # Include skills router
 app.include_router(skills_router, prefix="/api")
+
+# Include career router
+app.include_router(career_router)
 
 # Database-backed onboarding data (now persistent)
 

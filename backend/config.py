@@ -33,6 +33,10 @@ class Settings:
     GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
     GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
     
+    # SeaLion Configuration (for career coaching)
+    SEA_LION_KEY = os.getenv("SEA_LION_KEY", "")
+    SEA_LION_MODEL = os.getenv("SEA_LION_MODEL", "aisingapore/Gemma-SEA-LION-v4-27B-IT")
+    
     # Application
     DEBUG = os.getenv("DEBUG", "False").lower() == "true"
     PERFORMANCE_DEBUG = os.getenv("PERFORMANCE_DEBUG", "True").lower() == "true"
