@@ -4,6 +4,7 @@ from typing import Dict, Any
 import requests
 import os
 from config import settings
+from services.recommendation_service import SAPJobRecommendationService
 
 router = APIRouter()
 
@@ -82,29 +83,21 @@ Write a personalized, engaging profile summary in second person (using "you" and
         summary_data = summary_response.json()
         summary = summary_data["choices"][0]["message"]["content"] if "choices" in summary_data and len(summary_data["choices"]) > 0 else "No valid summary returned."
         
-        # Generate personalized SAP role suggestions based on quiz responses
+        # Use recommendation service to get relevant jobs based on user responses
+        print(f"\n🚀 Career Coach: Starting job recommendation matching...")
+        recommendation_service = SAPJobRecommendationService()
+        relevant_jobs = recommendation_service.get_recommended_jobs(answers.answers, top_k=5)
+        job_context = recommendation_service.get_job_context(relevant_jobs)
+        print(f"🎯 Career Coach: Job recommendations completed, proceeding with AI generation...")
+        
+        # Generate personalized SAP role suggestions using recommendation data
         roles_prompt = f"""Based on this user profile: {summary}
 
 Here are SAP roles to consider based on their quiz responses: {profile_text}
 
-Available SAP roles to match with:
-- SAP Business Analyst (analytical, business-focused)
-- SAP Technical Consultant (technical, implementation-focused)
-- SAP Solution Architect (strategic, design-focused)
-- SAP Project Manager (leadership, management-focused)
-- SAP Functional Consultant (process-focused, module-specific)
-- SAP Integration Specialist (technical, system integration)
-- SAP Security Consultant (security-focused, compliance)
-- SAP Data Analyst (data-focused, analytical)
-- SAP Basis Administrator (technical, infrastructure)
-- SAP SuccessFactors Consultant (HR-focused, cloud)
-- SAP FICO Consultant (finance-focused, accounting)
-- SAP MM Consultant (procurement-focused, supply chain)
-- SAP SD Consultant (sales-focused, customer-facing)
-- SAP HANA Developer (technical, database-focused)
-- SAP Innovation Manager (innovation-focused, strategic)
+{job_context}
 
-Select the **top 3 SAP roles** that best match this person's profile and explain why each role is suitable in 1-2 sentences. Consider their work style, preferences, and career goals.
+Select the **top 3 SAP roles** from the relevant jobs above that best match this person's profile and explain why each role is suitable in 1-2 sentences. Consider their work style, preferences, and career goals.
 
 Format your response as:
 1. [Role Name]: [Brief explanation]
