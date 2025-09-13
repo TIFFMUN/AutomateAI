@@ -527,6 +527,38 @@
   color: #666;
 }
 
+/* Loading state */
+.loading-text {
+  text-align: center;
+  font-size: 16px;
+  color: #666;
+  margin-top: 20px;
+  font-style: italic;
+}
+
+/* Button in Recommendations tab */
+.recommendations-btn {
+  background: #003366;
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.recommendations-btn:hover {
+  background: #00509e;
+}
+
+.recommendations-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+
 /* ===== RESPONSIVE DESIGN ===== */
 @media (max-width: 768px) {
   .tab-navigation {

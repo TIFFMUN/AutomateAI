@@ -45,5 +45,7 @@ class Settings:
     # CORS
     ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:3001").split(",")
     PERFORMANCE_ALLOWED_ORIGINS = os.getenv("PERFORMANCE_ALLOWED_ORIGINS", "http://localhost:3002,http://localhost:3001").split(",")
+
+    ZHIPUAI_API_KEY = os.getenv("ZHIPUAI_API_KEY", "e441b270d5824d2dabb6b0a4666fa68a.4eOvea0pcz08e2Js")
     
 settings = Settings()
