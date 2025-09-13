@@ -19,7 +19,7 @@ function Performance() {
   const [error, setError] = useState(null);
   const [currentUserId, setCurrentUserId] = useState(null); // Start with no user selected
   const [hasSelectedRole, setHasSelectedRole] = useState(false); // Track if user has selected a role
-  const [showAIAnalysis, setShowAIAnalysis] = useState(true);
+  const [showAIAnalysis, setShowAIAnalysis] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false); // Custom dropdown state
   const [aiAssistantEnabled, setAiAssistantEnabled] = useState(true);
   const [aiAnalysis, setAiAnalysis] = useState(null);
@@ -1078,7 +1078,7 @@ function EmployeeView({ feedbacks, loading, showAIAnalysis, setShowAIAnalysis, o
                           disabled={loading}
                           title="Regenerate AI Analysis"
                         >
-                          {loading ? '⏳' : '🔄'} Regenerate
+                          {loading ? '⏳' : ''} Regenerate
                         </button>
                         <button 
                           className="hide-analysis-btn"
