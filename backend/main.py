@@ -25,6 +25,7 @@ from db import (
     save_progress_update_performance, get_latest_progress_goals_performance, get_progress_history_performance
 )
 from routers.auth import router as auth_router
+from routers.skills import router as skills_router
 import os
 from dotenv import load_dotenv
 from database import create_tables
@@ -112,6 +113,9 @@ app.add_middleware(
 
 # Include authentication router
 app.include_router(auth_router, prefix="/api")
+
+# Include skills router
+app.include_router(skills_router, prefix="/api")
 
 # Database-backed onboarding data (now persistent)
 
