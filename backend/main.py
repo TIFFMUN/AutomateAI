@@ -30,7 +30,11 @@ import os
 from dotenv import load_dotenv
 from database import create_tables
 
-load_dotenv()
+try:
+    load_dotenv()
+except Exception as e:
+    print(f"Warning: Could not load .env file: {e}")
+    # Continue without .env file
 
 app = FastAPI(
     title="AutomateAI API", 
