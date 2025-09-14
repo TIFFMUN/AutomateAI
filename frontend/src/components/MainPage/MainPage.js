@@ -9,11 +9,13 @@ function MainPage() {
   const [hoveredCard, setHoveredCard] = useState(null);
   const [totalPoints, setTotalPoints] = useState(null);
   const [rank, setRank] = useState(null);
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [leaderboardData, setLeaderboardData] = useState([]);
 
   useEffect(() => {
     const loadUserStats = async () => {
       try {
-        const userId = user?.id || user?.username;
+        const userId = user?.id;
         if (!userId) return;
         const apiBase = process.env.REACT_APP_API_URL || 'http://localhost:8000';
         const [stateRes, rankRes] = await Promise.all([
@@ -33,11 +35,29 @@ function MainPage() {
       }
     };
     loadUserStats();
-  }, [user?.id, user?.username]);
+  }, [user?.id]);
 
   const handleLogout = async () => {
     await logout();
     navigate('/login');
+  };
+
+  const handleLeaderboardClick = async () => {
+    try {
+      const apiBase = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+      const response = await fetch(`${apiBase}/api/leaderboard?limit=10`);
+      if (response.ok) {
+        const data = await response.json();
+        setLeaderboardData(data.entries || []);
+        setShowLeaderboard(true);
+      }
+    } catch (error) {
+      console.error('Error loading leaderboard:', error);
+    }
+  };
+
+  const closeLeaderboard = () => {
+    setShowLeaderboard(false);
   };
 
   const handleSectionClick = (section) => {
@@ -112,6 +132,11 @@ function MainPage() {
                 </span>
               )}
             </p>
+            <div className="header-actions">
+              <button className="leaderboard-btn" onClick={handleLeaderboardClick}>
+                🏆 Leaderboard
+              </button>
+            </div>
           </div>
           <button className="logout-btn" onClick={handleLogout}>
             Logout
@@ -153,6 +178,47 @@ function MainPage() {
           </div>
         </div>
       </div>
+
+      {/* Leaderboard Modal */}
+      {showLeaderboard && (
+        <div className="leaderboard-modal-overlay" onClick={closeLeaderboard}>
+          <div className="leaderboard-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="leaderboard-header">
+              <h2>🏆 Leaderboard</h2>
+              <button className="close-btn" onClick={closeLeaderboard}>×</button>
+            </div>
+            <div className="leaderboard-content">
+              {leaderboardData.length > 0 ? (
+                <div className="leaderboard-list">
+                  {leaderboardData.map((entry, index) => {
+                    const currentUserId = user?.id;
+                    const isCurrentUser = entry.user_id === currentUserId;
+                    return (
+                      <div key={entry.user_id} className={`leaderboard-item ${index < 3 ? 'top-three' : ''} ${isCurrentUser ? 'current-user' : ''}`}>
+                        <div className="rank">
+                          {index === 0 && '🥇'}
+                          {index === 1 && '🥈'}
+                          {index === 2 && '🥉'}
+                          {index > 2 && `#${index + 1}`}
+                        </div>
+                        <div className="user-info">
+                          <div className="username">
+                            {entry.username || `User ${entry.user_id}`}
+                            {isCurrentUser && <span className="current-user-badge"> (You)</span>}
+                          </div>
+                          <div className="points">{entry.total_points} points</div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="no-data">No leaderboard data available</div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
