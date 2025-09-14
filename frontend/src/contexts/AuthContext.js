@@ -46,6 +46,7 @@ export const AuthProvider = ({ children }) => {
   const checkAuthStatus = async () => {
     try {
       const response = await axios.get('/api/auth/me');
+      console.log('Auth check response:', response.data);
       setUser(response.data);
       setIsAuthenticated(true);
     } catch (error) {
@@ -63,7 +64,18 @@ export const AuthProvider = ({ children }) => {
       const response = await axios.post('/api/auth/login', credentials);
       
       // Cookies are automatically set by the server
-      setUser(response.data.user || { username: credentials.username });
+      // Use the user data from response, or fetch it from /me endpoint
+      console.log('Login response data:', response.data);
+      if (response.data.user) {
+        console.log('Using user data from login response:', response.data.user);
+        setUser(response.data.user);
+      } else {
+        // If user data not in response, fetch it from /me endpoint
+        console.log('Fetching user data from /me endpoint');
+        const meResponse = await axios.get('/api/auth/me');
+        console.log('Me endpoint response:', meResponse.data);
+        setUser(meResponse.data);
+      }
       setIsAuthenticated(true);
       
       return { success: true, data: response.data };

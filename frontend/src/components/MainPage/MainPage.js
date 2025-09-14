@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import axios from 'axios';
+import API_CONFIG from '../../utils/apiConfig';
 import './MainPage.css';
 
 function MainPage() {
@@ -19,8 +20,8 @@ function MainPage() {
         const userId = user?.id;
         if (!userId) return;
         const [stateRes, rankRes] = await Promise.all([
-          axios.get(`/api/user/${userId}/state`),
-          axios.get(`/api/user/${userId}/rank`)
+          axios.get(API_CONFIG.buildUrl(`/api/user/${userId}/state`)),
+          axios.get(API_CONFIG.buildUrl(`/api/user/${userId}/rank`))
         ]);
         if (stateRes.status === 200) {
           const data = stateRes.data;
@@ -47,10 +48,11 @@ function MainPage() {
 
   const handleLeaderboardClick = async () => {
     try {
-      const apiBase = process.env.REACT_APP_API_URL || 'http://localhost:8000';
-      const response = await fetch(`${apiBase}/api/leaderboard?limit=10`);
-      if (response.ok) {
-        const data = await response.json();
+      const response = await axios.get(API_CONFIG.buildUrl('/api/leaderboard'), {
+        params: { limit: 10 }
+      });
+      if (response.status === 200) {
+        const data = response.data;
         setLeaderboardData(data.entries || []);
         setShowLeaderboard(true);
       }

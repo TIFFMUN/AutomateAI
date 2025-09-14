@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import axios from 'axios';
+import API_CONFIG from '../../utils/apiConfig';
 import './Onboarding.css';
 
 function Onboarding() {
@@ -147,7 +148,7 @@ function Onboarding() {
     
     try {
       // Load user state from backend using authenticated user's ID
-      const response = await axios.get(`/api/user/${userId}/state`);
+      const response = await axios.get(API_CONFIG.buildUrl(`/api/user/${userId}/state`));
       const data = response.data;
       
       if (data.chat_messages && data.chat_messages.length > 0) {
@@ -455,8 +456,8 @@ function Onboarding() {
     
     setIsProcessing(true);
     try {
-      console.log('Making request to:', `/api/user/${userId}/chat`);
-      const response = await axios.post(`/api/user/${userId}/chat`, {
+      console.log('Making request to:', API_CONFIG.buildUrl(`/api/user/${userId}/chat`));
+      const response = await axios.post(API_CONFIG.buildUrl(`/api/user/${userId}/chat`), {
         user_id: userId,
         message: message
       });
