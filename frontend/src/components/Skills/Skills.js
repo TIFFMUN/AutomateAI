@@ -472,23 +472,32 @@ function Skills() {
               </div>
               
               <div className="recommendations-input">
-                <textarea
-                  placeholder="Tell us about your current skills, experience, and career goals..."
-                  value={userSkillsInput}
-                  onChange={(e) => setUserSkillsInput(e.target.value)}
-                  className="skills-input"
-                  rows="4"
-                />
-                <button 
-                  onClick={getSkillRecommendations}
-                  className="recommendations-btn"
-                  disabled={isLoadingRecommendations}
-                >
-                  {isLoadingRecommendations ? 'Generating...' : 'Get Recommendations'}
-                </button>
+                {isLoadingRecommendations ? (
+                  <div className="loading-state">
+                    <div className="spinner"></div>
+                    <p>Getting your personalized skill recommendations...</p>
+                  </div>
+                ) : (
+                  <>
+                    <textarea
+                      placeholder="Tell us about your current skills, experience, and career goals..."
+                      value={userSkillsInput}
+                      onChange={(e) => setUserSkillsInput(e.target.value)}
+                      className="skills-input"
+                      rows="4"
+                    />
+                    <button 
+                      onClick={getSkillRecommendations}
+                      className="recommendations-btn"
+                      disabled={isLoadingRecommendations}
+                    >
+                      Get Recommendations
+                    </button>
+                  </>
+                )}
               </div>
               
-              {recommendations.length > 0 && (
+              {recommendations.length > 0 ? (
                 <div className="recommendations-results">
                   <h4>Recommended Skills for You</h4>
                   <div className="recommendations-grid">
@@ -531,7 +540,7 @@ function Skills() {
                     ))}
                   </div>
                 </div>
-              )}
+              ) : null}
             </div>
           )}
         </div>

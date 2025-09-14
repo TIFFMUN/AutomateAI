@@ -67,8 +67,7 @@ function MainPage() {
       description: 'Complete your onboarding process and set up your profile you',
       icon: '🚀',
       color: '#8E44AD',
-      gradient: 'linear-gradient(135deg, #8E44AD 0%, #9B59B6 100%)',
-      stats: '3 tasks remaining'
+      gradient: 'linear-gradient(135deg, #8E44AD 0%, #9B59B6 100%)'
     },
     {
       id: 'skills',
@@ -77,8 +76,7 @@ function MainPage() {
       description: 'Track your skills and discover learning opportunities',
       icon: '📚',
       color: '#27AE60',
-      gradient: 'linear-gradient(135deg, #27AE60 0%, #2ECC71 100%)',
-      stats: '5 skills in progress'
+      gradient: 'linear-gradient(135deg, #27AE60 0%, #2ECC71 100%)'
     },
     {
       id: 'performance',
@@ -87,8 +85,7 @@ function MainPage() {
       description: 'Monitor your performance and receive feedback',
       icon: '📊',
       color: '#E67E22',
-      gradient: 'linear-gradient(135deg, #E67E22 0%, #F39C12 100%)',
-      stats: '2 reviews pending'
+      gradient: 'linear-gradient(135deg, #E67E22 0%, #F39C12 100%)'
     },
     {
       id: 'career',
@@ -97,8 +94,7 @@ function MainPage() {
       description: 'Set long-term goals and plan your career path',
       icon: '🎯',
       color: '#E74C3C',
-      gradient: 'linear-gradient(135deg, #E74C3C 0%, #C0392B 100%)',
-      stats: '1 goal active'
+      gradient: 'linear-gradient(135deg, #E74C3C 0%, #C0392B 100%)'
     }
   ];
 
@@ -118,7 +114,6 @@ function MainPage() {
             </p>
           </div>
           <button className="logout-btn" onClick={handleLogout}>
-            <span className="logout-icon">🚪</span>
             Logout
           </button>
         </div>
@@ -142,7 +137,6 @@ function MainPage() {
               >
                 <div className="card-header">
                   <div className="card-icon">{section.icon}</div>
-                  <div className="card-badge">{section.stats}</div>
                 </div>
                 
                 <div className="card-content">

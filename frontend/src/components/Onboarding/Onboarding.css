@@ -10,7 +10,7 @@ body {
 /* Main Layout */
 .onboarding-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   display: flex;
   flex-direction: column;
@@ -400,9 +400,15 @@ body {
 }
 
 .progress-text {
-  font-size: 1.2rem;
-  color: #333;
-  font-weight: 600;
+  font-size: 1.5rem !important;
+  font-weight: 800;
+  background: linear-gradient(135deg, #0070f3 0%, #0056d3 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: #0070f3; /* Fallback color */
+  display: inline-block;
+  position: relative;
   flex-shrink: 0;
 }
 
@@ -428,12 +434,12 @@ body {
 }
 
 .node.active {
-  background: #667eea;
+  background: #0070f3;
   color: white;
 }
 
 .node.completed {
-  background: #4caf50;
+  background: #2e7d32;
   color: white;
 }
 

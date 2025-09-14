@@ -305,11 +305,25 @@ function Career() {
                             {careerResponse.suggestions
                               .split('\n')
                               .filter(line => line.trim() !== '')
-                              .map((line, index) => (
-                                <p key={index} className="suggestion-line">
-                                  {line.trim().replace(/\*\*/g, '')}
-                                </p>
-                              ))}
+                              .map((line, index) => {
+                                const cleanLine = line.trim().replace(/\*\*/g, '');
+                                // Extract role name (everything before the first colon)
+                                const colonIndex = cleanLine.indexOf(':');
+                                if (colonIndex > 0) {
+                                  const roleName = cleanLine.substring(0, colonIndex);
+                                  const description = cleanLine.substring(colonIndex + 1);
+                                  return (
+                                    <p key={index} className="suggestion-line">
+                                      <strong>{roleName}:</strong>{description}
+                                    </p>
+                                  );
+                                }
+                                return (
+                                  <p key={index} className="suggestion-line">
+                                    {cleanLine}
+                                  </p>
+                                );
+                              })}
                           </div>
                         </div>
                       </div>
