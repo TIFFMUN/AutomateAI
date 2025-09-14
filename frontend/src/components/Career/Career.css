@@ -119,10 +119,11 @@
 
 .quiz-container {
   background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 112, 243, 0.1);
-  padding: 30px;
-  border: 1px solid rgba(0, 112, 243, 0.1);
+  border-radius: 16px;
+  box-shadow: 0 8px 25px rgba(0, 112, 243, 0.08);
+  padding: 35px;
+  border: 1px solid rgba(0, 112, 243, 0.06);
+  backdrop-filter: blur(10px);
 }
 
 .quiz-header {
@@ -186,9 +187,9 @@
 }
 
 .quiz-option {
-  padding: 20px;
+  padding: 22px;
   border: 2px solid #e9ecef;
-  border-radius: 4px;
+  border-radius: 12px;
   background: white;
   color: #333;
   cursor: pointer;
@@ -196,20 +197,22 @@
   text-align: left;
   font-size: 16px;
   font-weight: 500;
+  box-shadow: 0 2px 8px rgba(0, 112, 243, 0.04);
 }
 
 .quiz-option:hover {
   border-color: #0070f3;
-  background: #f8f9fa;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(0, 112, 243, 0.1);
+  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 112, 243, 0.12);
 }
 
 .quiz-option.selected {
   border-color: #0070f3;
-  background: #0070f3;
+  background: linear-gradient(135deg, #0070f3 0%, #0056d3 100%);
   color: white;
-  box-shadow: 0 2px 8px rgba(0, 112, 243, 0.2);
+  box-shadow: 0 4px 20px rgba(0, 112, 243, 0.25);
+  transform: translateY(-1px);
 }
 
 .quiz-navigation {
@@ -303,10 +306,11 @@
 
 .jobs-container {
   background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 112, 243, 0.1);
-  padding: 30px;
-  border: 1px solid rgba(0, 112, 243, 0.1);
+  border-radius: 16px;
+  box-shadow: 0 8px 25px rgba(0, 112, 243, 0.08);
+  padding: 35px;
+  border: 1px solid rgba(0, 112, 243, 0.06);
+  backdrop-filter: blur(10px);
 }
 
 .jobs-header {
@@ -334,17 +338,18 @@
 
 .job-card {
   background: white;
-  border: 1px solid rgba(0, 112, 243, 0.1);
-  border-radius: 8px;
-  padding: 25px;
+  border: 1px solid rgba(0, 112, 243, 0.08);
+  border-radius: 16px;
+  padding: 28px;
   transition: all 0.3s ease;
   position: relative;
-  box-shadow: 0 2px 8px rgba(0, 112, 243, 0.05);
+  box-shadow: 0 4px 20px rgba(0, 112, 243, 0.06);
+  backdrop-filter: blur(10px);
 }
 
 .job-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 16px rgba(0, 112, 243, 0.1);
+  transform: translateY(-4px);
+  box-shadow: 0 8px 30px rgba(0, 112, 243, 0.15);
   border-color: rgba(0, 112, 243, 0.2);
 }
 
@@ -839,7 +844,7 @@
 }
 
 .oracle-container {
-  max-width: 1000px;
+  max-width: 1200px;
   margin: 0 auto;
 }
 
@@ -848,8 +853,14 @@
   margin-bottom: 2rem;
 }
 
+.oracle-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  display: block;
+}
+
 .oracle-header h3 {
-  color: #2c3e50;
+  color: #0070f3;
   margin: 0 0 0.5rem 0;
   font-size: 1.8rem;
   font-weight: 600;
@@ -867,33 +878,6 @@
   gap: 2rem;
 }
 
-.oracle-intro {
-  text-align: center;
-  padding: 2rem;
-  background: linear-gradient(135deg, #f8fbff 0%, #e6f3ff 100%);
-  border-radius: 16px;
-  border: 2px solid #ff6b35;
-}
-
-.oracle-icon {
-  font-size: 3rem;
-  margin-bottom: 1rem;
-  display: block;
-}
-
-.oracle-intro h4 {
-  color: #ff6b35;
-  margin: 0 0 0.5rem 0;
-  font-size: 1.4rem;
-  font-weight: 600;
-}
-
-.oracle-intro p {
-  color: #ff6b35;
-  margin: 0;
-  font-size: 1rem;
-}
-
 .role-selection {
   display: flex;
   flex-direction: column;
@@ -905,48 +889,39 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
-.role-input-group,
-.experience-input-group,
-.goal-input-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
 .role-input-group label,
 .experience-input-group label,
 .goal-input-group label {
   font-weight: 600;
   color: #2c3e50;
   font-size: 1rem;
+  margin-bottom: 0.5rem;
 }
 
 .role-select,
 .experience-input,
 .goal-select {
+  height: 48px;
   padding: 0.75rem 1rem;
-  border: 2px solid var(--sap-blue);
+  border: 2px solid #e9ecef;
   border-radius: 8px;
   font-size: 1rem;
-  font-weight: 500;
-  color: #2c3e50;
-  background: white;
   transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(0, 112, 243, 0.1);
+  background: white;
 }
 
 .role-select:focus,
 .experience-input:focus,
 .goal-select:focus {
   outline: none;
-  border-color: var(--sap-blue-dark);
-  box-shadow: 0 0 0 3px rgba(0, 112, 243, 0.2);
+  border-color: #0070f3;
+  box-shadow: 0 0 0 3px rgba(0, 112, 243, 0.1);
 }
 
 .oracle-btn {
-  align-self: center;
+  width: 100%;
   padding: 1rem 2rem;
-  background: linear-gradient(135deg, #ff6b35 0%, #e55a2b 100%);
+  background: linear-gradient(135deg, #0070f3 0%, #0056d3 100%);
   color: white;
   border: none;
   border-radius: 12px;
@@ -954,56 +929,22 @@
   font-size: 1.1rem;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);
-}
-
-.oracle-btn:hover {
-  background: linear-gradient(135deg, #e55a2b 0%, #d44a1b 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(255, 107, 53, 0.4);
-}
-
-.oracle-preview {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1.5rem;
+  box-shadow: 0 4px 15px rgba(0, 112, 243, 0.3);
   margin-top: 1rem;
 }
 
-.preview-card {
-  background: white;
-  border-radius: 12px;
-  padding: 1.5rem;
-  border: 1px solid #e9ecef;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  transition: all 0.3s ease;
-  text-align: center;
+.oracle-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #0056d3 0%, #0044a8 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 112, 243, 0.4);
 }
 
-.preview-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-  border-color: #ff6b35;
-}
-
-.preview-icon {
-  font-size: 2.5rem;
-  margin-bottom: 1rem;
-  display: block;
-}
-
-.preview-card h5 {
-  color: #2c3e50;
-  margin: 0 0 0.75rem 0;
-  font-size: 1.2rem;
-  font-weight: 600;
-}
-
-.preview-card p {
-  color: #6c757d;
-  margin: 0;
-  font-size: 0.95rem;
-  line-height: 1.5;
+.oracle-btn:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+  opacity: 0.6;
 }
 
 /* Responsive Design for Oracle */
@@ -1013,35 +954,168 @@
     margin-top: 1rem;
   }
 
-  .oracle-header h3 {
-    font-size: 1.5rem;
-  }
-
-  .oracle-intro {
-    padding: 1.5rem;
-  }
-
   .oracle-icon {
     font-size: 2.5rem;
+  }
+
+  .oracle-header h3 {
+    font-size: 1.5rem;
   }
 
   .role-selection {
     padding: 1.5rem;
   }
 
-  .oracle-preview {
-    grid-template-columns: 1fr;
+  .input-row {
+    flex-direction: column;
     gap: 1rem;
-  }
-
-  .preview-card {
-    padding: 1rem;
   }
 
   .oracle-btn {
     padding: 0.875rem 1.5rem;
     font-size: 1rem;
   }
+
+  /* AI Crafting Process Responsive */
+  .crafting-steps {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .step {
+    padding: 1rem;
+  }
+
+  /* Career Route Display Responsive */
+  .route-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .ai-badge {
+    align-self: flex-start;
+  }
+
+  .path-step {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .step-connector {
+    display: none;
+  }
+
+  .step-content {
+    border-left: none;
+    border-top: 3px solid #0070f3;
+  }
+
+  .step-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .skill-tags {
+    justify-content: flex-start;
+  }
+}
+
+/* AI Crafting Process Display */
+.ai-crafting-process {
+  margin-top: 2rem;
+  padding: 2rem;
+  background: linear-gradient(135deg, #f0f8ff 0%, #e6f3ff 100%);
+  border-radius: 16px;
+  border: 2px solid #0070f3;
+  box-shadow: 0 8px 25px rgba(0, 112, 243, 0.15);
+}
+
+.crafting-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.ai-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  display: block;
+}
+
+.crafting-header h4 {
+  color: #0070f3;
+  margin: 0 0 0.5rem 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.crafting-header p {
+  color: #495057;
+  margin: 0.25rem 0;
+  font-size: 1rem;
+}
+
+.crafting-steps {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.step {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 1.5rem;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 112, 243, 0.1);
+  border: 1px solid rgba(0, 112, 243, 0.1);
+}
+
+.step-icon {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  display: block;
+}
+
+.step-content h5 {
+  color: #0070f3;
+  margin: 0 0 0.5rem 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.step-content p {
+  color: #6c757d;
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+/* Input Row Layout */
+.input-row {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+  align-items: flex-end;
+}
+
+.input-row .role-input-group,
+.input-row .experience-input-group {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.goal-input-group {
+  margin-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
 /* Oracle Error Display */
@@ -1073,7 +1147,272 @@
   padding: 2rem;
   background: linear-gradient(135deg, #f8fbff 0%, #e6f3ff 100%);
   border-radius: 16px;
-  border: 2px solid #ff6b35;
+  border: 2px solid #0070f3;
+}
+
+/* Career Route Display */
+.career-route-display {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.current-role-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 112, 243, 0.1);
+  border: 2px solid #0070f3;
+}
+
+.role-icon {
+  font-size: 2rem;
+  color: #0070f3;
+}
+
+.role-content h5 {
+  color: #6c757d;
+  margin: 0 0 0.25rem 0;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.role-content h4 {
+  color: #0070f3;
+  margin: 0 0 0.25rem 0;
+  font-size: 1.3rem;
+  font-weight: 600;
+}
+
+.role-content p {
+  color: #495057;
+  margin: 0;
+  font-size: 1rem;
+}
+
+.career-route-card {
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 12px 35px rgba(0, 112, 243, 0.08);
+  border: 1px solid rgba(0, 112, 243, 0.06);
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+}
+
+.career-route-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 45px rgba(0, 112, 243, 0.12);
+}
+
+.route-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #f0f8ff 0%, #e6f3ff 100%);
+  border-bottom: 1px solid rgba(0, 112, 243, 0.1);
+}
+
+.route-icon {
+  font-size: 2rem;
+}
+
+.route-info {
+  flex: 1;
+}
+
+.route-info h5 {
+  color: #0070f3;
+  margin: 0 0 0.25rem 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.route-info p {
+  color: #6c757d;
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.ai-badge {
+  display: none;
+}
+
+.route-path {
+  padding: 1.5rem;
+}
+
+.path-step {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  position: relative;
+}
+
+.path-step:last-child {
+  margin-bottom: 0;
+}
+
+.step-connector {
+  display: none;
+}
+
+.step-content {
+  flex: 1;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+  border-radius: 12px;
+  border-left: 4px solid #0070f3;
+  box-shadow: 0 2px 10px rgba(0, 112, 243, 0.05);
+  transition: all 0.3s ease;
+}
+
+.step-content:hover {
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+  box-shadow: 0 4px 15px rgba(0, 112, 243, 0.1);
+}
+
+.step-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.step-header h6 {
+  color: #0070f3;
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.step-timeline {
+  background: #e6f3ff;
+  color: #0070f3;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.step-story {
+  margin-bottom: 1rem;
+}
+
+.step-story p {
+  color: #495057;
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.step-skills {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.skills-required,
+.skills-gained {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  text-align: left;
+}
+
+.skills-required strong,
+.skills-gained strong {
+  color: #495057;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.skill-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-start;
+}
+
+.skill-tag {
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.skill-tag.required {
+  background: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffeaa7;
+}
+
+.skill-tag.gained {
+  background: #d1ecf1;
+  color: #0c5460;
+  border: 1px solid #bee5eb;
+}
+
+/* Step Actions */
+.step-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1rem;
+}
+
+.develop-skills-btn {
+  background: linear-gradient(135deg, #0070f3 0%, #0056d3 100%);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 6px rgba(0, 112, 243, 0.2);
+}
+
+.develop-skills-btn:hover {
+  background: linear-gradient(135deg, #0056d3 0%, #0044a8 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 112, 243, 0.3);
+}
+
+.develop-skills-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(0, 112, 243, 0.2);
+}
+
+.no-routes {
+  text-align: center;
+  padding: 3rem;
+  background: white;
+  border-radius: 12px;
+  border: 2px dashed #dee2e6;
+}
+
+.no-routes-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  display: block;
+}
+
+.no-routes h4 {
+  color: #6c757d;
+  margin: 0 0 0.5rem 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.no-routes p {
+  color: #6c757d;
+  margin: 0;
+  font-size: 1rem;
 }
 
 .results-header {
@@ -1092,17 +1431,6 @@
   color: #ff6b35;
   margin: 0;
   font-size: 1rem;
-}
-
-/* Unified Career Graph */
-.unified-career-graph {
-  background: white;
-  border-radius: 16px;
-  padding: 2rem;
-  border: 1px solid #e9ecef;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  position: relative;
-  min-height: 500px;
 }
 
 .graph-root {
@@ -1185,41 +1513,28 @@
 }
 
 .step-connector {
-  width: 2px;
-  height: 1.5rem;
-  background: linear-gradient(180deg, #ff6b35 0%, #e55a2b 100%);
-  margin-bottom: 0.75rem;
-  position: relative;
-}
-
-.step-connector::before {
-  content: "";
-  position: absolute;
-  bottom: -4px;
-  left: -4px;
-  width: 10px;
-  height: 10px;
-  background: #ff6b35;
-  border-radius: 50%;
+  display: none;
 }
 
 .tree-node {
   background: white;
-  border-radius: 12px;
-  padding: 1rem;
+  border-radius: 16px;
+  padding: 1.25rem;
   border: 2px solid #e9ecef;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
   transition: all 0.3s ease;
   position: relative;
   cursor: pointer;
   min-width: 140px;
   max-width: 180px;
   text-align: center;
+  backdrop-filter: blur(10px);
 }
 
 .tree-node:hover {
-  transform: translateY(-8px) scale(1.05);
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+  transform: translateY(-6px) scale(1.03);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12);
+  border-color: rgba(0, 112, 243, 0.2);
 }
 
 .root-node {
@@ -1263,16 +1578,7 @@
 }
 
 .ai-badge {
-  background: linear-gradient(135deg, #ff6b35 0%, #e55a2b 100%);
-  color: white;
-  padding: 0.2rem 0.6rem;
-  border-radius: 15px;
-  font-size: 0.7rem;
-  font-weight: 600;
-  position: absolute;
-  top: -8px;
-  right: -8px;
-  box-shadow: 0 2px 8px rgba(255, 107, 53, 0.3);
+  display: none;
 }
 
 /* Tooltip Styles */
@@ -1400,51 +1706,63 @@
   font-weight: 500;
 }
 
-/* Responsive Design for Oracle Results */
-@media (max-width: 768px) {
-  .oracle-results {
-    padding: 1.5rem;
-  }
+/* LLM Enhancement Styles */
+.llm-enhanced-badge {
+  display: none;
+}
 
-  .results-header h4 {
-    font-size: 1.4rem;
-  }
+.tooltip-llm-enhancement {
+  display: none;
+}
 
-  .unified-career-graph {
-    padding: 1rem;
-  }
+.tooltip-next-steps {
+  margin: 0.75rem 0;
+}
 
-  .graph-branches {
-    grid-template-columns: 1fr;
-    gap: 1rem;
-  }
+.tooltip-next-steps strong {
+  color: #ff6b35;
+  font-size: 0.85rem;
+  display: block;
+  margin-bottom: 0.5rem;
+}
 
-  .career-branch {
-    max-width: 100%;
-  }
+.tooltip-next-steps ul {
+  margin: 0;
+  padding-left: 1rem;
+}
 
-  .tree-node {
-    padding: 0.75rem;
-    min-width: 120px;
-    max-width: 150px;
-  }
+.tooltip-next-steps li {
+  color: #495057;
+  font-size: 0.85rem;
+  margin-bottom: 0.25rem;
+  line-height: 1.3;
+}
 
-  .node-content h6 {
-    font-size: 0.85rem;
-  }
+.tooltip-llm-contribution {
+  background: #f8f9fa;
+  border-radius: 6px;
+  padding: 0.5rem;
+  margin-top: 0.75rem;
+}
 
-  .node-timeline {
-    font-size: 0.7rem;
-    padding: 0.15rem 0.5rem;
-  }
+.tooltip-llm-contribution strong {
+  color: #ff6b35;
+  font-size: 0.8rem;
+  display: block;
+  margin-bottom: 0.25rem;
+}
 
-  .node-tooltip {
-    min-width: 250px;
-    max-width: 300px;
-    padding: 1rem;
-  }
+.tooltip-llm-contribution span {
+  color: #6c757d;
+  font-size: 0.8rem;
+  font-style: italic;
+}
 
-  .branch-line {
-    height: 40px;
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
   }
 }
