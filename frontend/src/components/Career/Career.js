@@ -356,7 +356,7 @@ function Career() {
             <div className="jobs-segment">
               <div className="jobs-container">
                 <div className="jobs-header">
-                  <h3>SAP Job Opportunities</h3>
+                  <h3><strong>SAP Job Opportunities</strong></h3>
                   <p>Explore current SAP positions that match your career goals</p>
                 </div>
 

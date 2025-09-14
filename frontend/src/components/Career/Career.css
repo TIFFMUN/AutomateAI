@@ -1,4 +1,14 @@
 /* Career Component Styles */
+
+:root {
+  /* SAP Brand Colors */
+  --sap-blue: #0070f3;
+  --sap-blue-dark: #0056d3;
+  --sap-blue-darker: #0044a8;
+  --sap-blue-light: #4a9eff;
+  --sap-blue-lighter: #b3d9ff;
+  --sap-blue-ultra-light: #e6f3ff;
+}
 .career-header {
   text-align: center;
   margin-bottom: 30px;
@@ -632,12 +642,16 @@
 }
 
 .profile-summary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(
+    135deg,
+    var(--sap-blue-light) 0%,
+    var(--sap-blue) 100%
+  );
   color: white;
   padding: 2rem;
   border-radius: 16px;
   margin-bottom: 2rem;
-  box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 10px 30px rgba(0, 112, 243, 0.3);
   position: relative;
   overflow: hidden;
 }
@@ -787,14 +801,18 @@
 }
 
 .results-actions .btn-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(
+    135deg,
+    var(--sap-blue) 0%,
+    var(--sap-blue-dark) 100%
+  );
   color: white;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 4px 15px rgba(0, 112, 243, 0.3);
 }
 
 .results-actions .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 6px 20px rgba(0, 112, 243, 0.4);
 }
 
 .results-actions .btn-secondary {
