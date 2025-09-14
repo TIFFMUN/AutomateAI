@@ -235,6 +235,7 @@ class CreatePerformanceGoalRequest(BaseModel):
 
 class LeaderboardEntry(BaseModel):
     user_id: str
+    username: Optional[str] = None
     total_points: int
 
 class LeaderboardResponse(BaseModel):
@@ -312,6 +313,7 @@ def on_startup() -> None:
 
 @app.get("/api/user/{user_id}/state")
 def get_user_state_endpoint(user_id: str, db: Session = Depends(get_db)):
+    # Convert user_id to string for consistency, but ensure it's the integer ID
     user_state = get_user_state(db, user_id)
     if not user_state:
         user_state = create_user_state(db, user_id)
@@ -344,10 +346,29 @@ def get_leaderboard(limit: int = 10, db: Session = Depends(get_db)):
         .limit(max(1, min(limit, 100)))
         .all()
     )
-    entries = [
-        LeaderboardEntry(user_id=u.user_id, total_points=u.total_points or 0)
-        for u in top_users
-    ]
+    
+    # Get usernames by converting user_id to int and looking up User.id
+    entries = []
+    for u in top_users:
+        try:
+            # Convert user_id to int and find user
+            user_id_int = int(u.user_id)
+            user = db.query(User).filter(User.id == user_id_int).first()
+            username = user.username if user else f"User {u.user_id}"
+            print(f"Debug: user_id={u.user_id}, user_id_int={user_id_int}, found_user={user.username if user else 'None'}")
+        except (ValueError, TypeError) as e:
+            # Fallback: if user_id is not a valid integer, use it as username
+            username = u.user_id
+            print(f"Debug: user_id={u.user_id}, error={e}, using as username")
+        
+        entry = LeaderboardEntry(
+            user_id=u.user_id, 
+            username=username, 
+            total_points=u.total_points or 0
+        )
+        print(f"Debug: Created entry: user_id={entry.user_id}, username={entry.username}")
+        entries.append(entry)
+    
     return LeaderboardResponse(entries=entries)
 
 @app.get("/api/user/{user_id}/rank", response_model=UserRankResponse)
@@ -364,7 +385,7 @@ def get_user_rank(user_id: str, db: Session = Depends(get_db)):
 @app.post("/api/user/{user_id}/chat")
 def handle_chat(user_id: str, request: ChatRequest, db: Session = Depends(get_db)):
     print(f"Received chat request for user {user_id}: {request}")
-    # Ensure user state exists
+    # Ensure user state exists (user_id should be integer as string)
     user_state = get_user_state(db, user_id)
     if not user_state:
         user_state = create_user_state(db, user_id)

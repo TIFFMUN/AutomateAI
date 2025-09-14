@@ -72,13 +72,13 @@ function Onboarding() {
   // Initialize chat with state loading
   useEffect(() => {
     console.log('User object in Onboarding:', user);
-    const userId = user?.id || user?.username;
+    const userId = user?.id;
     if (userId) {
       loadUserState();
     } else {
       console.log('No user ID or username found, user object:', user);
     }
-  }, [user?.id, user?.username]);
+  }, [user?.id]);
 
   // Auto-scroll to bottom when new messages are added
   useEffect(() => {
@@ -138,7 +138,7 @@ function Onboarding() {
 
   const loadUserState = async () => {
     // Use user.id if available, otherwise fall back to username
-    const userId = user?.id || user?.username;
+    const userId = user?.id;
     if (!userId) {
       console.log('No user ID or username found');
       return;
@@ -418,7 +418,7 @@ function Onboarding() {
   // Handle user message
   const handleUserMessage = async (message) => {
     // Use user.id if available, otherwise fall back to username
-    const userId = user?.id || user?.username;
+    const userId = user?.id;
     if (!message.trim() || !userId) {
       console.log('Cannot send message - user not authenticated or message empty:', { user, message, userId });
       return;
