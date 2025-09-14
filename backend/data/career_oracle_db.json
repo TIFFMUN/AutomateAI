@@ -1,0 +1,303 @@
+[
+  {
+    "role": "ABAP Developer",
+    "experience_years": 1,
+    "current_level": "Entry",
+    "career_trees": [
+      {
+        "tree_name": "Technical Expert Path",
+        "tree_description": "Progressive technical mastery from developer to architect",
+        "tree_icon": "🛠️",
+        "progressive_paths": [
+          {
+            "level": 1,
+            "role": "Senior ABAP Developer",
+            "timeline": "2-3 years",
+            "experience_required": 3,
+            "skills_required": ["Advanced ABAP", "Performance Tuning", "Code Review"],
+            "skills_gained": ["Complex Object Development", "Performance Optimization", "Mentoring"],
+            "prerequisites": ["Basic ABAP", "Debugging", "Object-Oriented Programming"],
+            "story": "Developers often deepen their technical expertise to become senior developers, handling more complex projects and mentoring juniors.",
+            "next_levels": [2]
+          },
+          {
+            "level": 2,
+            "role": "ABAP Technical Lead",
+            "timeline": "5-6 years",
+            "experience_required": 5,
+            "skills_required": ["Technical Leadership", "Architecture Design", "Team Management"],
+            "skills_gained": ["Solution Architecture", "Team Leadership", "Technical Strategy"],
+            "prerequisites": ["Senior ABAP Developer", "Project Management", "Communication"],
+            "story": "Senior developers evolve into technical leads, guiding architecture decisions and leading development teams.",
+            "next_levels": [3]
+          },
+          {
+            "level": 3,
+            "role": "SAP Technical Architect",
+            "timeline": "8-10 years",
+            "experience_required": 8,
+            "skills_required": ["Enterprise Architecture", "Integration Patterns", "Cloud Technologies"],
+            "skills_gained": ["Enterprise Design", "Cloud Migration", "Strategic Planning"],
+            "prerequisites": ["ABAP Technical Lead", "System Integration", "Business Acumen"],
+            "story": "Technical leads become architects, designing enterprise-wide SAP solutions and driving technology strategy.",
+            "next_levels": []
+          }
+        ]
+      },
+      {
+        "tree_name": "Solution Architect Path",
+        "tree_description": "Transition from technical to business-focused solution design",
+        "tree_icon": "🏗️",
+        "progressive_paths": [
+          {
+            "level": 1,
+            "role": "SAP Functional Consultant",
+            "timeline": "2-4 years",
+            "experience_required": 2,
+            "skills_required": ["Business Process Analysis", "SAP Modules", "Client Communication"],
+            "skills_gained": ["Business Analysis", "Process Optimization", "Stakeholder Management"],
+            "prerequisites": ["ABAP Development", "Business Understanding", "Communication Skills"],
+            "story": "ABAP developers transition to functional roles, bridging technical and business requirements.",
+            "next_levels": [2]
+          },
+          {
+            "level": 2,
+            "role": "SAP Solution Architect",
+            "timeline": "5-7 years",
+            "experience_required": 5,
+            "skills_required": ["Solution Design", "Integration Architecture", "Business Strategy"],
+            "skills_gained": ["End-to-End Design", "Business Transformation", "Technology Roadmap"],
+            "prerequisites": ["SAP Functional Consultant", "Multiple SAP Modules", "Strategic Thinking"],
+            "story": "Functional consultants evolve into solution architects, designing comprehensive business solutions.",
+            "next_levels": [3]
+          },
+          {
+            "level": 3,
+            "role": "Enterprise Solution Architect",
+            "timeline": "8-12 years",
+            "experience_required": 8,
+            "skills_required": ["Enterprise Architecture", "Digital Transformation", "C-Level Communication"],
+            "skills_gained": ["Digital Strategy", "Enterprise Design", "Executive Leadership"],
+            "prerequisites": ["SAP Solution Architect", "Multiple Technologies", "Business Leadership"],
+            "story": "Solution architects become enterprise architects, driving digital transformation across the organization.",
+            "next_levels": []
+          }
+        ]
+      },
+      {
+        "tree_name": "People Leadership Path",
+        "tree_description": "Progressive leadership development from individual contributor to executive",
+        "tree_icon": "👥",
+        "progressive_paths": [
+          {
+            "level": 1,
+            "role": "SAP Team Lead",
+            "timeline": "3-4 years",
+            "experience_required": 3,
+            "skills_required": ["Team Management", "Project Leadership", "People Development"],
+            "skills_gained": ["Team Building", "Project Delivery", "Performance Management"],
+            "prerequisites": ["ABAP Development", "Leadership Interest", "Communication Skills"],
+            "story": "Developers with leadership potential transition to team lead roles, managing small development teams.",
+            "next_levels": [2]
+          },
+          {
+            "level": 2,
+            "role": "SAP Development Manager",
+            "timeline": "6-8 years",
+            "experience_required": 6,
+            "skills_required": ["Department Management", "Budget Planning", "Strategic Planning"],
+            "skills_gained": ["Resource Management", "Budget Control", "Strategic Execution"],
+            "prerequisites": ["SAP Team Lead", "Management Experience", "Business Acumen"],
+            "story": "Team leads become development managers, overseeing larger teams and departmental strategy.",
+            "next_levels": [3]
+          },
+          {
+            "level": 3,
+            "role": "SAP Director / VP Engineering",
+            "timeline": "10-15 years",
+            "experience_required": 10,
+            "skills_required": ["Executive Leadership", "Organizational Strategy", "Industry Expertise"],
+            "skills_gained": ["Executive Management", "Organizational Design", "Industry Leadership"],
+            "prerequisites": ["SAP Development Manager", "Executive Experience", "Industry Knowledge"],
+            "story": "Development managers advance to executive roles, leading entire SAP organizations and driving industry innovation.",
+            "next_levels": []
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "role": "SAP Basis Administrator",
+    "experience_years": 1,
+    "current_level": "Entry",
+    "career_trees": [
+      {
+        "tree_name": "Infrastructure Expert Path",
+        "tree_description": "Deep technical specialization in SAP infrastructure and operations",
+        "tree_icon": "🖥️",
+        "progressive_paths": [
+          {
+            "level": 1,
+            "role": "Senior SAP Basis Administrator",
+            "timeline": "3-4 years",
+            "experience_required": 3,
+            "skills_required": ["Advanced Basis Administration", "Performance Tuning", "System Monitoring"],
+            "skills_gained": ["Complex System Management", "Performance Optimization", "Troubleshooting"],
+            "prerequisites": ["Basic SAP Basis", "System Administration", "Problem Solving"],
+            "story": "Basis administrators deepen their technical expertise to handle complex enterprise systems.",
+            "next_levels": [2]
+          },
+          {
+            "level": 2,
+            "role": "SAP Infrastructure Architect",
+            "timeline": "6-8 years",
+            "experience_required": 6,
+            "skills_required": ["Infrastructure Design", "Cloud Architecture", "Security Architecture"],
+            "skills_gained": ["Infrastructure Strategy", "Cloud Migration", "Security Design"],
+            "prerequisites": ["Senior SAP Basis Administrator", "Cloud Technologies", "Security Knowledge"],
+            "story": "Senior basis administrators become infrastructure architects, designing enterprise SAP landscapes.",
+            "next_levels": [3]
+          },
+          {
+            "level": 3,
+            "role": "Enterprise Infrastructure Director",
+            "timeline": "10-12 years",
+            "experience_required": 10,
+            "skills_required": ["Enterprise Architecture", "Digital Transformation", "Executive Leadership"],
+            "skills_gained": ["Enterprise Strategy", "Digital Leadership", "Executive Management"],
+            "prerequisites": ["SAP Infrastructure Architect", "Enterprise Experience", "Leadership Skills"],
+            "story": "Infrastructure architects advance to executive roles, leading enterprise-wide technology strategy.",
+            "next_levels": []
+          }
+        ]
+      },
+      {
+        "tree_name": "Security Specialist Path",
+        "tree_description": "Specialized focus on SAP security and compliance",
+        "tree_icon": "🔒",
+        "progressive_paths": [
+          {
+            "level": 1,
+            "role": "SAP Security Consultant",
+            "timeline": "2-3 years",
+            "experience_required": 2,
+            "skills_required": ["SAP Security", "Access Control", "Compliance Management"],
+            "skills_gained": ["Security Design", "Risk Assessment", "Compliance Implementation"],
+            "prerequisites": ["SAP Basis Administration", "Security Interest", "Analytical Skills"],
+            "story": "Basis administrators transition to security roles, focusing on access control and compliance.",
+            "next_levels": [2]
+          },
+          {
+            "level": 2,
+            "role": "SAP Security Architect",
+            "timeline": "5-7 years",
+            "experience_required": 5,
+            "skills_required": ["Security Architecture", "Risk Management", "Security Strategy"],
+            "skills_gained": ["Security Strategy", "Risk Mitigation", "Security Leadership"],
+            "prerequisites": ["SAP Security Consultant", "Risk Management", "Strategic Thinking"],
+            "story": "Security consultants become architects, designing comprehensive security frameworks.",
+            "next_levels": [3]
+          },
+          {
+            "level": 3,
+            "role": "Chief Security Officer (CSO)",
+            "timeline": "8-12 years",
+            "experience_required": 8,
+            "skills_required": ["Executive Security Leadership", "Regulatory Compliance", "Crisis Management"],
+            "skills_gained": ["Executive Security", "Regulatory Leadership", "Crisis Leadership"],
+            "prerequisites": ["SAP Security Architect", "Executive Experience", "Regulatory Knowledge"],
+            "story": "Security architects advance to C-level roles, leading organization-wide security strategy.",
+            "next_levels": []
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "role": "Fiori Developer",
+    "experience_years": 1,
+    "current_level": "Entry",
+    "career_trees": [
+      {
+        "tree_name": "UI/UX Specialist Path",
+        "tree_description": "Progressive specialization in user experience and interface design",
+        "tree_icon": "🎨",
+        "progressive_paths": [
+          {
+            "level": 1,
+            "role": "Senior Fiori Developer",
+            "timeline": "2-3 years",
+            "experience_required": 3,
+            "skills_required": ["Advanced Fiori", "UI/UX Design", "JavaScript Frameworks"],
+            "skills_gained": ["Complex UI Development", "User Experience Design", "Frontend Architecture"],
+            "prerequisites": ["Basic Fiori Development", "UI/UX Interest", "JavaScript Skills"],
+            "story": "Fiori developers deepen their UI/UX expertise to create sophisticated user experiences.",
+            "next_levels": [2]
+          },
+          {
+            "level": 2,
+            "role": "SAP UX Architect",
+            "timeline": "5-6 years",
+            "experience_required": 5,
+            "skills_required": ["UX Strategy", "Design Systems", "User Research"],
+            "skills_gained": ["UX Strategy", "Design Leadership", "User-Centered Design"],
+            "prerequisites": ["Senior Fiori Developer", "UX Design", "Strategic Thinking"],
+            "story": "Senior developers become UX architects, leading user experience strategy across SAP solutions.",
+            "next_levels": [3]
+          },
+          {
+            "level": 3,
+            "role": "Chief Experience Officer (CXO)",
+            "timeline": "8-10 years",
+            "experience_required": 8,
+            "skills_required": ["Executive UX Leadership", "Digital Experience Strategy", "Customer Journey Design"],
+            "skills_gained": ["Executive UX", "Digital Strategy", "Customer Leadership"],
+            "prerequisites": ["SAP UX Architect", "Executive Experience", "Customer Focus"],
+            "story": "UX architects advance to C-level roles, leading organization-wide customer experience strategy.",
+            "next_levels": []
+          }
+        ]
+      },
+      {
+        "tree_name": "Product Management Path",
+        "tree_description": "Transition from development to product strategy and management",
+        "tree_icon": "📱",
+        "progressive_paths": [
+          {
+            "level": 1,
+            "role": "SAP Product Analyst",
+            "timeline": "2-3 years",
+            "experience_required": 2,
+            "skills_required": ["Product Analysis", "Market Research", "Business Requirements"],
+            "skills_gained": ["Product Strategy", "Market Analysis", "Business Intelligence"],
+            "prerequisites": ["Fiori Development", "Business Interest", "Analytical Skills"],
+            "story": "Fiori developers transition to product roles, analyzing market needs and defining product requirements.",
+            "next_levels": [2]
+          },
+          {
+            "level": 2,
+            "role": "SAP Product Manager",
+            "timeline": "5-7 years",
+            "experience_required": 5,
+            "skills_required": ["Product Strategy", "Roadmap Planning", "Stakeholder Management"],
+            "skills_gained": ["Product Leadership", "Strategic Planning", "Cross-functional Leadership"],
+            "prerequisites": ["SAP Product Analyst", "Strategic Thinking", "Leadership Skills"],
+            "story": "Product analysts become product managers, leading product strategy and cross-functional teams.",
+            "next_levels": [3]
+          },
+          {
+            "level": 3,
+            "role": "VP of Product / CPO",
+            "timeline": "8-12 years",
+            "experience_required": 8,
+            "skills_required": ["Executive Product Leadership", "Portfolio Strategy", "Innovation Management"],
+            "skills_gained": ["Executive Product", "Portfolio Leadership", "Innovation Strategy"],
+            "prerequisites": ["SAP Product Manager", "Executive Experience", "Innovation Focus"],
+            "story": "Product managers advance to executive roles, leading entire product portfolios and driving innovation.",
+            "next_levels": []
+          }
+        ]
+      }
+    ]
+  }
+]

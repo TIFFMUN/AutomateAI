@@ -10,7 +10,7 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend)
 
 // Helper function to build API URLs without double slashes
 const buildApiUrl = (endpoint) => {
-  const baseUrl = process.env.REACT_APP_API_URL || 'https://automateai-56bf.onrender.com';
+  const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:8000';
   return `${baseUrl.replace(/\/$/, '')}${endpoint}`;
 };
 
