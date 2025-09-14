@@ -1,7 +1,11 @@
 import os
 from dotenv import load_dotenv
 
-load_dotenv()
+try:
+    load_dotenv()
+except Exception as e:
+    print(f"Warning: Could not load .env file: {e}")
+    # Continue without .env file
 
 class Settings:
     # Main PostgreSQL Database
@@ -25,12 +29,16 @@ class Settings:
     
     # OpenAI Configuration
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
-    OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-3.5-turbo")
+    OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o")
     PERFORMANCE_OPENAI_MODEL = os.getenv("PERFORMANCE_OPENAI_MODEL", "gpt-4")
     
     # Gemini Configuration (fallback)
     GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
     GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
+    
+    # SeaLion Configuration (for career coaching)
+    SEA_LION_KEY = os.getenv("SEA_LION_KEY", "")
+    SEA_LION_MODEL = os.getenv("SEA_LION_MODEL", "aisingapore/Gemma-SEA-LION-v4-27B-IT")
     
     # Application
     DEBUG = os.getenv("DEBUG", "False").lower() == "true"
@@ -47,5 +55,7 @@ class Settings:
     # Clean up any whitespace from origins
     ALLOWED_ORIGINS = [origin.strip() for origin in ALLOWED_ORIGINS if origin.strip()]
     PERFORMANCE_ALLOWED_ORIGINS = os.getenv("PERFORMANCE_ALLOWED_ORIGINS", "http://localhost:3002,http://localhost:3001").split(",")
+
+    ZHIPUAI_API_KEY = os.getenv("ZHIPUAI_API_KEY", "e441b270d5824d2dabb6b0a4666fa68a.4eOvea0pcz08e2Js")
     
 settings = Settings()
