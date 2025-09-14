@@ -661,10 +661,10 @@ function Onboarding() {
           </div>
         </div>
         <div className="header-buttons">
-          <button className="restart-btn" onClick={() => handleUserMessage('restart')}>
+          <button className="btn btn-danger" onClick={() => handleUserMessage('restart')}>
             Restart
           </button>
-        <button className="back-btn" onClick={() => navigate('/main')}>
+        <button className="btn btn-primary" onClick={() => navigate('/main')}>
           Back to Main
         </button>
         </div>
