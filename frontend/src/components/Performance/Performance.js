@@ -901,7 +901,7 @@ function ManagerView({
                       <span className="suggestion-card-icon">💡</span>
                       <h4 className="suggestion-card-title">Key Recommendations</h4>
                     </div>
-                    <p style={{ color: 'rgba(255, 255, 255, 0.95)', margin: 0, fontSize: '0.9rem', lineHeight: '1.4' }}>
+                    <p style={{ color: '#ff6b35', margin: 0, fontSize: '0.9rem', lineHeight: '1.4' }}>
                       {aiAnalysis.overall_recommendations}
                     </p>
                   </div>
@@ -916,7 +916,7 @@ function ManagerView({
               </>
             ) : (
               <div>
-                <p style={{ color: 'rgba(255, 255, 255, 0.8)', margin: 0, fontSize: '0.9rem', marginBottom: '1rem' }}>
+                <p style={{ color: '#ff6b35', margin: 0, fontSize: '0.9rem', marginBottom: '1rem' }}>
                   Start typing your feedback to get AI-powered suggestions and analysis.
                 </p>
                 
@@ -1103,7 +1103,11 @@ function EmployeeView({ feedbacks, loading, showAIAnalysis, setShowAIAnalysis, o
                         <div className="analysis-card strengths-card">
                           <div className="card-icon">💪</div>
                           <h5>Strengths</h5>
-                          <p>{feedback.strengths}</p>
+                          <ul className="analysis-list">
+                            {feedback.strengths.split('•').filter(item => item.trim()).map((item, index) => (
+                              <li key={index}>{item.trim()}</li>
+                            ))}
+                          </ul>
                         </div>
                       )}
                       
@@ -1111,7 +1115,11 @@ function EmployeeView({ feedbacks, loading, showAIAnalysis, setShowAIAnalysis, o
                         <div className="analysis-card improvement-card">
                           <div className="card-icon">🎯</div>
                           <h5>Areas for Improvement</h5>
-                          <p>{feedback.areas_for_improvement}</p>
+                          <ul className="analysis-list">
+                            {feedback.areas_for_improvement.split('•').filter(item => item.trim()).map((item, index) => (
+                              <li key={index}>{item.trim()}</li>
+                            ))}
+                          </ul>
                         </div>
                       )}
                       
@@ -1119,7 +1127,11 @@ function EmployeeView({ feedbacks, loading, showAIAnalysis, setShowAIAnalysis, o
                         <div className="analysis-card nextsteps-card">
                           <div className="card-icon">🚀</div>
                           <h5>Next Steps</h5>
-                          <p>{feedback.next_steps}</p>
+                          <ul className="analysis-list">
+                            {feedback.next_steps.split('•').filter(item => item.trim()).map((item, index) => (
+                              <li key={index}>{item.trim()}</li>
+                            ))}
+                          </ul>
                         </div>
                       )}
                     </div>
