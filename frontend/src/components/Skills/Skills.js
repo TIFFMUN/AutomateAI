@@ -526,12 +526,12 @@ function Skills() {
                             {rec.resources.map((resource, idx) => (
                               <a 
                                 key={idx} 
-                                href={resource.link} 
+                                href={typeof resource === 'string' ? '#' : resource.link} 
                                 target="_blank" 
                                 rel="noopener noreferrer" 
                                 className="resource-link"
                               >
-                                {resource.title}
+                                {typeof resource === 'string' ? resource : resource.title}
                               </a>
                             ))}
                           </div>
