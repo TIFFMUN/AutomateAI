@@ -123,7 +123,7 @@ function MainPage() {
       <div className="container">
         <div className="main-header">
           <div className="header-content">
-            <h1>Welcome Back! 👋</h1>
+            <h1>Welcome Back, {user?.username || 'User'}! 👋</h1>
             <p className="header-subtitle">
               Manage your professional development journey
               {totalPoints !== null && (
@@ -191,7 +191,7 @@ function MainPage() {
               {leaderboardData.length > 0 ? (
                 <div className="leaderboard-list">
                   {leaderboardData.map((entry, index) => {
-                    const currentUserId = user?.id;
+                    const currentUserId = user?.id?.toString();
                     const isCurrentUser = entry.user_id === currentUserId;
                     return (
                       <div key={entry.user_id} className={`leaderboard-item ${index < 3 ? 'top-three' : ''} ${isCurrentUser ? 'current-user' : ''}`}>

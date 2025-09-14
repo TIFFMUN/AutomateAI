@@ -5,6 +5,18 @@ from typing import Dict, Any, List, Optional
 from sqlalchemy.orm import Session
 from datetime import datetime
 import json
+
+def validate_user_id(user_id: str, db: Session) -> int:
+    """Validate that user_id is a valid integer and user exists"""
+    try:
+        user_id_int = int(user_id)
+        # Verify the user exists
+        user = db.query(User).filter(User.id == user_id_int).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        return user_id_int
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid user_id format. Must be an integer.")
 from config import settings
 from langgraph_connection import LangGraphConnection
 from prompts import PERFORMANCE_FEEDBACK_ANALYSIS, PERFORMANCE_FEEDBACK_ANALYSIS_PROMPT, REAL_TIME_FEEDBACK_SUGGESTIONS_PROMPT
@@ -313,7 +325,9 @@ def on_startup() -> None:
 
 @app.get("/api/user/{user_id}/state")
 def get_user_state_endpoint(user_id: str, db: Session = Depends(get_db)):
-    # Convert user_id to string for consistency, but ensure it's the integer ID
+    # Validate that user_id is a valid integer
+    validate_user_id(user_id, db)
+    
     user_state = get_user_state(db, user_id)
     if not user_state:
         user_state = create_user_state(db, user_id)
@@ -355,24 +369,24 @@ def get_leaderboard(limit: int = 10, db: Session = Depends(get_db)):
             user_id_int = int(u.user_id)
             user = db.query(User).filter(User.id == user_id_int).first()
             username = user.username if user else f"User {u.user_id}"
-            print(f"Debug: user_id={u.user_id}, user_id_int={user_id_int}, found_user={user.username if user else 'None'}")
         except (ValueError, TypeError) as e:
             # Fallback: if user_id is not a valid integer, use it as username
             username = u.user_id
-            print(f"Debug: user_id={u.user_id}, error={e}, using as username")
         
         entry = LeaderboardEntry(
             user_id=u.user_id, 
             username=username, 
             total_points=u.total_points or 0
         )
-        print(f"Debug: Created entry: user_id={entry.user_id}, username={entry.username}")
         entries.append(entry)
     
     return LeaderboardResponse(entries=entries)
 
 @app.get("/api/user/{user_id}/rank", response_model=UserRankResponse)
 def get_user_rank(user_id: str, db: Session = Depends(get_db)):
+    # Validate that user_id is a valid integer
+    validate_user_id(user_id, db)
+    
     user_state = get_user_state(db, user_id)
     if not user_state:
         user_state = create_user_state(db, user_id)
@@ -385,6 +399,10 @@ def get_user_rank(user_id: str, db: Session = Depends(get_db)):
 @app.post("/api/user/{user_id}/chat")
 def handle_chat(user_id: str, request: ChatRequest, db: Session = Depends(get_db)):
     print(f"Received chat request for user {user_id}: {request}")
+    
+    # Validate that user_id is a valid integer
+    validate_user_id(user_id, db)
+    
     # Ensure user state exists (user_id should be integer as string)
     user_state = get_user_state(db, user_id)
     if not user_state:
