@@ -1,8 +1,9 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from typing import Dict, Any
+from typing import Dict, Any, List, Optional
 import requests
 import os
+import json
 from config import settings
 from services.recommendation_service import SAPJobRecommendationService
 
@@ -14,6 +15,34 @@ class QuizAnswers(BaseModel):
 class CareerCoachResponse(BaseModel):
     profile_summary: str
     suggestions: str
+
+class OracleRequest(BaseModel):
+    current_role: str
+    experience_years: int
+    goal: Optional[str] = None
+
+class CareerPath(BaseModel):
+    level: int
+    role: str
+    timeline: str
+    experience_required: int
+    skills_required: List[str]
+    skills_gained: List[str]
+    prerequisites: List[str]
+    story: str
+    next_levels: List[int]
+    is_ai_generated: bool = False
+
+class CareerTree(BaseModel):
+    tree_name: str
+    tree_description: str
+    tree_icon: str
+    progressive_paths: List[CareerPath]
+
+class OracleResponse(BaseModel):
+    current_role: str
+    experience_years: int
+    career_trees: List[CareerTree]
 
 @router.post("/api/career/coach", response_model=CareerCoachResponse)
 async def career_coach(answers: QuizAnswers):
@@ -153,3 +182,165 @@ async def career_health_check():
     Health check for career service
     """
     return {"status": "healthy", "service": "Career Coach API"}
+
+@router.post("/api/career/oracle", response_model=OracleResponse)
+async def career_oracle(request: OracleRequest):
+    """
+    Get RPG-style career paths using RAG retrieval + LLM generation
+    """
+    try:
+        # 1️⃣ RAG Retrieval - Load career oracle database
+        oracle_db_path = "data/career_oracle_db.json"
+        if not os.path.exists(oracle_db_path):
+            raise HTTPException(status_code=404, detail="Career oracle database not found")
+        
+        with open(oracle_db_path, 'r', encoding='utf-8') as f:
+            oracle_data = json.load(f)
+        
+        # Find matching role and experience level
+        matching_roles = []
+        for role_data in oracle_data:
+            if (role_data["role"].lower() == request.current_role.lower() or 
+                request.current_role.lower() in role_data["role"].lower()):
+                matching_roles.append(role_data)
+        
+        if not matching_roles:
+            raise HTTPException(status_code=404, detail=f"No career paths found for role: {request.current_role}")
+        
+        # Get the closest experience match
+        best_match = min(matching_roles, key=lambda x: abs(x["experience_years"] - request.experience_years))
+        
+        # 2️⃣ LLM Call - Generate additional paths
+        openai_key = getattr(settings, 'OPENAI_API_KEY', os.getenv('OPENAI_API_KEY'))
+        openai_model = getattr(settings, 'OPENAI_MODEL', os.getenv('OPENAI_MODEL', 'gpt-4o'))
+        
+        ai_generated_trees = []
+        if openai_key and openai_key.strip() != "":
+            try:
+                # Prepare context for LLM
+                existing_trees = best_match["career_trees"]
+                trees_context = "\n".join([
+                    f"- {tree['tree_name']}: {tree['tree_description']}"
+                    for tree in existing_trees
+                ])
+                
+                llm_prompt = f"""You are a career oracle expert. Based on this SAP professional's profile:
+
+Current Role: {request.current_role}
+Experience: {request.experience_years} years
+Goal: {request.goal or 'General career growth'}
+
+Existing career trees:
+{trees_context}
+
+Generate 1-2 additional career trees that complement the existing ones. Each tree should have 2-3 career paths. Focus on:
+- Unique career directions not covered by existing trees
+- Realistic SAP career progressions
+- Specific skills, timelines, and prerequisites
+- Engaging stories for each path
+
+Format as JSON with this structure:
+{{
+  "trees": [
+    {{
+      "tree_name": "Tree Name",
+      "tree_description": "Brief description",
+      "tree_icon": "🎯",
+      "paths": [
+        {{
+          "path_id": "unique_id",
+          "future_role": "Role Name",
+          "timeline": "X-Y years",
+          "experience_required": X,
+          "skills_required": ["skill1", "skill2"],
+          "skills_gained": ["skill1", "skill2"],
+          "prerequisites": ["prereq1", "prereq2"],
+          "story": "Engaging narrative",
+          "next_paths": ["next_id1", "next_id2"]
+        }}
+      ]
+    }}
+  ]
+}}
+
+Return only the JSON, no additional text."""
+
+                llm_response = requests.post(
+                    "https://api.openai.com/v1/chat/completions",
+                    headers={
+                        "Authorization": f"Bearer {openai_key}",
+                        "Content-Type": "application/json"
+                    },
+                    json={
+                        "model": openai_model,
+                        "messages": [
+                            {"role": "system", "content": "You are an expert SAP career advisor. Generate realistic, detailed career paths in JSON format only."},
+                            {"role": "user", "content": llm_prompt}
+                        ],
+                        "max_tokens": 1000,
+                        "temperature": 0.7
+                    },
+                    timeout=30
+                )
+                
+                if llm_response.status_code == 200:
+                    llm_data = llm_response.json()
+                    llm_content = llm_data["choices"][0]["message"]["content"]
+                    
+                    # Parse LLM response
+                    try:
+                        ai_data = json.loads(llm_content)
+                        for tree in ai_data.get("trees", []):
+                            # Mark all paths as AI-generated
+                            for path in tree["paths"]:
+                                path["is_ai_generated"] = True
+                            ai_generated_trees.append(tree)
+                    except json.JSONDecodeError:
+                        print(f"Failed to parse LLM response: {llm_content}")
+                        
+            except Exception as e:
+                print(f"LLM generation failed: {str(e)}")
+        
+        # 3️⃣ Merge Paths - Combine RAG + LLM results
+        all_trees = best_match["career_trees"] + ai_generated_trees
+        
+        # Convert to response format
+        career_trees = []
+        for tree in all_trees:
+            paths = []
+            for path in tree["progressive_paths"]:
+                paths.append(CareerPath(
+                    level=path["level"],
+                    role=path["role"],
+                    timeline=path["timeline"],
+                    experience_required=path["experience_required"],
+                    skills_required=path["skills_required"],
+                    skills_gained=path["skills_gained"],
+                    prerequisites=path["prerequisites"],
+                    story=path["story"],
+                    next_levels=path["next_levels"],
+                    is_ai_generated=path.get("is_ai_generated", False)
+                ))
+            
+            career_trees.append(CareerTree(
+                tree_name=tree["tree_name"],
+                tree_description=tree["tree_description"],
+                tree_icon=tree["tree_icon"],
+                progressive_paths=paths
+            ))
+        
+        return OracleResponse(
+            current_role=request.current_role,
+            experience_years=request.experience_years,
+            career_trees=career_trees
+        )
+        
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="Career oracle database not found")
+    except json.JSONDecodeError as e:
+        raise HTTPException(status_code=500, detail=f"Invalid career oracle database format: {str(e)}")
+    except Exception as e:
+        print(f"Career oracle error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")

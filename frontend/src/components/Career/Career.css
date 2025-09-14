@@ -827,3 +827,624 @@
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
   background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
 }
+
+/* Career Oracle Styles */
+.oracle-segment {
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+  border-radius: 20px;
+  padding: 2rem;
+  margin-top: 1.5rem;
+  border: 2px solid #e9ecef;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+}
+
+.oracle-container {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.oracle-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.oracle-header h3 {
+  color: #2c3e50;
+  margin: 0 0 0.5rem 0;
+  font-size: 1.8rem;
+  font-weight: 600;
+}
+
+.oracle-header p {
+  color: #6c757d;
+  font-size: 1rem;
+  margin: 0;
+}
+
+.oracle-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.oracle-intro {
+  text-align: center;
+  padding: 2rem;
+  background: linear-gradient(135deg, #f8fbff 0%, #e6f3ff 100%);
+  border-radius: 16px;
+  border: 2px solid #ff6b35;
+}
+
+.oracle-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  display: block;
+}
+
+.oracle-intro h4 {
+  color: #ff6b35;
+  margin: 0 0 0.5rem 0;
+  font-size: 1.4rem;
+  font-weight: 600;
+}
+
+.oracle-intro p {
+  color: #ff6b35;
+  margin: 0;
+  font-size: 1rem;
+}
+
+.role-selection {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 2rem;
+  background: white;
+  border-radius: 16px;
+  border: 1px solid #e9ecef;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.role-input-group,
+.experience-input-group,
+.goal-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.role-input-group label,
+.experience-input-group label,
+.goal-input-group label {
+  font-weight: 600;
+  color: #2c3e50;
+  font-size: 1rem;
+}
+
+.role-select,
+.experience-input,
+.goal-select {
+  padding: 0.75rem 1rem;
+  border: 2px solid var(--sap-blue);
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #2c3e50;
+  background: white;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 112, 243, 0.1);
+}
+
+.role-select:focus,
+.experience-input:focus,
+.goal-select:focus {
+  outline: none;
+  border-color: var(--sap-blue-dark);
+  box-shadow: 0 0 0 3px rgba(0, 112, 243, 0.2);
+}
+
+.oracle-btn {
+  align-self: center;
+  padding: 1rem 2rem;
+  background: linear-gradient(135deg, #ff6b35 0%, #e55a2b 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);
+}
+
+.oracle-btn:hover {
+  background: linear-gradient(135deg, #e55a2b 0%, #d44a1b 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 107, 53, 0.4);
+}
+
+.oracle-preview {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
+
+.preview-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  border: 1px solid #e9ecef;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+  text-align: center;
+}
+
+.preview-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  border-color: #ff6b35;
+}
+
+.preview-icon {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  display: block;
+}
+
+.preview-card h5 {
+  color: #2c3e50;
+  margin: 0 0 0.75rem 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.preview-card p {
+  color: #6c757d;
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+/* Responsive Design for Oracle */
+@media (max-width: 768px) {
+  .oracle-segment {
+    padding: 1.5rem;
+    margin-top: 1rem;
+  }
+
+  .oracle-header h3 {
+    font-size: 1.5rem;
+  }
+
+  .oracle-intro {
+    padding: 1.5rem;
+  }
+
+  .oracle-icon {
+    font-size: 2.5rem;
+  }
+
+  .role-selection {
+    padding: 1.5rem;
+  }
+
+  .oracle-preview {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .preview-card {
+    padding: 1rem;
+  }
+
+  .oracle-btn {
+    padding: 0.875rem 1.5rem;
+    font-size: 1rem;
+  }
+}
+
+/* Oracle Error Display */
+.oracle-error {
+  background: linear-gradient(135deg, #ffe6e6 0%, #ffcccc 100%);
+  border: 2px solid #ff6b6b;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-top: 1.5rem;
+  text-align: center;
+}
+
+.error-icon {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+.oracle-error p {
+  color: #d63031;
+  margin: 0;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+/* Oracle Results Display */
+.oracle-results {
+  margin-top: 2rem;
+  padding: 2rem;
+  background: linear-gradient(135deg, #f8fbff 0%, #e6f3ff 100%);
+  border-radius: 16px;
+  border: 2px solid #ff6b35;
+}
+
+.results-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.results-header h4 {
+  color: #ff6b35;
+  margin: 0 0 0.5rem 0;
+  font-size: 1.6rem;
+  font-weight: 600;
+}
+
+.results-header p {
+  color: #ff6b35;
+  margin: 0;
+  font-size: 1rem;
+}
+
+/* Unified Career Graph */
+.unified-career-graph {
+  background: white;
+  border-radius: 16px;
+  padding: 2rem;
+  border: 1px solid #e9ecef;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  position: relative;
+  min-height: 500px;
+}
+
+.graph-root {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 3rem;
+  position: relative;
+}
+
+.graph-root::after {
+  content: "";
+  position: absolute;
+  bottom: -1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 2px;
+  height: 3rem;
+  background: linear-gradient(180deg, #ff6b35 0%, #e55a2b 100%);
+}
+
+.graph-branches {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  position: relative;
+  align-items: start;
+}
+
+.career-branch {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+
+.branch-header {
+  text-align: center;
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background: linear-gradient(135deg, #f8fbff 0%, #e6f3ff 100%);
+  border-radius: 8px;
+  border: 2px solid #ff6b35;
+  width: 100%;
+}
+
+.branch-icon {
+  font-size: 1.5rem;
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.branch-header h5 {
+  color: #ff6b35;
+  margin: 0 0 0.25rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.branch-header p {
+  color: #ff6b35;
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.3;
+}
+
+.branch-path {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+}
+
+.path-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  width: 100%;
+}
+
+.step-connector {
+  width: 2px;
+  height: 1.5rem;
+  background: linear-gradient(180deg, #ff6b35 0%, #e55a2b 100%);
+  margin-bottom: 0.75rem;
+  position: relative;
+}
+
+.step-connector::before {
+  content: "";
+  position: absolute;
+  bottom: -4px;
+  left: -4px;
+  width: 10px;
+  height: 10px;
+  background: #ff6b35;
+  border-radius: 50%;
+}
+
+.tree-node {
+  background: white;
+  border-radius: 12px;
+  padding: 1rem;
+  border: 2px solid #e9ecef;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+  position: relative;
+  cursor: pointer;
+  min-width: 140px;
+  max-width: 180px;
+  text-align: center;
+}
+
+.tree-node:hover {
+  transform: translateY(-8px) scale(1.05);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+}
+
+.root-node {
+  border-color: #0070f3;
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+}
+
+.path-node.rag-generated {
+  border-color: #28a745;
+  background: linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%);
+}
+
+.path-node.ai-generated {
+  border-color: #ff6b35;
+  background: linear-gradient(135deg, #fff8f5 0%, #ffe8e0 100%);
+}
+
+.node-icon {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+.node-content h6 {
+  color: #2c3e50;
+  margin: 0 0 0.25rem 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.node-experience,
+.node-timeline {
+  background: linear-gradient(135deg, #ff6b35 0%, #e55a2b 100%);
+  color: white;
+  padding: 0.2rem 0.6rem;
+  border-radius: 15px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.ai-badge {
+  background: linear-gradient(135deg, #ff6b35 0%, #e55a2b 100%);
+  color: white;
+  padding: 0.2rem 0.6rem;
+  border-radius: 15px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  box-shadow: 0 2px 8px rgba(255, 107, 53, 0.3);
+}
+
+/* Tooltip Styles */
+.node-tooltip {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: white;
+  border: 2px solid #ff6b35;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+  z-index: 1000;
+  min-width: 300px;
+  max-width: 400px;
+  margin-bottom: 1rem;
+}
+
+.tree-node:hover .node-tooltip {
+  opacity: 1;
+  visibility: visible;
+}
+
+.node-tooltip::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 8px solid transparent;
+  border-top-color: #ff6b35;
+}
+
+.tooltip-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.tooltip-header h7 {
+  color: #2c3e50;
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.tooltip-timeline {
+  background: linear-gradient(135deg, #ff6b35 0%, #e55a2b 100%);
+  color: white;
+  padding: 0.2rem 0.6rem;
+  border-radius: 15px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.tooltip-story {
+  margin-bottom: 1rem;
+}
+
+.tooltip-story p {
+  color: #495057;
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  font-style: italic;
+}
+
+.tooltip-skills {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.tooltip-skills-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.tooltip-skills-section strong {
+  color: #2c3e50;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.tooltip-skills-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.tooltip-skill {
+  padding: 0.2rem 0.6rem;
+  border-radius: 15px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.tooltip-skill.required {
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+  color: #1976d2;
+  border: 1px solid #90caf9;
+}
+
+.tooltip-skill.gained {
+  background: linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%);
+  color: #2e7d32;
+  border: 1px solid #81c784;
+}
+
+.tooltip-skill-more {
+  background: #f8f9fa;
+  color: #6c757d;
+  border: 1px solid #dee2e6;
+  padding: 0.2rem 0.6rem;
+  border-radius: 15px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+/* Responsive Design for Oracle Results */
+@media (max-width: 768px) {
+  .oracle-results {
+    padding: 1.5rem;
+  }
+
+  .results-header h4 {
+    font-size: 1.4rem;
+  }
+
+  .unified-career-graph {
+    padding: 1rem;
+  }
+
+  .graph-branches {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .career-branch {
+    max-width: 100%;
+  }
+
+  .tree-node {
+    padding: 0.75rem;
+    min-width: 120px;
+    max-width: 150px;
+  }
+
+  .node-content h6 {
+    font-size: 0.85rem;
+  }
+
+  .node-timeline {
+    font-size: 0.7rem;
+    padding: 0.15rem 0.5rem;
+  }
+
+  .node-tooltip {
+    min-width: 250px;
+    max-width: 300px;
+    padding: 1rem;
+  }
+
+  .branch-line {
+    height: 40px;
+  }
+}

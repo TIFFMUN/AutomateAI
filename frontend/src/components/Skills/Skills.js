@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Skills.css';
+import API_CONFIG from '../../utils/apiConfig';
 
 function Skills() {
   const navigate = useNavigate();
@@ -190,7 +191,7 @@ function Skills() {
     setIsLoadingRecommendations(true);
     try {
       // Simulate API call to backend for LLM recommendations
-      const response = await fetch('http://localhost:8000/api/skills/recommendations', {
+      const response = await fetch(API_CONFIG.buildUrl('/api/skills/recommendations'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
