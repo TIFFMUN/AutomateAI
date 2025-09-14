@@ -5,6 +5,18 @@ from typing import Dict, Any, List, Optional
 from sqlalchemy.orm import Session
 from datetime import datetime
 import json
+
+def validate_user_id(user_id: str, db: Session) -> int:
+    """Validate that user_id is a valid integer and user exists"""
+    try:
+        user_id_int = int(user_id)
+        # Verify the user exists
+        user = db.query(User).filter(User.id == user_id_int).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        return user_id_int
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid user_id format. Must be an integer.")
 from config import settings
 from langgraph_connection import LangGraphConnection
 from prompts import PERFORMANCE_FEEDBACK_ANALYSIS, PERFORMANCE_FEEDBACK_ANALYSIS_PROMPT, REAL_TIME_FEEDBACK_SUGGESTIONS_PROMPT
@@ -25,13 +37,19 @@ from db import (
     save_progress_update_performance, get_latest_progress_goals_performance, get_progress_history_performance
 )
 from routers.auth import router as auth_router
+from routers.skills import router as skills_router
+from routers.career import router as career_router
 from middleware.auth_middleware import get_current_active_user
 from models.user import User
 import os
 from dotenv import load_dotenv
 from database import create_tables
 
-load_dotenv()
+try:
+    load_dotenv()
+except Exception as e:
+    print(f"Warning: Could not load .env file: {e}")
+    # Continue without .env file
 
 app = FastAPI(
     title="AutomateAI API", 
@@ -160,6 +178,12 @@ def setup_manager_relationships(db: Session = Depends(get_performance_db)):
 # Include authentication router
 app.include_router(auth_router, prefix="/api")
 
+# Include skills router
+app.include_router(skills_router)
+
+# Include career router
+app.include_router(career_router)
+
 # Database-backed onboarding data (now persistent)
 
 
@@ -273,6 +297,7 @@ class CreatePerformanceGoalRequest(BaseModel):
 
 class LeaderboardEntry(BaseModel):
     user_id: str
+    username: Optional[str] = None
     total_points: int
 
 class LeaderboardResponse(BaseModel):
@@ -407,6 +432,7 @@ def on_startup() -> None:
         print(f"Error creating performance users: {e}")
 
 @app.get("/api/user/{user_id}/state")
+<<<<<<< HEAD
 def get_user_state_endpoint(user_id: str, current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)):
     try:
         print(f"Getting user state for user_id: {user_id}, current_user: {current_user.username}")
@@ -447,6 +473,34 @@ def get_user_state_endpoint(user_id: str, current_user: User = Depends(get_curre
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+=======
+def get_user_state_endpoint(user_id: str, db: Session = Depends(get_db)):
+    # Validate that user_id is a valid integer
+    validate_user_id(user_id, db)
+    
+    user_state = get_user_state(db, user_id)
+    if not user_state:
+        user_state = create_user_state(db, user_id)
+    
+    chat_messages = get_chat_messages(db, user_id)
+    chat_message_responses = [
+        ChatMessageResponse(
+            role=msg.role,
+            content=msg.content,
+            timestamp=msg.timestamp
+        ) for msg in chat_messages
+    ]
+    
+    return UserStateResponse(
+        user_id=user_state.user_id,
+        current_node=user_state.current_node,
+        total_points=user_state.total_points,
+        node_tasks=user_state.node_tasks,
+        chat_messages=chat_message_responses,
+        created_at=user_state.created_at,
+        updated_at=user_state.updated_at
+    )
+>>>>>>> dev-backup-copy
 
 @app.get("/api/leaderboard", response_model=LeaderboardResponse)
 def get_leaderboard(limit: int = 10, current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)):
@@ -457,14 +511,37 @@ def get_leaderboard(limit: int = 10, current_user: User = Depends(get_current_ac
         .limit(max(1, min(limit, 100)))
         .all()
     )
-    entries = [
-        LeaderboardEntry(user_id=u.user_id, total_points=u.total_points or 0)
-        for u in top_users
-    ]
+    
+    # Get usernames by converting user_id to int and looking up User.id
+    entries = []
+    for u in top_users:
+        try:
+            # Convert user_id to int and find user
+            user_id_int = int(u.user_id)
+            user = db.query(User).filter(User.id == user_id_int).first()
+            username = user.username if user else f"User {u.user_id}"
+        except (ValueError, TypeError) as e:
+            # Fallback: if user_id is not a valid integer, use it as username
+            username = u.user_id
+        
+        entry = LeaderboardEntry(
+            user_id=u.user_id, 
+            username=username, 
+            total_points=u.total_points or 0
+        )
+        entries.append(entry)
+    
     return LeaderboardResponse(entries=entries)
 
 @app.get("/api/user/{user_id}/rank", response_model=UserRankResponse)
+<<<<<<< HEAD
 def get_user_rank(user_id: str, current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)):
+=======
+def get_user_rank(user_id: str, db: Session = Depends(get_db)):
+    # Validate that user_id is a valid integer
+    validate_user_id(user_id, db)
+    
+>>>>>>> dev-backup-copy
     user_state = get_user_state(db, user_id)
     if not user_state:
         user_state = create_user_state(db, user_id)
@@ -477,7 +554,11 @@ def get_user_rank(user_id: str, current_user: User = Depends(get_current_active_
 @app.post("/api/user/{user_id}/chat")
 def handle_chat(user_id: str, request: ChatRequest, db: Session = Depends(get_db)):
     print(f"Received chat request for user {user_id}: {request}")
-    # Ensure user state exists
+    
+    # Validate that user_id is a valid integer
+    validate_user_id(user_id, db)
+    
+    # Ensure user state exists (user_id should be integer as string)
     user_state = get_user_state(db, user_id)
     if not user_state:
         user_state = create_user_state(db, user_id)
