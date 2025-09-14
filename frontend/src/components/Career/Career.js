@@ -170,13 +170,21 @@ function Career() {
 
   // Career Oracle API call
   const predictCareerPath = async () => {
-    if (!selectedRole || !experienceYears) {
-      setOracleError('Please select a role and enter your experience years');
+    // Clear previous errors
+    setOracleError(null);
+    
+    // Validate inputs
+    if (!selectedRole) {
+      setOracleError('Please select your current role');
+      return;
+    }
+    
+    if (!experienceYears || experienceYears < 0 || experienceYears > 20) {
+      setOracleError('Please enter a valid number of years (0-20)');
       return;
     }
 
     setOracleLoading(true);
-    setOracleError(null);
     setOracleData(null);
 
     try {
@@ -185,6 +193,7 @@ function Career() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include', // Include cookies for authentication
         body: JSON.stringify({
           current_role: selectedRole,
           experience_years: parseInt(experienceYears),
@@ -197,8 +206,11 @@ function Career() {
         throw new Error(errorData.detail || 'Failed to get career predictions');
       }
 
-      const data = await response.json();
-      setOracleData(data);
+          const data = await response.json();
+          console.log('Oracle API Response:', data);
+          console.log('Career Trees:', data.career_trees);
+          console.log('Full response structure:', JSON.stringify(data, null, 2));
+          setOracleData(data);
     } catch (err) {
       console.error('Career Oracle error:', err);
       setOracleError(err.message || 'Failed to get career predictions');
@@ -218,6 +230,7 @@ function Career() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include', // Include cookies for authentication
         body: JSON.stringify({
           answers: quizAnswers
         })
@@ -468,63 +481,57 @@ function Career() {
             <div className="oracle-segment">
               <div className="oracle-container">
                 <div className="oracle-header">
-                  <h3><strong>🌟 Career Path Oracle</strong></h3>
-                  <p>Discover your potential career paths with our RPG-style career progression system</p>
+                  <div className="oracle-icon">🔮</div>
+                  <h3><strong>AI Career Path Oracle</strong></h3>
+                  <p>Watch our AI craft a personalized career route based on your profile and constraints</p>
                 </div>
                 
                 <div className="oracle-content">
-                  <div className="oracle-intro">
-                    <div className="oracle-icon">🔮</div>
-                    <h4>Choose Your Current Role</h4>
-                    <p>Select your current SAP role and experience level to see your potential career paths</p>
-                  </div>
-                  
                   <div className="role-selection">
-                    <div className="role-input-group">
-                      <label htmlFor="current-role">Current Role:</label>
-                      <select 
-                        id="current-role" 
-                        className="role-select"
-                        value={selectedRole}
-                        onChange={(e) => setSelectedRole(e.target.value)}
-                      >
-                        <option value="">Select your role...</option>
-                        <option value="ABAP Developer">ABAP Developer</option>
-                        <option value="SAP Basis Administrator">SAP Basis Administrator</option>
-                        <option value="Fiori Developer">Fiori Developer</option>
-                        <option value="SAP FI Consultant">SAP FI Consultant</option>
-                        <option value="SAP MM Consultant">SAP MM Consultant</option>
-                        <option value="SAP SD Consultant">SAP SD Consultant</option>
-                        <option value="SAP HCM Consultant">SAP HCM Consultant</option>
-                        <option value="SAP Security Consultant">SAP Security Consultant</option>
-                        <option value="SAP Integration Specialist">SAP Integration Specialist</option>
-                        <option value="SAP Functional Analyst">SAP Functional Analyst</option>
-                      </select>
-                    </div>
-                    
-                    <div className="experience-input-group">
-                      <label htmlFor="experience-years">Years of Experience:</label>
-                      <input 
-                        type="number" 
-                        id="experience-years" 
-                        className="experience-input"
-                        min="0" 
-                        max="20" 
-                        placeholder="e.g., 1"
-                        value={experienceYears}
-                        onChange={(e) => setExperienceYears(e.target.value)}
-                      />
+                    <div className="input-row">
+                      <div className="role-input-group">
+                        <label htmlFor="current-role">Current Role *</label>
+                        <select
+                          id="current-role"
+                          className="role-select"
+                          value={selectedRole}
+                          onChange={(e) => setSelectedRole(e.target.value)}
+                          required
+                        >
+                          <option value="">Choose your current SAP role...</option>
+                          <option value="SAP Junior Developer">SAP Junior Developer</option>
+                          <option value="SAP Functional Consultant">SAP Functional Consultant</option>
+                          <option value="SAP Business Analyst">SAP Business Analyst</option>
+                          <option value="SAP Project Manager">SAP Project Manager</option>
+                          <option value="SAP Solution Architect">SAP Solution Architect</option>
+                        </select>
+                      </div>
+                      
+                      <div className="experience-input-group">
+                        <label htmlFor="experience-years">Years of Experience *</label>
+                        <input 
+                          type="number" 
+                          id="experience-years" 
+                          className="experience-input"
+                          min="0" 
+                          max="20" 
+                          placeholder="Enter years (0-20)"
+                          value={experienceYears}
+                          onChange={(e) => setExperienceYears(e.target.value)}
+                          required
+                        />
+                      </div>
                     </div>
                     
                     <div className="goal-input-group">
-                      <label htmlFor="career-goal">Career Goal (Optional):</label>
+                      <label htmlFor="career-goal">Career Goal (Optional)</label>
                       <select 
                         id="career-goal" 
                         className="goal-select"
                         value={careerGoal}
                         onChange={(e) => setCareerGoal(e.target.value)}
                       >
-                        <option value="">Select your goal...</option>
+                        <option value="">Choose your career goal...</option>
                         <option value="leadership">Leadership & Management</option>
                         <option value="technical mastery">Technical Mastery</option>
                         <option value="architecture">Solution Architecture</option>
@@ -536,30 +543,10 @@ function Career() {
                     <button 
                       className="btn btn-primary oracle-btn"
                       onClick={predictCareerPath}
-                      disabled={oracleLoading}
+                      disabled={oracleLoading || !selectedRole || !experienceYears}
                     >
-                      {oracleLoading ? '🔮 Predicting...' : '🔮 Predict My Career Path'}
+                      {oracleLoading ? '🔮 AI is crafting your route...' : '🔮 Craft My Career Route'}
                     </button>
-                  </div>
-                  
-                  <div className="oracle-preview">
-                    <div className="preview-card">
-                      <div className="preview-icon">🎮</div>
-                      <h5>RPG-Style Career Trees</h5>
-                      <p>Visualize your career progression like a skill tree in an RPG game</p>
-                    </div>
-                    
-                    <div className="preview-card">
-                      <div className="preview-icon">📊</div>
-                      <h5>Multiple Career Paths</h5>
-                      <p>Discover 3-4 different career trees with branching progression paths</p>
-                    </div>
-                    
-                    <div className="preview-card">
-                      <div className="preview-icon">⚡</div>
-                      <h5>Skills & Prerequisites</h5>
-                      <p>See what skills you need and what you'll gain at each career step</p>
-                    </div>
                   </div>
                   
                   {/* Error Display */}
@@ -570,95 +557,135 @@ function Career() {
                     </div>
                   )}
                   
+                  {/* AI Crafting Process Display */}
+                  {oracleLoading && (
+                    <div className="ai-crafting-process">
+                      <div className="crafting-header">
+                        <div className="ai-icon">🔮</div>
+                        <h4>AI is crafting your personalized career route...</h4>
+                        <p>Analyzing your profile: <strong>{selectedRole}</strong> with <strong>{experienceYears} years</strong> experience</p>
+                        {careerGoal && <p>Goal: <strong>{careerGoal}</strong></p>}
+                      </div>
+                      
+                      <div className="crafting-steps">
+                        <div className="step">
+                          <div className="step-icon">🔍</div>
+                          <div className="step-content">
+                            <h5>Analyzing Constraints</h5>
+                            <p>Reviewing SAP role requirements and experience levels</p>
+                          </div>
+                        </div>
+                        
+                        <div className="step">
+                          <div className="step-icon">🎯</div>
+                          <div className="step-content">
+                            <h5>Mapping Career Goals</h5>
+                            <p>Aligning your goals with realistic progression paths</p>
+                          </div>
+                        </div>
+                        
+                        <div className="step">
+                          <div className="step-icon">⚡</div>
+                          <div className="step-content">
+                            <h5>Generating Routes</h5>
+                            <p>Creating personalized career progression sequences</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
                   {/* Results Display */}
                   {oracleData && (
                     <div className="oracle-results">
                       <div className="results-header">
-                        <h4>🌟 Your Career Path Oracle Results</h4>
-                        <p>Based on your role as <strong>{oracleData.current_role}</strong> with <strong>{oracleData.experience_years} years</strong> of experience</p>
+                        <h4>🔮 Your AI-Crafted Career Route</h4>
+                        <p>Based on your profile: <strong>{oracleData.current_role}</strong> • <strong>{oracleData.experience_years} years</strong> experience</p>
                       </div>
                       
-                      <div className="unified-career-graph">
-                        {/* Root Node - Current Role */}
-                        <div className="graph-root">
-                          <div className="tree-node root-node">
-                            <div className="node-icon">🎯</div>
-                            <div className="node-content">
-                              <h6>{oracleData.current_role}</h6>
-                              <span className="node-experience">{oracleData.experience_years} years</span>
-                            </div>
+                      <div className="career-route-display">
+                        {/* Current Role */}
+                        <div className="current-role-card">
+                          <div className="role-icon">📍</div>
+                          <div className="role-content">
+                            <h5>Your Starting Point</h5>
+                            <h4>{oracleData.current_role}</h4>
+                            <p>{oracleData.experience_years} years of experience</p>
                           </div>
                         </div>
                         
-                        {/* Branching Paths */}
-                        <div className="graph-branches">
-                          {oracleData.career_trees.map((tree, treeIndex) => (
-                            <div key={treeIndex} className="career-branch">
-                              {/* Branch Header */}
-                              <div className="branch-header">
-                                <span className="branch-icon">{tree.tree_icon}</span>
-                                <h5>{tree.tree_name}</h5>
-                                <p>{tree.tree_description}</p>
+                        {/* Career Routes */}
+                        {oracleData.career_trees && oracleData.career_trees.length > 0 ? (
+                          oracleData.career_trees.map((tree, treeIndex) => (
+                            <div key={treeIndex} className="career-route-card">
+                              <div className="route-header">
+                                <span className="route-icon">{tree.tree_icon || '🎯'}</span>
+                                <div className="route-info">
+                                  <h5>{tree.tree_name}</h5>
+                                  <p>{tree.tree_description}</p>
+                                </div>
+                                <span className="ai-badge">🔮 AI Crafted</span>
                               </div>
                               
-                              {/* Branch Path */}
-                              <div className="branch-path">
-                                {tree.progressive_paths.map((path, pathIndex) => (
+                              <div className="route-path">
+                                {tree.progressive_paths && tree.progressive_paths.map((path, pathIndex) => (
                                   <div key={pathIndex} className="path-step">
-                                    {/* Connection Line */}
                                     <div className="step-connector"></div>
-                                    
-                                    {/* Path Node */}
-                                    <div className={`tree-node path-node level-${path.level} ${path.is_ai_generated ? 'ai-generated' : 'rag-generated'}`}>
-                                      <div className="node-icon">
-                                        {path.is_ai_generated ? '🤖' : '⭐'}
-                                      </div>
-                                      <div className="node-content">
+                                    <div className="step-content">
+                                      <div className="step-header">
                                         <h6>{path.role}</h6>
-                                        <span className="node-timeline">{path.timeline}</span>
-                                        {path.is_ai_generated && <span className="ai-badge">AI</span>}
+                                        <span className="step-timeline">{path.timeline}</span>
                                       </div>
                                       
-                                      {/* Hover Tooltip */}
-                                      <div className="node-tooltip">
-                                        <div className="tooltip-header">
-                                          <h7>{path.role}</h7>
-                                          <span className="tooltip-timeline">{path.timeline}</span>
-                                        </div>
-                                        
-                                        <div className="tooltip-story">
-                                          <p>{path.story}</p>
-                                        </div>
-                                        
-                                        <div className="tooltip-skills">
-                                          <div className="tooltip-skills-section">
-                                            <strong>Skills Required:</strong>
-                                            <div className="tooltip-skills-list">
-                                              {path.skills_required.slice(0, 3).map((skill, skillIndex) => (
-                                                <span key={skillIndex} className="tooltip-skill required">{skill}</span>
-                                              ))}
-                                              {path.skills_required.length > 3 && <span className="tooltip-skill-more">+{path.skills_required.length - 3} more</span>}
-                                            </div>
-                                          </div>
-                                          
-                                          <div className="tooltip-skills-section">
-                                            <strong>Skills Gained:</strong>
-                                            <div className="tooltip-skills-list">
-                                              {path.skills_gained.slice(0, 3).map((skill, skillIndex) => (
-                                                <span key={skillIndex} className="tooltip-skill gained">{skill}</span>
-                                              ))}
-                                              {path.skills_gained.length > 3 && <span className="tooltip-skill-more">+{path.skills_gained.length - 3} more</span>}
-                                            </div>
+                                      <div className="step-story">
+                                        <p>{path.story}</p>
+                                      </div>
+                                      
+                                      <div className="step-skills">
+                                        <div className="skills-required">
+                                          <strong>Skills to Develop:</strong>
+                                          <div className="skill-tags">
+                                            {(path.skills_required || []).map((skill, skillIndex) => (
+                                              <span key={skillIndex} className="skill-tag required">{skill}</span>
+                                            ))}
                                           </div>
                                         </div>
+                                        
+                                        <div className="skills-gained">
+                                          <strong>Skills You'll Gain:</strong>
+                                          <div className="skill-tags">
+                                            {(path.skills_gained || []).map((skill, skillIndex) => (
+                                              <span key={skillIndex} className="skill-tag gained">{skill}</span>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      </div>
+                                      
+                                      <div className="step-actions">
+                                        <button className="develop-skills-btn">
+                                          Develop Skills
+                                        </button>
                                       </div>
                                     </div>
                                   </div>
                                 ))}
                               </div>
                             </div>
-                          ))}
-                        </div>
+                          ))
+                        ) : (
+                          <div className="no-routes">
+                            <div className="no-routes-icon">🔮</div>
+                            <h4>No career routes generated</h4>
+                            <p>Unable to generate career routes. Please try again or check your inputs.</p>
+                            <button 
+                              className="btn btn-primary"
+                              onClick={predictCareerPath}
+                              disabled={oracleLoading}
+                            >
+                              Try Again
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
