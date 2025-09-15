@@ -275,6 +275,7 @@ def calculate_points_for_task(task_name: str, user_message: str) -> int:
         # New explicit tasks
         'career_coach_quiz': 300,
         'personal_information_completed': 400,
+        'skill_completion': 500,
     }
 
     # If an explicit task name is provided, prefer that

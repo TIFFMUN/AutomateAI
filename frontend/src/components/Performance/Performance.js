@@ -1299,6 +1299,14 @@ function PersonalGoalsSection({ currentUserId, insight, setInsight, chartData, s
             {isUpdating ? 'Updating...' : 'Update'}
           </button>
         </div>
+        
+        {/* Loading State Overlay */}
+        {isUpdating && (
+          <div className="progress-loading-overlay">
+            <div className="spinner"></div>
+            <p>Processing your progress update...</p>
+          </div>
+        )}
       </div>
 
       {/* Goals List */}

@@ -285,15 +285,13 @@ CAREER PROGRESSION RULES:
 4. BUSINESS ROLES (Analyst, Business roles) → Progress to Senior Business roles or Management
 5. EXECUTIVE ROLES (CTO, VP) → Stay in executive track or board positions
 
-LOGICAL PROGRESSIONS:
+POSSIBLE LOGICAL PROGRESSIONS:
 - ABAP Developer → Senior Developer → Technical Lead → Development Manager
 - SAP FI Consultant → Senior Consultant → Functional Lead → Solution Architect
 - SAP Business Analyst → Senior Analyst → Business Process Consultant → Project Manager
 - SAP Project Manager → Senior PM → Program Manager → Director
 - SAP Solution Architect → Senior Architect → Principal Architect → CTO
 - SAP Security Consultant → Senior Security → Security Manager → CISO
-- SAP Development Manager → Director → VP Engineering → CTO
-- SAP CTO → Senior VP → President → Board Member
 
 Create routes with 2-3 realistic steps each. Each step should show:
 - LOGICAL progression from current role (don't jump between unrelated tracks)

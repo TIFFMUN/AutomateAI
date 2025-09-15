@@ -51,7 +51,7 @@ async def get_skill_recommendations(request: SkillRecommendationRequest):
         """
         
         skill_response = await client.chat.completions.create(
-            model="gpt-3.5-turbo", # Change to an OpenAI model
+            model="gpt-4o",
             messages=[
                 {"role": "system", "content": "You are a career development expert. Always output a strict JSON object with a 'recommendations' key."},
                 {"role": "user", "content": skill_prompt}
@@ -82,7 +82,7 @@ async def get_skill_recommendations(request: SkillRecommendationRequest):
             """
 
             resource_response = await client.chat.completions.create(
-                model="gpt-3.5-turbo",
+                model="gpt-4o",
                 messages=[
                     {"role": "system", "content": "You are a helpful assistant that finds real online courses. Always provide direct links to the course pages. Your output must be a valid JSON object."},
                     {"role": "user", "content": resource_prompt}
