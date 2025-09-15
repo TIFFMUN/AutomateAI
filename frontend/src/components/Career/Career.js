@@ -2,10 +2,12 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Career.css';
 import apiConfig from '../../utils/apiConfig';
+import { useAuth } from '../../contexts/AuthContext';
 
 
 function Career() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [activeSegment, setActiveSegment] = useState('quiz');
   const [quizStep, setQuizStep] = useState(0);
   const [quizAnswers, setQuizAnswers] = useState({});
@@ -14,6 +16,9 @@ function Career() {
   const [isLoading, setIsLoading] = useState(false);
   const [careerResponse, setCareerResponse] = useState(null);
   const [error, setError] = useState(null);
+  const [totalPoints, setTotalPoints] = useState(0);
+  const [pointsEarned, setPointsEarned] = useState(0);
+  const [showPointsAnimation, setShowPointsAnimation] = useState(false);
   
   // Career Oracle states
   const [oracleData, setOracleData] = useState(null);
@@ -242,6 +247,46 @@ function Career() {
 
       const data = await response.json();
       setCareerResponse(data);
+
+      // Award points for completing the career coach quiz
+      try {
+        const userId = user?.id;
+        if (userId) {
+          const awardRes = await fetch(apiConfig.buildUrl(`/api/user/${userId}/points`), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ task_name: 'career_coach_quiz' })
+          });
+          if (awardRes.ok) {
+            const awardData = await awardRes.json();
+            const gained = awardData.awarded_points || 300;
+            setPointsEarned(gained);
+            // Prefer reloading from server to avoid drift
+            try {
+              const stateRes = await fetch(apiConfig.buildUrl(`/api/user/${userId}/state`), { credentials: 'include' });
+              if (stateRes.ok) {
+                const stateData = await stateRes.json();
+                if (typeof stateData.total_points === 'number') {
+                  setTotalPoints(stateData.total_points);
+                } else {
+                  setTotalPoints((prev) => prev + gained);
+                }
+              } else {
+                setTotalPoints((prev) => prev + gained);
+              }
+            } catch (_) {
+              setTotalPoints((prev) => prev + gained);
+            }
+            setShowPointsAnimation(true);
+            setTimeout(() => setShowPointsAnimation(false), 3000);
+          } else {
+            console.warn('Award points request failed:', awardRes.status);
+          }
+        }
+      } catch (e) {
+        console.warn('Failed to award points for career coach quiz:', e);
+      }
     } catch (err) {
       console.error('Error fetching career recommendations:', err);
       setError('Failed to get career recommendations. Please try again.');
@@ -249,6 +294,22 @@ function Career() {
       setIsLoading(false);
     }
   };
+
+  // Load current total points when component mounts or user changes
+  React.useEffect(() => {
+    const loadPoints = async () => {
+      try {
+        const userId = user?.id;
+        if (!userId) return;
+        const res = await fetch(apiConfig.buildUrl(`/api/user/${userId}/state`), { credentials: 'include' });
+        if (res.ok) {
+          const data = await res.json();
+          if (typeof data.total_points === 'number') setTotalPoints(data.total_points);
+        }
+      } catch (_) {}
+    };
+    loadPoints();
+  }, [user?.id]);
 
 
   return (
@@ -694,6 +755,22 @@ function Career() {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Points Display (standardized with Onboarding) */}
+      <div className="points-display">
+        <div className="points-container">
+          <div className="points-icon">⭐</div>
+          <div className="points-text">
+            <span className="points-label">Points</span>
+            <span className="points-value">{totalPoints}</span>
+          </div>
+        </div>
+        {showPointsAnimation && (
+          <div className="points-animation">
+            <div className="points-earned">+{pointsEarned}</div>
+          </div>
+        )}
       </div>
     </div>
   );
