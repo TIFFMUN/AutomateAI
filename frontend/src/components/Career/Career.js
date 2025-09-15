@@ -295,6 +295,20 @@ function Career() {
     }
   };
 
+  // Handle Develop Skills button click
+  const handleDevelopSkills = (skillsToDevelop) => {
+    // Convert skills array to comma-separated string for URL parameter
+    const skillsString = skillsToDevelop.join(', ');
+    
+    // Navigate to Skills page with skills data
+    navigate('/skills', { 
+      state: { 
+        skillsToDevelop: skillsString,
+        fromCareerOracle: true 
+      } 
+    });
+  };
+
   // Load current total points when component mounts or user changes
   React.useEffect(() => {
     const loadPoints = async () => {
@@ -723,7 +737,10 @@ function Career() {
                                       </div>
                                       
                                       <div className="step-actions">
-                                        <button className="develop-skills-btn">
+                                        <button 
+                                          className="develop-skills-btn"
+                                          onClick={() => handleDevelopSkills(path.skills_required || [])}
+                                        >
                                           Develop Skills
                                         </button>
                                       </div>

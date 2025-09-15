@@ -196,7 +196,46 @@ function Onboarding() {
     setShowVideoPopup(true);
   };
 
-  const handleCloseVideo = () => {
+  const handleCloseVideo = async () => {
+    // Award points for completing the welcome video
+    try {
+      const userId = user?.id;
+      if (userId) {
+        const awardRes = await fetch(API_CONFIG.buildUrl(`/api/user/${userId}/points`), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ task_name: 'welcome_video' })
+        });
+        if (awardRes.ok) {
+          const awardData = await awardRes.json();
+          const gained = awardData.awarded_points || 300;
+          setPointsEarned(gained);
+          // Update total points
+          try {
+            const stateRes = await fetch(API_CONFIG.buildUrl(`/api/user/${userId}/state`), { credentials: 'include' });
+            if (stateRes.ok) {
+              const stateData = await stateRes.json();
+              if (typeof stateData.total_points === 'number') {
+                setTotalPoints(stateData.total_points);
+              } else {
+                setTotalPoints((prev) => prev + gained);
+              }
+            } else {
+              setTotalPoints((prev) => prev + gained);
+            }
+          } catch (_) {
+            setTotalPoints((prev) => prev + gained);
+          }
+          // Show animation
+          setShowPointsAnimation(true);
+          setTimeout(() => setShowPointsAnimation(false), 3000);
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to award points for video completion:', e);
+    }
+    
     // Show visual notification immediately with estimated points
     showVisualPoints(300, "Welcome Video Completed!");
     
@@ -214,7 +253,46 @@ function Onboarding() {
     setShowPolicyPopup(true);
   };
 
-  const handleClosePolicy = () => {
+  const handleClosePolicy = async () => {
+    // Award points for completing the company policies
+    try {
+      const userId = user?.id;
+      if (userId) {
+        const awardRes = await fetch(API_CONFIG.buildUrl(`/api/user/${userId}/points`), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ task_name: 'company_policies' })
+        });
+        if (awardRes.ok) {
+          const awardData = await awardRes.json();
+          const gained = awardData.awarded_points || 200;
+          setPointsEarned(gained);
+          // Update total points
+          try {
+            const stateRes = await fetch(API_CONFIG.buildUrl(`/api/user/${userId}/state`), { credentials: 'include' });
+            if (stateRes.ok) {
+              const stateData = await stateRes.json();
+              if (typeof stateData.total_points === 'number') {
+                setTotalPoints(stateData.total_points);
+              } else {
+                setTotalPoints((prev) => prev + gained);
+              }
+            } else {
+              setTotalPoints((prev) => prev + gained);
+            }
+          } catch (_) {
+            setTotalPoints((prev) => prev + gained);
+          }
+          // Show animation
+          setShowPointsAnimation(true);
+          setTimeout(() => setShowPointsAnimation(false), 3000);
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to award points for policy completion:', e);
+    }
+    
     // Show visual notification immediately with estimated points
     showVisualPoints(200, "Company Policies Reviewed!");
     
@@ -245,7 +323,46 @@ function Onboarding() {
     setShowQuizPopup(true);
   };
 
-  const handleCloseQuiz = () => {
+  const handleCloseQuiz = async () => {
+    // Award points for completing the culture quiz
+    try {
+      const userId = user?.id;
+      if (userId) {
+        const awardRes = await fetch(API_CONFIG.buildUrl(`/api/user/${userId}/points`), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ task_name: 'culture_quiz' })
+        });
+        if (awardRes.ok) {
+          const awardData = await awardRes.json();
+          const gained = awardData.awarded_points || 250;
+          setPointsEarned(gained);
+          // Update total points
+          try {
+            const stateRes = await fetch(API_CONFIG.buildUrl(`/api/user/${userId}/state`), { credentials: 'include' });
+            if (stateRes.ok) {
+              const stateData = await stateRes.json();
+              if (typeof stateData.total_points === 'number') {
+                setTotalPoints(stateData.total_points);
+              } else {
+                setTotalPoints((prev) => prev + gained);
+              }
+            } else {
+              setTotalPoints((prev) => prev + gained);
+            }
+          } catch (_) {
+            setTotalPoints((prev) => prev + gained);
+          }
+          // Show animation
+          setShowPointsAnimation(true);
+          setTimeout(() => setShowPointsAnimation(false), 3000);
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to award points for quiz completion:', e);
+    }
+    
     // Show visual notification immediately with estimated points
     showVisualPoints(250, "Culture Quiz Completed!");
     
@@ -268,7 +385,46 @@ function Onboarding() {
     setShowEmployeePerksPopup(true);
   };
 
-  const handleCloseEmployeePerks = () => {
+  const handleCloseEmployeePerks = async () => {
+    // Award points for completing the employee perks review
+    try {
+      const userId = user?.id;
+      if (userId) {
+        const awardRes = await fetch(API_CONFIG.buildUrl(`/api/user/${userId}/points`), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ task_name: 'employee_perks' })
+        });
+        if (awardRes.ok) {
+          const awardData = await awardRes.json();
+          const gained = awardData.awarded_points || 150;
+          setPointsEarned(gained);
+          // Update total points
+          try {
+            const stateRes = await fetch(API_CONFIG.buildUrl(`/api/user/${userId}/state`), { credentials: 'include' });
+            if (stateRes.ok) {
+              const stateData = await stateRes.json();
+              if (typeof stateData.total_points === 'number') {
+                setTotalPoints(stateData.total_points);
+              } else {
+                setTotalPoints((prev) => prev + gained);
+              }
+            } else {
+              setTotalPoints((prev) => prev + gained);
+            }
+          } catch (_) {
+            setTotalPoints((prev) => prev + gained);
+          }
+          // Show animation
+          setShowPointsAnimation(true);
+          setTimeout(() => setShowPointsAnimation(false), 3000);
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to award points for perks completion:', e);
+    }
+    
     // Show visual notification immediately with estimated points
     showVisualPoints(150, "Employee Perks Reviewed!");
     
@@ -285,7 +441,46 @@ function Onboarding() {
     setShowPersonalInfoFormPopup(true);
   };
 
-  const handleClosePersonalInfoForm = () => {
+  const handleClosePersonalInfoForm = async () => {
+    // Award points for completing the personal info form
+    try {
+      const userId = user?.id;
+      if (userId) {
+        const awardRes = await fetch(API_CONFIG.buildUrl(`/api/user/${userId}/points`), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ task_name: 'personal_info_form' })
+        });
+        if (awardRes.ok) {
+          const awardData = await awardRes.json();
+          const gained = awardData.awarded_points || 400;
+          setPointsEarned(gained);
+          // Update total points
+          try {
+            const stateRes = await fetch(API_CONFIG.buildUrl(`/api/user/${userId}/state`), { credentials: 'include' });
+            if (stateRes.ok) {
+              const stateData = await stateRes.json();
+              if (typeof stateData.total_points === 'number') {
+                setTotalPoints(stateData.total_points);
+              } else {
+                setTotalPoints((prev) => prev + gained);
+              }
+            } else {
+              setTotalPoints((prev) => prev + gained);
+            }
+          } catch (_) {
+            setTotalPoints((prev) => prev + gained);
+          }
+          // Show animation
+          setShowPointsAnimation(true);
+          setTimeout(() => setShowPointsAnimation(false), 3000);
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to award points for personal info form completion:', e);
+    }
+    
     // Show visual notification immediately with estimated points
     showVisualPoints(400, "Personal Info Form Submitted!");
     

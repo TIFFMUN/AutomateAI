@@ -3,7 +3,7 @@
     "role": "SAP Junior Developer",
     "constraints": {
       "min_experience": 0,
-      "required_skills": ["ABAP", "SAP Development", "Debugging"],
+      "required_skills": ["Programming", "ABAP Development", "Debugging", "Object-Oriented Programming", "Report Development", "API Development", "Problem Solving", "Technical Documentation"],
       "sap_relevance": ["SAP", "ABAP", "Development"],
       "career_types": ["technical", "entry-level"]
     }
@@ -12,7 +12,7 @@
     "role": "SAP Functional Consultant",
     "constraints": {
       "min_experience": 1,
-      "required_skills": ["SAP Modules", "Business Process", "Configuration"],
+      "required_skills": ["Business Process Mapping", "Gap Analysis", "User Acceptance Testing", "System Configuration", "Requirements Analysis", "Change Management", "Client Communication", "Problem Solving"],
       "sap_relevance": ["SAP", "Functional", "Consulting"],
       "career_types": ["functional", "consulting"]
     }
@@ -21,7 +21,7 @@
     "role": "SAP Business Analyst",
     "constraints": {
       "min_experience": 2,
-      "required_skills": ["Business Analysis", "Requirements Gathering", "SAP Modules"],
+      "required_skills": ["Business Process Analysis", "Requirements Documentation", "Stakeholder Management", "Use Case Development", "Data Analysis", "Business Intelligence", "Process Improvement", "Communication Skills"],
       "sap_relevance": ["SAP", "Business", "Analysis"],
       "career_types": ["business", "functional"]
     }
@@ -30,7 +30,7 @@
     "role": "SAP Project Manager",
     "constraints": {
       "min_experience": 4,
-      "required_skills": ["Project Management", "SAP Implementation", "Team Leadership"],
+      "required_skills": ["Project Management", "Strategic Planning", "Team Leadership", "Budget Management", "Risk Management", "Stakeholder Communication", "Process Improvement", "Change Management"],
       "sap_relevance": ["SAP", "Project", "Management"],
       "career_types": ["management", "leadership"]
     }
@@ -39,7 +39,7 @@
     "role": "SAP Solution Architect",
     "constraints": {
       "min_experience": 5,
-      "required_skills": ["Solution Design", "SAP Architecture", "Technical Leadership"],
+      "required_skills": ["Solution Design", "Strategic Planning", "Technical Leadership", "System Integration", "Performance Optimization", "Business Analysis", "Innovation Management", "Technology Strategy"],
       "sap_relevance": ["SAP", "Architecture", "Solution"],
       "career_types": ["technical", "leadership", "senior"]
     }
@@ -48,7 +48,7 @@
     "role": "SAP Senior Developer",
     "constraints": {
       "min_experience": 3,
-      "required_skills": ["Advanced ABAP", "SAP Development", "Code Review"],
+      "required_skills": ["Advanced Programming", "Object-Oriented Programming", "Code Review & Optimization", "Performance Tuning", "Web Development", "Mobile Development", "Database Development", "Technical Leadership"],
       "sap_relevance": ["SAP", "ABAP", "Development"],
       "career_types": ["technical", "senior"]
     }
@@ -57,7 +57,7 @@
     "role": "SAP Technical Lead",
     "constraints": {
       "min_experience": 5,
-      "required_skills": ["Technical Leadership", "SAP Development", "Team Management"],
+      "required_skills": ["Technical Leadership", "System Development", "Team Management", "Code Architecture", "Performance Optimization", "Technical Mentoring", "Project Management", "Innovation Leadership"],
       "sap_relevance": ["SAP", "Technical", "Leadership"],
       "career_types": ["technical", "leadership"]
     }
@@ -66,7 +66,7 @@
     "role": "SAP Development Manager",
     "constraints": {
       "min_experience": 6,
-      "required_skills": ["Team Management", "SAP Development", "Strategic Planning"],
+      "required_skills": ["Team Management", "Strategic Planning", "Resource Allocation", "Quality Assurance", "Budget Management", "Vendor Management", "Process Improvement", "Innovation Leadership"],
       "sap_relevance": ["SAP", "Development", "Management"],
       "career_types": ["management", "technical"]
     }
@@ -75,7 +75,7 @@
     "role": "SAP Senior Consultant",
     "constraints": {
       "min_experience": 4,
-      "required_skills": ["Advanced SAP Modules", "Client Management", "Solution Design"],
+      "required_skills": ["Client Management", "Solution Design", "Business Process Optimization", "Change Management", "Training & Documentation", "Industry Knowledge", "Strategic Consulting", "Problem Solving"],
       "sap_relevance": ["SAP", "Consulting", "Senior"],
       "career_types": ["functional", "consulting", "senior"]
     }
@@ -84,7 +84,7 @@
     "role": "SAP Functional Lead",
     "constraints": {
       "min_experience": 5,
-      "required_skills": ["Functional Leadership", "SAP Modules", "Team Coordination"],
+      "required_skills": ["Team Leadership", "Team Coordination", "Business Process Design", "Solution Validation", "Team Mentoring", "Strategic Planning", "Cross-functional Collaboration", "Process Improvement"],
       "sap_relevance": ["SAP", "Functional", "Leadership"],
       "career_types": ["functional", "leadership"]
     }
@@ -93,7 +93,7 @@
     "role": "SAP Senior Business Analyst",
     "constraints": {
       "min_experience": 4,
-      "required_skills": ["Advanced Business Analysis", "SAP Modules", "Process Optimization"],
+      "required_skills": ["Advanced Business Analysis", "Process Optimization", "Data Analytics", "Business Intelligence", "Requirements Engineering", "Stakeholder Management", "Solution Design", "Strategic Thinking"],
       "sap_relevance": ["SAP", "Business", "Analysis"],
       "career_types": ["business", "senior"]
     }
@@ -102,7 +102,7 @@
     "role": "SAP Business Process Consultant",
     "constraints": {
       "min_experience": 3,
-      "required_skills": ["Process Design", "SAP Configuration", "Business Optimization"],
+      "required_skills": ["Business Process Design", "Process Optimization", "Workflow Management", "Business Process Modeling", "Process Automation", "Best Practices", "Continuous Improvement", "Change Management"],
       "sap_relevance": ["SAP", "Business", "Process"],
       "career_types": ["business", "functional"]
     }
@@ -111,7 +111,7 @@
     "role": "SAP Senior Project Manager",
     "constraints": {
       "min_experience": 6,
-      "required_skills": ["Advanced Project Management", "SAP Implementation", "Strategic Planning"],
+      "required_skills": ["Advanced Project Management", "Strategic Planning", "Program Management", "Risk Management", "Stakeholder Management", "Budget Control", "Quality Assurance", "Leadership"],
       "sap_relevance": ["SAP", "Project", "Management"],
       "career_types": ["management", "senior"]
     }
@@ -120,7 +120,7 @@
     "role": "SAP Program Manager",
     "constraints": {
       "min_experience": 7,
-      "required_skills": ["Program Management", "Multiple Projects", "Strategic Leadership"],
+      "required_skills": ["Program Management", "Multiple Project Coordination", "Strategic Leadership", "Resource Management", "Portfolio Management", "Change Management", "Governance", "Strategic Alignment"],
       "sap_relevance": ["SAP", "Program", "Management"],
       "career_types": ["management", "senior"]
     }
@@ -129,7 +129,7 @@
     "role": "SAP Director",
     "constraints": {
       "min_experience": 8,
-      "required_skills": ["Strategic Leadership", "SAP Strategy", "Team Management"],
+      "required_skills": ["Strategic Leadership", "Strategic Planning", "Team Management", "Business Development", "Operational Excellence", "Client Relationship Management", "Innovation Management", "Change Leadership"],
       "sap_relevance": ["SAP", "Director", "Leadership"],
       "career_types": ["management", "executive"]
     }
@@ -138,7 +138,7 @@
     "role": "SAP Senior Solution Architect",
     "constraints": {
       "min_experience": 7,
-      "required_skills": ["Advanced Solution Design", "Enterprise Architecture", "Technical Strategy"],
+      "required_skills": ["Advanced Solution Design", "Enterprise Architecture", "Technical Strategy", "SAP HANA", "Cloud Architecture", "Integration Architecture", "Performance Optimization", "Technical Leadership"],
       "sap_relevance": ["SAP", "Architecture", "Solution"],
       "career_types": ["technical", "senior", "leadership"]
     }
@@ -147,7 +147,7 @@
     "role": "SAP Principal Architect",
     "constraints": {
       "min_experience": 9,
-      "required_skills": ["Principal Architecture", "Enterprise Design", "Technical Vision"],
+      "required_skills": ["Principal Architecture", "Enterprise Design", "Technical Vision", "Innovation Leadership", "Technology Strategy", "Architecture Governance", "Solution Excellence", "Thought Leadership"],
       "sap_relevance": ["SAP", "Architecture", "Principal"],
       "career_types": ["technical", "senior", "expert"]
     }
@@ -156,7 +156,7 @@
     "role": "SAP Chief Technology Officer",
     "constraints": {
       "min_experience": 12,
-      "required_skills": ["Technology Strategy", "Executive Leadership", "Innovation"],
+      "required_skills": ["Technology Strategy", "Executive Leadership", "Innovation Management", "Digital Transformation", "Technology Vision", "R&D Leadership", "Strategic Planning", "Industry Leadership"],
       "sap_relevance": ["SAP", "CTO", "Technology"],
       "career_types": ["executive", "leadership"]
     }
@@ -165,7 +165,7 @@
     "role": "SAP FI Consultant",
     "constraints": {
       "min_experience": 2,
-      "required_skills": ["SAP FI", "Financial Accounting", "Configuration"],
+      "required_skills": ["SAP FI Module", "General Ledger (GL)", "Accounts Payable (AP)", "Accounts Receivable (AR)", "Asset Accounting (AA)", "SPRO Configuration", "Financial Reporting", "Banking Integration"],
       "sap_relevance": ["SAP", "FI", "Financial"],
       "career_types": ["functional", "financial"]
     }
@@ -174,7 +174,7 @@
     "role": "SAP Security Consultant",
     "constraints": {
       "min_experience": 3,
-      "required_skills": ["SAP Security", "Authorization", "GRC"],
+      "required_skills": ["Security Management", "Role-Based Access Control", "User Administration", "Security Audit", "Compliance Management", "Risk Assessment", "Security Policies", "Access Management"],
       "sap_relevance": ["SAP", "Security", "Authorization"],
       "career_types": ["functional", "security"]
     }
@@ -183,7 +183,7 @@
     "role": "SAP Basis Administrator",
     "constraints": {
       "min_experience": 2,
-      "required_skills": ["SAP Basis", "System Administration", "Database"],
+      "required_skills": ["System Administration", "Database Administration", "System Monitoring", "Performance Tuning", "System Management", "Infrastructure Management", "Backup & Recovery", "OS Administration"],
       "sap_relevance": ["SAP", "Basis", "Infrastructure"],
       "career_types": ["technical", "infrastructure"]
     }
@@ -192,7 +192,7 @@
     "role": "SAP Data Analyst",
     "constraints": {
       "min_experience": 1,
-      "required_skills": ["Data Analysis", "SAP Reporting", "SQL"],
+      "required_skills": ["Data Analysis", "SQL Programming", "Data Modeling", "Report Development", "Data Extraction", "Business Intelligence", "Statistical Analysis", "Data Visualization"],
       "sap_relevance": ["SAP", "Data", "Analytics"],
       "career_types": ["technical", "analytics"]
     }
@@ -201,7 +201,7 @@
     "role": "SAP Integration Specialist",
     "constraints": {
       "min_experience": 3,
-      "required_skills": ["SAP PI/PO", "Integration", "Middleware"],
+      "required_skills": ["ABAP Integration", "API Development", "Data Integration", "Middleware Configuration", "Integration Monitoring", "Cloud Integration", "Data Mapping", "Process Integration"],
       "sap_relevance": ["SAP", "Integration", "PI"],
       "career_types": ["technical", "integration"]
     }
@@ -210,7 +210,7 @@
     "role": "SAP Cloud Consultant",
     "constraints": {
       "min_experience": 2,
-      "required_skills": ["SAP Cloud", "S/4HANA Cloud", "Cloud Architecture"],
+      "required_skills": ["Cloud Architecture", "Cloud Migration", "Cloud Solutions", "Cloud Security", "Cloud Integration", "Digital Transformation", "Cloud Strategy", "Hybrid Solutions"],
       "sap_relevance": ["SAP", "Cloud", "S4HANA"],
       "career_types": ["functional", "cloud"]
     }
@@ -219,7 +219,7 @@
     "role": "SAP UX/UI Designer",
     "constraints": {
       "min_experience": 1,
-      "required_skills": ["Fiori", "UI5", "User Experience"],
+      "required_skills": ["User Experience Design", "User Interface Design", "Responsive Design", "Design Thinking", "Prototyping", "User Research", "Visual Design", "Interaction Design"],
       "sap_relevance": ["SAP", "Fiori", "UI"],
       "career_types": ["technical", "design"]
     }
@@ -228,7 +228,7 @@
     "role": "SAP DevOps Engineer",
     "constraints": {
       "min_experience": 2,
-      "required_skills": ["DevOps", "CI/CD", "SAP Deployment"],
+      "required_skills": ["SAP DevOps", "CI/CD Pipelines", "SAP Deployment", "Docker & Kubernetes", "SAP Solution Manager", "Automated Testing", "Infrastructure as Code", "Monitoring & Logging"],
       "sap_relevance": ["SAP", "DevOps", "Deployment"],
       "career_types": ["technical", "devops"]
     }
@@ -237,7 +237,7 @@
     "role": "SAP Change Management Specialist",
     "constraints": {
       "min_experience": 3,
-      "required_skills": ["Change Management", "Training", "SAP Implementation"],
+      "required_skills": ["Change Management", "Training & Documentation", "SAP Implementation", "Stakeholder Engagement", "Communication Planning", "Resistance Management", "Training Material Development", "Adoption Strategies"],
       "sap_relevance": ["SAP", "Change", "Management"],
       "career_types": ["business", "change"]
     }
@@ -246,7 +246,7 @@
     "role": "SAP Sales Engineer",
     "constraints": {
       "min_experience": 3,
-      "required_skills": ["Sales", "SAP Solutions", "Technical Sales"],
+      "required_skills": ["SAP Solutions Sales", "Technical Sales", "Solution Demos", "Proposal Development", "Client Presentations", "SAP Product Knowledge", "Market Analysis", "Relationship Building"],
       "sap_relevance": ["SAP", "Sales", "Solutions"],
       "career_types": ["sales", "technical"]
     }
@@ -255,7 +255,7 @@
     "role": "SAP Pre-sales Consultant",
     "constraints": {
       "min_experience": 4,
-      "required_skills": ["Pre-sales", "Solution Design", "Client Engagement"],
+      "required_skills": ["Pre-sales Consulting", "Solution Design", "Client Engagement", "Technical Presentations", "RFP Response", "Solution Architecture", "Business Case Development", "Competitive Analysis"],
       "sap_relevance": ["SAP", "Pre-sales", "Solutions"],
       "career_types": ["sales", "consulting"]
     }
@@ -264,7 +264,7 @@
     "role": "SAP Support Engineer",
     "constraints": {
       "min_experience": 1,
-      "required_skills": ["SAP Support", "Troubleshooting", "Customer Service"],
+      "required_skills": ["SAP Support", "Incident Management", "Troubleshooting", "Customer Service", "SAP Solution Manager", "Knowledge Management", "Escalation Procedures", "SAP Modules Knowledge"],
       "sap_relevance": ["SAP", "Support", "Troubleshooting"],
       "career_types": ["technical", "support"]
     }
@@ -273,7 +273,7 @@
     "role": "SAP Quality Assurance Analyst",
     "constraints": {
       "min_experience": 2,
-      "required_skills": ["QA Testing", "SAP Testing", "Test Automation"],
+      "required_skills": ["SAP Testing", "Test Automation", "SAP Solution Manager", "UAT Coordination", "Regression Testing", "Performance Testing", "Test Data Management", "Quality Metrics"],
       "sap_relevance": ["SAP", "QA", "Testing"],
       "career_types": ["technical", "quality"]
     }
@@ -282,7 +282,7 @@
     "role": "SAP Business Intelligence Consultant",
     "constraints": {
       "min_experience": 3,
-      "required_skills": ["SAP BW", "Business Intelligence", "Reporting"],
+      "required_skills": ["SAP BW/4HANA", "SAP Analytics Cloud", "Business Intelligence", "Data Warehousing", "ETL Processes", "OLAP Cubes", "Dashboard Development", "Predictive Analytics"],
       "sap_relevance": ["SAP", "BW", "BI"],
       "career_types": ["functional", "analytics"]
     }
@@ -291,7 +291,7 @@
     "role": "SAP Mobile Developer",
     "constraints": {
       "min_experience": 2,
-      "required_skills": ["Mobile Development", "Fiori", "SAP Mobile"],
+      "required_skills": ["SAP Fiori Mobile", "SAP UI5", "Mobile App Development", "SAP Mobile Platform", "Offline Capabilities", "Mobile Security", "Responsive Design", "Native App Integration"],
       "sap_relevance": ["SAP", "Mobile", "Fiori"],
       "career_types": ["technical", "mobile"]
     }
@@ -300,7 +300,7 @@
     "role": "SAP AI/ML Specialist",
     "constraints": {
       "min_experience": 3,
-      "required_skills": ["AI/ML", "SAP Analytics", "Machine Learning"],
+      "required_skills": ["SAP Analytics Cloud", "SAP HANA Machine Learning", "Python/R Programming", "Predictive Analytics", "Data Science", "SAP Leonardo", "AI Model Development", "Business Intelligence"],
       "sap_relevance": ["SAP", "AI", "ML"],
       "career_types": ["technical", "innovation"]
     }
@@ -309,7 +309,7 @@
     "role": "SAP Sustainability Consultant",
     "constraints": {
       "min_experience": 2,
-      "required_skills": ["Sustainability", "ESG", "SAP Sustainability"],
+      "required_skills": ["SAP Sustainability Solutions", "ESG Reporting", "Carbon Footprint Management", "Sustainability Analytics", "Environmental Compliance", "Green IT", "Sustainability KPIs", "Regulatory Reporting"],
       "sap_relevance": ["SAP", "Sustainability", "ESG"],
       "career_types": ["functional", "sustainability"]
     }
@@ -318,7 +318,7 @@
     "role": "SAP Digital Transformation Lead",
     "constraints": {
       "min_experience": 6,
-      "required_skills": ["Digital Transformation", "Strategy", "SAP Innovation"],
+      "required_skills": ["Digital Transformation Strategy", "Strategic Planning", "Process Automation", "Innovation Management", "Change Leadership", "Technology Roadmap", "Business Model Innovation", "Digital Strategy"],
       "sap_relevance": ["SAP", "Digital", "Transformation"],
       "career_types": ["leadership", "innovation"]
     }
@@ -327,7 +327,7 @@
     "role": "SAP Enterprise Architect",
     "constraints": {
       "min_experience": 8,
-      "required_skills": ["Enterprise Architecture", "Strategic Planning", "SAP Strategy"],
+      "required_skills": ["Enterprise Architecture", "Strategic Planning", "Technology Roadmap", "Architecture Governance", "Solution Architecture", "Strategic Thinking", "Innovation Leadership", "Business Architecture"],
       "sap_relevance": ["SAP", "Enterprise", "Architecture"],
       "career_types": ["technical", "strategic"]
     }
@@ -336,7 +336,7 @@
     "role": "SAP Vice President",
     "constraints": {
       "min_experience": 10,
-      "required_skills": ["Executive Leadership", "Strategic Vision", "SAP Strategy"],
+      "required_skills": ["Executive Leadership", "Strategic Vision", "Strategic Planning", "Business Development", "P&L Management", "Market Analysis", "Partnership Development", "Organizational Leadership"],
       "sap_relevance": ["SAP", "VP", "Executive"],
       "career_types": ["executive", "leadership"]
     }
@@ -345,7 +345,7 @@
     "role": "SAP Managing Director",
     "constraints": {
       "min_experience": 12,
-      "required_skills": ["Executive Management", "Business Strategy", "SAP Leadership"],
+      "required_skills": ["Executive Management", "Business Strategy", "Strategic Leadership", "P&L Responsibility", "Market Expansion", "Strategic Partnerships", "Organizational Development", "Industry Leadership"],
       "sap_relevance": ["SAP", "Managing", "Director"],
       "career_types": ["executive", "management"]
     }

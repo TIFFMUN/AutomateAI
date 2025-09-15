@@ -1,16 +1,30 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import './Skills.css';
 import API_CONFIG from '../../utils/apiConfig';
+import { useAuth } from '../../contexts/AuthContext';
 
 function Skills() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { user } = useAuth();
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('skills');
   const [recommendations, setRecommendations] = useState([]);
   const [isLoadingRecommendations, setIsLoadingRecommendations] = useState(false);
   const [userSkillsInput, setUserSkillsInput] = useState('');
+  
+  // Points state
+  const [totalPoints, setTotalPoints] = useState(0);
+  const [pointsEarned, setPointsEarned] = useState(0);
+  const [showPointsAnimation, setShowPointsAnimation] = useState(false);
+  const [completedSkills, setCompletedSkills] = useState(new Set());
+  
+  // Visual points notification state
+  const [showVisualPointsNotification, setShowVisualPointsNotification] = useState(false);
+  const [visualPointsValue, setVisualPointsValue] = useState(0);
+  const [visualPointsMessage, setVisualPointsMessage] = useState('');
 
   const skillCategories = [
     { id: 'all', name: 'All Skills', color: '#667eea' },
@@ -25,7 +39,7 @@ function Skills() {
       name: 'React Development',
       category: 'technical',
       level: 'Intermediate',
-      progress: 75,
+      progress: 100,
       description: 'Frontend development with React.js',
       learningPath: ['Basics', 'Hooks', 'State Management', 'Advanced Patterns'],
       estimatedTime: '40 hours',
@@ -182,7 +196,7 @@ function Skills() {
   ];
 
   // Function to get LLM skill recommendations
-  const getSkillRecommendations = async () => {
+  const getSkillRecommendations = useCallback(async () => {
     if (!userSkillsInput.trim()) {
       alert('Please enter your current skills first');
       return;
@@ -259,7 +273,116 @@ function Skills() {
       ]);
     }
     setIsLoadingRecommendations(false);
+  }, [userSkillsInput]);
+
+  // Load current total points when component mounts or user changes
+  useEffect(() => {
+    const loadPoints = async () => {
+      try {
+        const userId = user?.id;
+        if (!userId) return;
+        const res = await fetch(API_CONFIG.buildUrl(`/api/user/${userId}/state`), { credentials: 'include' });
+        if (res.ok) {
+          const data = await res.json();
+          if (typeof data.total_points === 'number') setTotalPoints(data.total_points);
+        }
+      } catch (_) {}
+    };
+    loadPoints();
+  }, [user?.id]);
+
+  // Show visual points notification
+  const showVisualPoints = (points, message) => {
+    setVisualPointsValue(points);
+    setVisualPointsMessage(message);
+    setShowVisualPointsNotification(true);
+    
+    // Hide notification after 2 seconds
+    setTimeout(() => {
+      setShowVisualPointsNotification(false);
+    }, 2000);
   };
+
+  // Award points for skill completion
+  const awardSkillCompletionPoints = async (skillId, skillName) => {
+    try {
+      const userId = user?.id;
+      console.log('Attempting to award points for user:', userId, 'skill:', skillName);
+      if (userId && !completedSkills.has(skillId)) {
+        const requestBody = { 
+          task_name: 'skill_completion',
+          message: `Completed skill: ${skillName}` 
+        };
+        console.log('Sending request body:', requestBody);
+        
+        const awardRes = await fetch(API_CONFIG.buildUrl(`/api/user/${userId}/points`), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(requestBody)
+        });
+
+        console.log('Points API response status:', awardRes.status);
+        if (awardRes.ok) {
+          const awardData = await awardRes.json();
+          console.log('Points awarded successfully:', awardData);
+          const gained = awardData.awarded_points || 500;
+          setPointsEarned(gained);
+          
+          // Update total points
+          try {
+            const stateRes = await fetch(API_CONFIG.buildUrl(`/api/user/${userId}/state`), { credentials: 'include' });
+            if (stateRes.ok) {
+              const stateData = await stateRes.json();
+              if (typeof stateData.total_points === 'number') {
+                setTotalPoints(stateData.total_points);
+              } else {
+                setTotalPoints((prev) => prev + gained);
+              }
+            } else {
+              setTotalPoints((prev) => prev + gained);
+            }
+          } catch (_) {
+            setTotalPoints((prev) => prev + gained);
+          }
+          
+          // Mark skill as completed
+          setCompletedSkills(prev => new Set([...prev, skillId]));
+          
+          // Show visual notification only after successful database update
+          showVisualPoints(500, "Course Completed!");
+          
+          // Show animation
+          setShowPointsAnimation(true);
+          setTimeout(() => setShowPointsAnimation(false), 3000);
+          
+          return true;
+        } else {
+          console.warn('Failed to award points - API returned error:', awardRes.status);
+          const errorText = await awardRes.text();
+          console.warn('Error response:', errorText);
+        }
+      } else {
+        console.warn('No user ID or skill already completed');
+      }
+    } catch (e) {
+      console.warn('Failed to award points for skill completion:', e);
+    }
+    return false;
+  };
+
+  // Handle incoming data from Career Oracle
+  useEffect(() => {
+    if (location.state?.fromCareerOracle && location.state?.skillsToDevelop) {
+      // Auto-populate the skills input with data from Career Oracle
+      setUserSkillsInput(location.state.skillsToDevelop);
+      
+      // Switch to recommendations tab
+      setActiveTab('recommendations');
+      
+      // Don't auto-trigger recommendations - let user decide when to get them
+    }
+  }, [location.state]);
 
   const filteredSkills = skills.filter(skill => {
     const matchesCategory = selectedCategory === 'all' || skill.category === selectedCategory;
@@ -401,7 +524,22 @@ function Skills() {
                     </div>
 
                     <div className="skill-actions">
-                      <button className="btn btn-primary">Continue Learning</button>
+                      {skill.progress === 100 ? (
+                        completedSkills.has(skill.id) ? (
+                          <button className="btn btn-success" disabled>
+                            Completed
+                          </button>
+                        ) : (
+                          <button 
+                            className="btn btn-success"
+                            onClick={() => awardSkillCompletionPoints(skill.id, skill.name)}
+                          >
+                            Complete Course
+                          </button>
+                        )
+                      ) : (
+                        <button className="btn btn-primary">Continue Learning</button>
+                      )}
                       <button className="btn btn-secondary">View Details</button>
                     </div>
                   </div>
@@ -473,6 +611,15 @@ function Skills() {
               </div>
               
               <div className="recommendations-input">
+                {location.state?.fromCareerOracle && (
+                  <div className="career-oracle-notice">
+                    <div className="notice-icon">🎯</div>
+                    <div className="notice-content">
+                      <h4>Skills from Career Oracle</h4>
+                      <p>These skills were automatically populated from your Career Oracle results. You can modify them below or get AI recommendations.</p>
+                    </div>
+                  </div>
+                )}
                 {isLoadingRecommendations ? (
                   <div className="loading-state">
                     <div className="spinner"></div>
@@ -480,20 +627,22 @@ function Skills() {
                   </div>
                 ) : (
                   <>
-                    <textarea
-                      placeholder="Tell us about your current skills, experience, and career goals..."
-                      value={userSkillsInput}
-                      onChange={(e) => setUserSkillsInput(e.target.value)}
-                      className="skills-input"
-                      rows="4"
-                    />
-                    <button 
-                      onClick={getSkillRecommendations}
-                      className="recommendations-btn"
-                      disabled={isLoadingRecommendations}
-                    >
-                      Get Recommendations
-                    </button>
+                     <textarea
+                       placeholder="Tell us about your current skills, experience, and career goals..."
+                       value={userSkillsInput}
+                       onChange={(e) => setUserSkillsInput(e.target.value)}
+                       className="skills-input"
+                       rows="4"
+                     />
+                     <div className="recommendations-btn-container">
+                       <button 
+                         onClick={getSkillRecommendations}
+                         className="recommendations-btn"
+                         disabled={isLoadingRecommendations}
+                       >
+                         Get Recommendations
+                       </button>
+                     </div>
                   </>
                 )}
               </div>
@@ -546,6 +695,35 @@ function Skills() {
           )}
         </div>
       </div>
+
+      {/* Points Display */}
+      <div className="points-display">
+        <div className="points-container">
+          <div className="points-icon">⭐</div>
+          <div className="points-text">
+            <span className="points-label">Points</span>
+            <span className="points-value">{totalPoints}</span>
+          </div>
+        </div>
+        {showPointsAnimation && (
+          <div className="points-animation">
+            <div className="points-earned">+{pointsEarned}</div>
+          </div>
+        )}
+      </div>
+
+      {/* Visual Points Notification */}
+      {showVisualPointsNotification && (
+        <div className="visual-points-notification">
+          <div className="visual-points-content">
+            <div className="visual-points-icon">🎉</div>
+            <div className="visual-points-text">
+              <div className="visual-points-message">{visualPointsMessage}</div>
+              <div className="visual-points-value">+{visualPointsValue} points!</div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
