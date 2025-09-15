@@ -533,8 +533,8 @@ def handle_chat(user_id: str, request: ChatRequest, db: Session = Depends(get_db
     # Save user message
     save_chat_message(db, user_id, "user", request.message)
     
-    # Calculate points for task completion
-    points_earned = calculate_points_for_task("", request.message)
+    # Points are no longer awarded via chat keywords; use explicit POST /api/user/{user_id}/points
+    points_earned = 0
     
     # Get agent response with database state
     result = hr_agent.process_chat(request.message, user_id, chat_history, db_state)
@@ -577,9 +577,7 @@ def handle_chat(user_id: str, request: ChatRequest, db: Session = Depends(get_db
     user_state.current_node = result["current_node"]
     user_state.node_tasks = result["node_tasks"]
     
-    # Add points if earned
-    if points_earned > 0:
-        user_state.total_points += points_earned
+    # Do not modify total_points here; points are awarded only via explicit POST
     
     # Update personal goals based on onboarding progress
     updated_goals = calculate_goal_progress_from_onboarding(
@@ -634,19 +632,52 @@ def award_points(user_id: str, request: AwardPointsRequest, db: Session = Depend
     if not user_state:
         user_state = create_user_state(db, user_id)
 
-    # Prefer explicit task name if provided
+    # Prefer explicit task name if provided and enforce idempotency using node_tasks
     task_name = (request.task_name or '').strip()
     message = request.message or ''
-    points = calculate_points_for_task(task_name, message)
 
-    if points > 0:
-        user_state.total_points = (user_state.total_points or 0) + points
-        db.commit()
+    # Map known onboarding tasks to node_tasks locations for idempotency
+    task_to_nodekey = {
+        'welcome_video': ('welcome_overview', 'welcome_video'),
+        'company_policies': ('welcome_overview', 'company_policies'),
+        'culture_quiz': ('welcome_overview', 'culture_quiz'),
+        # 'employee_perks' and others could be added to node_tasks schema if desired
+    }
+
+    awarded_points = 0
+    already_completed = False
+
+    if task_name and task_name in task_to_nodekey:
+        node_name, key = task_to_nodekey[task_name]
+        node_tasks = user_state.node_tasks or {}
+        # Ensure node exists
+        node_tasks.setdefault(node_name, {})
+        node = node_tasks[node_name]
+        current_value = bool(node.get(key, False))
+        if current_value:
+            already_completed = True
+        else:
+            # Mark as completed and award once
+            node[key] = True
+            user_state.node_tasks = node_tasks
+            points = calculate_points_for_task(task_name, '')
+            if points > 0:
+                user_state.total_points = (user_state.total_points or 0) + points
+                awarded_points = points
+            db.commit()
+    else:
+        # Fallback: calculate based on provided task_name/message (non-idempotent for tasks not tracked)
+        points = calculate_points_for_task(task_name, message)
+        if points > 0:
+            user_state.total_points = (user_state.total_points or 0) + points
+            awarded_points = points
+            db.commit()
 
     return {
-        "awarded_points": points,
+        "awarded_points": awarded_points,
         "total_points": user_state.total_points,
-        "task_name": task_name or None
+        "task_name": task_name or None,
+        "already_completed": already_completed
     }
 
 @app.get("/api/health")
