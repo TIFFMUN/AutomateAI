@@ -261,32 +261,42 @@ def update_user_state_timestamp(db: Session, user_id: str):
         db.commit()
 
 def calculate_points_for_task(task_name: str, user_message: str) -> int:
-    """Calculate points based on task completion"""
+    """Calculate points based on task completion.
+
+    Supports explicit task names and keyword detection in a freeform message.
+    """
     points_map = {
         'welcome_video': 300,
         'company_policies': 200,
         'culture_quiz': 250,
         'employee_perks': 150,
         'personal_info_form': 400,
-        'account_setup': 500
+        'account_setup': 500,
+        # New explicit tasks
+        'career_coach_quiz': 300,
+        'personal_information_completed': 400,
+        'skill_completion': 500,
     }
-    
-    # Check if user completed a specific task
-    user_msg_lower = user_message.lower()
-    
+
+    # If an explicit task name is provided, prefer that
+    if task_name and task_name in points_map:
+        return points_map[task_name]
+
+    # Otherwise, infer from message contents
+    user_msg_lower = (user_message or '').lower()
     if 'watched the video' in user_msg_lower or 'video' in user_msg_lower:
         return points_map.get('welcome_video', 0)
-    elif 'reviewed all company policies' in user_msg_lower or 'policies' in user_msg_lower:
+    if 'reviewed all company policies' in user_msg_lower or 'policies' in user_msg_lower:
         return points_map.get('company_policies', 0)
-    elif 'completed the culture quiz' in user_msg_lower or 'quiz' in user_msg_lower:
+    if 'completed the culture quiz' in user_msg_lower or 'quiz' in user_msg_lower:
         return points_map.get('culture_quiz', 0)
-    elif 'reviewed the employee perks' in user_msg_lower or 'perks' in user_msg_lower:
+    if 'reviewed the employee perks' in user_msg_lower or 'perks' in user_msg_lower:
         return points_map.get('employee_perks', 0)
-    elif 'submitted the personal information form' in user_msg_lower or 'personal information' in user_msg_lower:
+    if 'submitted the personal information form' in user_msg_lower or 'personal information' in user_msg_lower:
         return points_map.get('personal_info_form', 0)
-    elif 'account setup' in user_msg_lower and 'complete' in user_msg_lower:
+    if 'account setup' in user_msg_lower and 'complete' in user_msg_lower:
         return points_map.get('account_setup', 0)
-    
+
     return 0
 
 

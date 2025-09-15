@@ -2,10 +2,12 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Career.css';
 import apiConfig from '../../utils/apiConfig';
+import { useAuth } from '../../contexts/AuthContext';
 
 
 function Career() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [activeSegment, setActiveSegment] = useState('quiz');
   const [quizStep, setQuizStep] = useState(0);
   const [quizAnswers, setQuizAnswers] = useState({});
@@ -14,6 +16,17 @@ function Career() {
   const [isLoading, setIsLoading] = useState(false);
   const [careerResponse, setCareerResponse] = useState(null);
   const [error, setError] = useState(null);
+  const [totalPoints, setTotalPoints] = useState(0);
+  const [pointsEarned, setPointsEarned] = useState(0);
+  const [showPointsAnimation, setShowPointsAnimation] = useState(false);
+  
+  // Career Oracle states
+  const [oracleData, setOracleData] = useState(null);
+  const [oracleLoading, setOracleLoading] = useState(false);
+  const [oracleError, setOracleError] = useState(null);
+  const [selectedRole, setSelectedRole] = useState('');
+  const [experienceYears, setExperienceYears] = useState('');
+  const [careerGoal, setCareerGoal] = useState('');
 
 
   // Career Coach AI Quiz Data
@@ -160,17 +173,69 @@ function Career() {
     setJobsToShow(sapJobs.length);
   };
 
+  // Career Oracle API call
+  const predictCareerPath = async () => {
+    // Clear previous errors
+    setOracleError(null);
+    
+    // Validate inputs
+    if (!selectedRole) {
+      setOracleError('Please select your current role');
+      return;
+    }
+    
+    if (!experienceYears || experienceYears < 0 || experienceYears > 20) {
+      setOracleError('Please enter a valid number of years (0-20)');
+      return;
+    }
+
+    setOracleLoading(true);
+    setOracleData(null);
+
+    try {
+      const response = await fetch(apiConfig.buildUrl('/api/career/oracle'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include', // Include cookies for authentication
+        body: JSON.stringify({
+          current_role: selectedRole,
+          experience_years: parseInt(experienceYears),
+          goal: careerGoal || null
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Failed to get career predictions');
+      }
+
+          const data = await response.json();
+          console.log('Oracle API Response:', data);
+          console.log('Career Trees:', data.career_trees);
+          console.log('Full response structure:', JSON.stringify(data, null, 2));
+          setOracleData(data);
+    } catch (err) {
+      console.error('Career Oracle error:', err);
+      setOracleError(err.message || 'Failed to get career predictions');
+    } finally {
+      setOracleLoading(false);
+    }
+  };
+
 
   const getCareerRecommendations = async () => {
     setIsLoading(true);
     setError(null);
     
     try {
-      const response = await fetch(`${apiConfig.BASE_URL}/api/career/coach`, {
+      const response = await fetch(apiConfig.buildUrl('/api/career/coach'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include', // Include cookies for authentication
         body: JSON.stringify({
           answers: quizAnswers
         })
@@ -182,6 +247,46 @@ function Career() {
 
       const data = await response.json();
       setCareerResponse(data);
+
+      // Award points for completing the career coach quiz
+      try {
+        const userId = user?.id;
+        if (userId) {
+          const awardRes = await fetch(apiConfig.buildUrl(`/api/user/${userId}/points`), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ task_name: 'career_coach_quiz' })
+          });
+          if (awardRes.ok) {
+            const awardData = await awardRes.json();
+            const gained = awardData.awarded_points || 300;
+            setPointsEarned(gained);
+            // Prefer reloading from server to avoid drift
+            try {
+              const stateRes = await fetch(apiConfig.buildUrl(`/api/user/${userId}/state`), { credentials: 'include' });
+              if (stateRes.ok) {
+                const stateData = await stateRes.json();
+                if (typeof stateData.total_points === 'number') {
+                  setTotalPoints(stateData.total_points);
+                } else {
+                  setTotalPoints((prev) => prev + gained);
+                }
+              } else {
+                setTotalPoints((prev) => prev + gained);
+              }
+            } catch (_) {
+              setTotalPoints((prev) => prev + gained);
+            }
+            setShowPointsAnimation(true);
+            setTimeout(() => setShowPointsAnimation(false), 3000);
+          } else {
+            console.warn('Award points request failed:', awardRes.status);
+          }
+        }
+      } catch (e) {
+        console.warn('Failed to award points for career coach quiz:', e);
+      }
     } catch (err) {
       console.error('Error fetching career recommendations:', err);
       setError('Failed to get career recommendations. Please try again.');
@@ -189,6 +294,36 @@ function Career() {
       setIsLoading(false);
     }
   };
+
+  // Handle Develop Skills button click
+  const handleDevelopSkills = (skillsToDevelop) => {
+    // Convert skills array to comma-separated string for URL parameter
+    const skillsString = skillsToDevelop.join(', ');
+    
+    // Navigate to Skills page with skills data
+    navigate('/skills', { 
+      state: { 
+        skillsToDevelop: skillsString,
+        fromCareerOracle: true 
+      } 
+    });
+  };
+
+  // Load current total points when component mounts or user changes
+  React.useEffect(() => {
+    const loadPoints = async () => {
+      try {
+        const userId = user?.id;
+        if (!userId) return;
+        const res = await fetch(apiConfig.buildUrl(`/api/user/${userId}/state`), { credentials: 'include' });
+        if (res.ok) {
+          const data = await res.json();
+          if (typeof data.total_points === 'number') setTotalPoints(data.total_points);
+        }
+      } catch (_) {}
+    };
+    loadPoints();
+  }, [user?.id]);
 
 
   return (
@@ -215,6 +350,12 @@ function Career() {
                   onClick={() => setActiveSegment('jobs')}
               >
                   SAP Jobs
+              </button>
+              <button
+                  className={`segment-btn ${activeSegment === 'oracle' ? 'active' : ''}`}
+                  onClick={() => setActiveSegment('oracle')}
+              >
+                  Career Oracle
               </button>
             </div>
           </div>
@@ -409,7 +550,244 @@ function Career() {
               </div>
             </div>
           )}
+
+          {/* Career Oracle Segment */}
+          {activeSegment === 'oracle' && (
+            <div className="oracle-segment">
+              <div className="oracle-container">
+                <div className="oracle-header">
+                  <div className="oracle-icon">🔮</div>
+                  <h3><strong>AI Career Path Oracle</strong></h3>
+                  <p>Watch our AI craft a personalized career route based on your profile and constraints</p>
+                </div>
+                
+                <div className="oracle-content">
+                  <div className="role-selection">
+                    <div className="input-row">
+                      <div className="role-input-group">
+                        <label htmlFor="current-role">Current Role *</label>
+                        <select
+                          id="current-role"
+                          className="role-select"
+                          value={selectedRole}
+                          onChange={(e) => setSelectedRole(e.target.value)}
+                          required
+                        >
+                          <option value="">Choose your current SAP role...</option>
+                          <option value="SAP Junior Developer">SAP Junior Developer</option>
+                          <option value="SAP Functional Consultant">SAP Functional Consultant</option>
+                          <option value="SAP Business Analyst">SAP Business Analyst</option>
+                          <option value="SAP Project Manager">SAP Project Manager</option>
+                          <option value="SAP Solution Architect">SAP Solution Architect</option>
+                        </select>
+                      </div>
+                      
+                      <div className="experience-input-group">
+                        <label htmlFor="experience-years">Years of Experience *</label>
+                        <input 
+                          type="number" 
+                          id="experience-years" 
+                          className="experience-input"
+                          min="0" 
+                          max="20" 
+                          placeholder="Enter years (0-20)"
+                          value={experienceYears}
+                          onChange={(e) => setExperienceYears(e.target.value)}
+                          required
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="goal-input-group">
+                      <label htmlFor="career-goal">Career Goal (Optional)</label>
+                      <select 
+                        id="career-goal" 
+                        className="goal-select"
+                        value={careerGoal}
+                        onChange={(e) => setCareerGoal(e.target.value)}
+                      >
+                        <option value="">Choose your career goal...</option>
+                        <option value="leadership">Leadership & Management</option>
+                        <option value="technical mastery">Technical Mastery</option>
+                        <option value="architecture">Solution Architecture</option>
+                        <option value="consulting">Consulting Excellence</option>
+                        <option value="innovation">Innovation & R&D</option>
+                      </select>
+                    </div>
+                    
+                    <button 
+                      className="btn btn-primary oracle-btn"
+                      onClick={predictCareerPath}
+                      disabled={oracleLoading || !selectedRole || !experienceYears}
+                    >
+                      {oracleLoading ? '🔮 AI is crafting your route...' : '🔮 Craft My Career Route'}
+                    </button>
+                  </div>
+                  
+                  {/* Error Display */}
+                  {oracleError && (
+                    <div className="oracle-error">
+                      <div className="error-icon">⚠️</div>
+                      <p>{oracleError}</p>
+                    </div>
+                  )}
+                  
+                  {/* AI Crafting Process Display */}
+                  {oracleLoading && (
+                    <div className="ai-crafting-process">
+                      <div className="crafting-header">
+                        <div className="ai-icon">🔮</div>
+                        <h4>AI is crafting your personalized career route...</h4>
+                        <p>Analyzing your profile: <strong>{selectedRole}</strong> with <strong>{experienceYears} years</strong> experience</p>
+                        {careerGoal && <p>Goal: <strong>{careerGoal}</strong></p>}
+                      </div>
+                      
+                      <div className="crafting-steps">
+                        <div className="step">
+                          <div className="step-icon">🔍</div>
+                          <div className="step-content">
+                            <h5>Analyzing Constraints</h5>
+                            <p>Reviewing SAP role requirements and experience levels</p>
+                          </div>
+                        </div>
+                        
+                        <div className="step">
+                          <div className="step-icon">🎯</div>
+                          <div className="step-content">
+                            <h5>Mapping Career Goals</h5>
+                            <p>Aligning your goals with realistic progression paths</p>
+                          </div>
+                        </div>
+                        
+                        <div className="step">
+                          <div className="step-icon">⚡</div>
+                          <div className="step-content">
+                            <h5>Generating Routes</h5>
+                            <p>Creating personalized career progression sequences</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Results Display */}
+                  {oracleData && (
+                    <div className="oracle-results">
+                      <div className="results-header">
+                        <h4>🔮 Your AI-Crafted Career Route</h4>
+                        <p>Based on your profile: <strong>{oracleData.current_role}</strong> • <strong>{oracleData.experience_years} years</strong> experience</p>
+                      </div>
+                      
+                      <div className="career-route-display">
+                        {/* Current Role */}
+                        <div className="current-role-card">
+                          <div className="role-icon">📍</div>
+                          <div className="role-content">
+                            <h5>Your Starting Point</h5>
+                            <h4>{oracleData.current_role}</h4>
+                            <p>{oracleData.experience_years} years of experience</p>
+                          </div>
+                        </div>
+                        
+                        {/* Career Routes */}
+                        {oracleData.career_trees && oracleData.career_trees.length > 0 ? (
+                          oracleData.career_trees.map((tree, treeIndex) => (
+                            <div key={treeIndex} className="career-route-card">
+                              <div className="route-header">
+                                <span className="route-icon">{tree.tree_icon || '🎯'}</span>
+                                <div className="route-info">
+                                  <h5>{tree.tree_name}</h5>
+                                  <p>{tree.tree_description}</p>
+                                </div>
+                                <span className="ai-badge">🔮 AI Crafted</span>
+                              </div>
+                              
+                              <div className="route-path">
+                                {tree.progressive_paths && tree.progressive_paths.map((path, pathIndex) => (
+                                  <div key={pathIndex} className="path-step">
+                                    <div className="step-connector"></div>
+                                    <div className="step-content">
+                                      <div className="step-header">
+                                        <h6>{path.role}</h6>
+                                        <span className="step-timeline">{path.timeline}</span>
+                                      </div>
+                                      
+                                      <div className="step-story">
+                                        <p>{path.story}</p>
+                                      </div>
+                                      
+                                      <div className="step-skills">
+                                        <div className="skills-required">
+                                          <strong>Skills to Develop:</strong>
+                                          <div className="skill-tags">
+                                            {(path.skills_required || []).map((skill, skillIndex) => (
+                                              <span key={skillIndex} className="skill-tag required">{skill}</span>
+                                            ))}
+                                          </div>
+                                        </div>
+                                        
+                                        <div className="skills-gained">
+                                          <strong>Skills You'll Gain:</strong>
+                                          <div className="skill-tags">
+                                            {(path.skills_gained || []).map((skill, skillIndex) => (
+                                              <span key={skillIndex} className="skill-tag gained">{skill}</span>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      </div>
+                                      
+                                      <div className="step-actions">
+                                        <button 
+                                          className="develop-skills-btn"
+                                          onClick={() => handleDevelopSkills(path.skills_required || [])}
+                                        >
+                                          Develop Skills
+                                        </button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="no-routes">
+                            <div className="no-routes-icon">🔮</div>
+                            <h4>No career routes generated</h4>
+                            <p>Unable to generate career routes. Please try again or check your inputs.</p>
+                            <button 
+                              className="btn btn-primary"
+                              onClick={predictCareerPath}
+                              disabled={oracleLoading}
+                            >
+                              Try Again
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
+      </div>
+
+      {/* Points Display (standardized with Onboarding) */}
+      <div className="points-display">
+        <div className="points-container">
+          <div className="points-icon">⭐</div>
+          <div className="points-text">
+            <span className="points-label">Points</span>
+            <span className="points-value">{totalPoints}</span>
+          </div>
+        </div>
+        {showPointsAnimation && (
+          <div className="points-animation">
+            <div className="points-earned">+{pointsEarned}</div>
+          </div>
+        )}
       </div>
     </div>
   );
