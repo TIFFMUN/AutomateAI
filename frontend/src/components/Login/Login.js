@@ -162,7 +162,7 @@ function Login() {
   if (loading) {
     return (
       <div className="login-container">
-        <LoadingSpinner text="please be patient with me as a load" size="large" className="full-page" />
+        <LoadingSpinner text="please be patient with me as i load" size="large" className="full-page" />
       </div>
     );
   }
@@ -247,7 +247,7 @@ function Login() {
               disabled={isSubmitting}
             >
               {isSubmitting ? (
-                <LoadingSpinner text="please be patient with me as a load" size="small" />
+                <LoadingSpinner text="please be patient with me as i load" size="small" />
               ) : 'Sign In'}
             </button>
           </form>
