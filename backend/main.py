@@ -258,6 +258,10 @@ class ProgressUpdateRequest(BaseModel):
 class PersonalGoalsResponse(BaseModel):
     goals: List[Dict[str, Any]]
 
+class AwardPointsRequest(BaseModel):
+    task_name: Optional[str] = None
+    message: Optional[str] = None
+
 # Performance Testing Models
 class PerformanceUserResponse(BaseModel):
     id: int
@@ -613,6 +617,36 @@ def handle_chat(user_id: str, request: ChatRequest, db: Session = Depends(get_db
         "chat_history": result["chat_history"],
         "points_earned": points_earned,
         "total_points": user_state.total_points
+    }
+
+
+@app.post("/api/user/{user_id}/points")
+def award_points(user_id: str, request: AwardPointsRequest, db: Session = Depends(get_db)):
+    """Award points for a specific task or message-based detection.
+
+    Allows frontend to explicitly award points for actions like completing
+    the personal information form or finishing the career coach quiz.
+    """
+    # Validate that user_id is a valid integer (and user exists)
+    validate_user_id(user_id, db)
+
+    user_state = get_user_state(db, user_id)
+    if not user_state:
+        user_state = create_user_state(db, user_id)
+
+    # Prefer explicit task name if provided
+    task_name = (request.task_name or '').strip()
+    message = request.message or ''
+    points = calculate_points_for_task(task_name, message)
+
+    if points > 0:
+        user_state.total_points = (user_state.total_points or 0) + points
+        db.commit()
+
+    return {
+        "awarded_points": points,
+        "total_points": user_state.total_points,
+        "task_name": task_name or None
     }
 
 @app.get("/api/health")
