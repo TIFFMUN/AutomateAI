@@ -930,17 +930,54 @@ def generate_ai_summary(feedback_id: int, db: Session = Depends(get_performance_
 def analyze_feedback(request: FeedbackAnalysisRequest, db: Session = Depends(get_performance_db)):
     """Analyze feedback text and provide AI-powered suggestions"""
     try:
-        # Use the existing HR agent to analyze feedback
+        print(f"🔍 Analyzing feedback: {request.feedback_text[:100]}...")
+       
+        # Use direct LLM call for feedback analysis (bypass onboarding agent)
         analysis_prompt = PERFORMANCE_FEEDBACK_ANALYSIS_PROMPT.format(feedback_text=request.feedback_text)
-        
-        result = hr_agent.process_chat(analysis_prompt, f"feedback_analysis_{hash(request.feedback_text)}", [], {})
-        ai_response = result["agent_response"]
-        
+       
+        print(f"📝 Sending prompt to LLM...")
+        # Call LLM directly instead of using hr_agent.process_chat()
+        if hr_agent.llm is None:
+            raise Exception("LLM not initialized - check API key configuration")
+       
+        from langchain_core.messages import HumanMessage
+        response = hr_agent.llm.invoke([HumanMessage(content=analysis_prompt)])
+        ai_response = response.content.strip()
+       
+        print(f"🤖 LLM Response: {ai_response[:200]}...")
+       
         # Try to parse JSON response
         try:
+            # First try direct JSON parsing
             analysis_data = json.loads(ai_response)
+            print(f"✅ Successfully parsed JSON response")
             return analysis_data
         except json.JSONDecodeError:
+            # Try to extract JSON from markdown code blocks
+            try:
+                import re
+                # Look for JSON within ```json ... ``` blocks
+                json_match = re.search(r'```json\s*\n(.*?)\n```', ai_response, re.DOTALL)
+                if json_match:
+                    json_content = json_match.group(1).strip()
+                    analysis_data = json.loads(json_content)
+                    print(f"✅ Successfully parsed JSON from markdown block")
+                    return analysis_data
+               
+                # Look for JSON within ``` ... ``` blocks (without json specifier)
+                json_match = re.search(r'```\s*\n(.*?)\n```', ai_response, re.DOTALL)
+                if json_match:
+                    json_content = json_match.group(1).strip()
+                    # Check if it looks like JSON (starts with { and ends with })
+                    if json_content.startswith('{') and json_content.endswith('}'):
+                        analysis_data = json.loads(json_content)
+                        print(f"✅ Successfully parsed JSON from code block")
+                        return analysis_data
+                       
+            except json.JSONDecodeError as json_err:
+                print(f"❌ JSON parsing failed even after markdown extraction: {json_err}")
+                print(f"📄 Raw response: {ai_response}")
+           
             # If JSON parsing fails, return structured response
             return {
                 "quality_score": 7,
@@ -966,7 +1003,7 @@ def analyze_feedback(request: FeedbackAnalysisRequest, db: Session = Depends(get
                 ],
                 "overall_recommendations": "Consider adding more specific examples and actionable next steps to make this feedback more effective."
             }
-        
+       
     except Exception as e:
         return {"error": f"Failed to analyze feedback: {str(e)}"}
 
@@ -974,17 +1011,45 @@ def analyze_feedback(request: FeedbackAnalysisRequest, db: Session = Depends(get
 def get_realtime_suggestions(request: RealTimeFeedbackRequest, db: Session = Depends(get_performance_db)):
     """Get real-time suggestions as manager types feedback"""
     try:
-        # Use the existing HR agent for real-time suggestions
+        # Use direct LLM call for real-time suggestions (bypass onboarding agent)
         suggestions_prompt = REAL_TIME_FEEDBACK_SUGGESTIONS_PROMPT.format(feedback_text=request.feedback_text)
-        
-        result = hr_agent.process_chat(suggestions_prompt, f"realtime_{hash(request.feedback_text)}", [], {})
-        ai_response = result["agent_response"]
-        
+       
+        # Call LLM directly instead of using hr_agent.process_chat()
+        if hr_agent.llm is None:
+            raise Exception("LLM not initialized - check API key configuration")
+       
+        from langchain_core.messages import HumanMessage
+        response = hr_agent.llm.invoke([HumanMessage(content=suggestions_prompt)])
+        ai_response = response.content.strip()
+       
         # Try to parse JSON response
         try:
+            # First try direct JSON parsing
             suggestions_data = json.loads(ai_response)
             return suggestions_data
         except json.JSONDecodeError:
+            # Try to extract JSON from markdown code blocks
+            try:
+                import re
+                # Look for JSON within ```json ... ``` blocks
+                json_match = re.search(r'```json\s*\n(.*?)\n```', ai_response, re.DOTALL)
+                if json_match:
+                    json_content = json_match.group(1).strip()
+                    suggestions_data = json.loads(json_content)
+                    return suggestions_data
+               
+                # Look for JSON within ``` ... ``` blocks (without json specifier)
+                json_match = re.search(r'```\s*\n(.*?)\n```', ai_response, re.DOTALL)
+                if json_match:
+                    json_content = json_match.group(1).strip()
+                    # Check if it looks like JSON (starts with { and ends with })
+                    if json_content.startswith('{') and json_content.endswith('}'):
+                        suggestions_data = json.loads(json_content)
+                        return suggestions_data
+                       
+            except json.JSONDecodeError:
+                pass
+           
             # If JSON parsing fails, return default suggestions
             return {
                 "live_suggestions": [
@@ -1005,7 +1070,7 @@ def get_realtime_suggestions(request: RealTimeFeedbackRequest, db: Session = Dep
                     "Include actionable next steps"
                 ]
             }
-        
+       
     except Exception as e:
         return {"error": f"Failed to get suggestions: {str(e)}"}
 
