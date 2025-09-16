@@ -1476,5 +1476,7 @@ def get_performance_user_summary(user_id: str, db: Session = Depends(get_perform
     return summary
 
 if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    import uvicorn, os
+    # Use PORT from environment if provided (e.g., Render sets $PORT)
+    port = int(os.getenv("PORT", "8000"))
+    uvicorn.run(app, host="0.0.0.0", port=port)
