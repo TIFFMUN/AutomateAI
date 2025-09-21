@@ -200,6 +200,7 @@
   border-radius: 4px;
   border: 1px solid #dee2e6;
   margin-bottom: 0.5rem;
+  text-align: left;
 }
 
 .ai-suggestion-display .suggestion-editor {
@@ -1628,6 +1629,7 @@
   position: relative;
   display: flex;
   align-items: flex-start;
+  text-align: left;
 }
 
 .suggestion-item::before {
@@ -1705,12 +1707,14 @@
   color: #ff6b35;
   font-size: 1rem;
   font-weight: 600;
+  text-align: left;
 }
 
 .ai-thinking-subtext {
   color: #ff6b35;
   font-size: 0.85rem;
   margin-top: 0.25rem;
+  text-align: left;
 }
 
 .ai-processing-steps {
@@ -1754,6 +1758,7 @@
   color: #ff6b35;
   font-size: 0.9rem;
   flex: 1;
+  text-align: left;
 }
 
 .ai-step-status {
