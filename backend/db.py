@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, JSON, ForeignKey, create_engine, Boolean, DECIMAL, Date
+from sqlalchemy import Column, Integer, String, Text, DateTime, JSON, ForeignKey, create_engine, Boolean, DECIMAL, Date, UniqueConstraint
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship, Session, joinedload
 from datetime import datetime, date
@@ -133,6 +133,30 @@ class ProgressUpdate(PerformanceBase):
     updated_goals = Column(JSON, nullable=False)  # The goals after update
     ai_insight = Column(Text, nullable=True)  # AI-generated insight
     created_at = Column(DateTime, default=datetime.utcnow)
+
+class UserGoal(PerformanceBase):
+    __tablename__ = "user_goals"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(String(50), nullable=False, index=True)
+    goal_id = Column(String(100), nullable=False)
+    goal_name = Column(String(255), nullable=False)
+    category = Column(String(50), nullable=False)
+    completed = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    __table_args__ = (UniqueConstraint('user_id', 'goal_id', name='unique_user_goal'),)
+
+class GoalProgressHistory(PerformanceBase):
+    __tablename__ = "goal_progress_history"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(String(50), nullable=False, index=True)
+    goal_id = Column(String(100), nullable=False)
+    action = Column(String(50), nullable=False)  # 'completed', 'uncompleted', 'created'
+    timestamp = Column(DateTime, default=datetime.utcnow)
+    extra_data = Column(JSON)  # Changed from 'metadata' to 'extra_data'
 
 class PerformanceGoal(PerformanceBase):
     __tablename__ = "performance_goals"
@@ -617,17 +641,167 @@ def save_progress_update_performance(db: Session, user_id: str, progress_text: s
 
 def get_latest_progress_goals_performance(db: Session, user_id: str) -> list:
     """Get the latest progress goals for a user from performance database"""
+    # First try to get from new user_goals table
+    user_goals = db.query(UserGoal).filter(UserGoal.user_id == user_id).all()
+    
+    if user_goals:
+        # Convert to the format expected by frontend
+        goals_list = []
+        for goal in user_goals:
+            goals_list.append({
+                'id': goal.goal_id,
+                'name': goal.goal_name,
+                'completed': goal.completed,
+                'category': goal.category
+            })
+        return goals_list
+    
+    # Fallback to old progress_updates table
     latest_update = db.query(ProgressUpdate).filter(
         ProgressUpdate.user_id == user_id
     ).order_by(ProgressUpdate.created_at.desc()).first()
     
-    if latest_update:
-        return latest_update.updated_goals
-    else:
-        # Return default goals if no progress updates found
-        return [
-            {"id": 1, "name": "Training", "progress": 0, "target": 100},
-            {"id": 2, "name": "Onboarding", "progress": 0, "target": 100}
+    if latest_update and latest_update.updated_goals:
+        # Check if the goals are in the new format (have 'completed' field)
+        if latest_update.updated_goals and len(latest_update.updated_goals) > 0:
+            first_goal = latest_update.updated_goals[0]
+            if 'completed' in first_goal:
+                # Already in new format
+                return latest_update.updated_goals
+            else:
+                # Old format - migrate to new format
+                return migrate_goals_to_new_format(latest_update.updated_goals)
+    
+    # Return default learning track goals if no progress updates found
+    return get_default_learning_track_goals()
+
+def migrate_goals_to_new_format(old_goals: list) -> list:
+    """Migrate old format goals to new checkbox format"""
+    # Map old goals to new learning tracks
+    migrated_goals = []
+    
+    for goal in old_goals:
+        goal_name = goal.get('name', '').lower()
+        if 'training' in goal_name:
+            # Map training to React Development track
+            migrated_goals.extend([
+                {"id": "react_basics", "name": "React Development - Basics", "completed": goal.get('progress', 0) > 50, "category": "react"},
+                {"id": "react_hooks", "name": "React Development - Hooks", "completed": goal.get('progress', 0) > 75, "category": "react"},
+                {"id": "react_state", "name": "React Development - State Management", "completed": goal.get('progress', 0) > 90, "category": "react"},
+                {"id": "react_advanced", "name": "React Development - Advanced Patterns", "completed": goal.get('progress', 0) >= 100, "category": "react"}
+            ])
+        elif 'onboarding' in goal_name:
+            # Map onboarding to onboarding track
+            migrated_goals.extend([
+                {"id": "onboarding_node1", "name": "Node 1: Welcome & Company Overview", "completed": goal.get('progress', 0) > 33, "category": "onboarding"},
+                {"id": "onboarding_node2", "name": "Node 2: Personal Information & Legal Forms", "completed": goal.get('progress', 0) > 66, "category": "onboarding"},
+                {"id": "onboarding_node3", "name": "Node 3: Account Setup", "completed": goal.get('progress', 0) >= 100, "category": "onboarding"}
+            ])
+    
+    # Add other tracks as not completed
+    if not any('project_management' in str(goal.get('category', '')) for goal in migrated_goals):
+        migrated_goals.extend([
+            {"id": "pm_planning", "name": "Project Management - Planning", "completed": False, "category": "project_management"},
+            {"id": "pm_execution", "name": "Project Management - Execution", "completed": False, "category": "project_management"},
+            {"id": "pm_monitoring", "name": "Project Management - Monitoring", "completed": False, "category": "project_management"},
+            {"id": "pm_closure", "name": "Project Management - Closure", "completed": False, "category": "project_management"}
+        ])
+    
+    if not any('data_analysis' in str(goal.get('category', '')) for goal in migrated_goals):
+        migrated_goals.extend([
+            {"id": "data_statistics", "name": "Data Analysis - Statistics", "completed": False, "category": "data_analysis"},
+            {"id": "data_tools", "name": "Data Analysis - Tools", "completed": False, "category": "data_analysis"},
+            {"id": "data_visualization", "name": "Data Analysis - Visualization", "completed": False, "category": "data_analysis"},
+            {"id": "data_ml", "name": "Data Analysis - Machine Learning", "completed": False, "category": "data_analysis"}
+        ])
+    
+    if not any('team_leadership' in str(goal.get('category', '')) for goal in migrated_goals):
+        migrated_goals.extend([
+            {"id": "leadership_communication", "name": "Team Leadership - Communication", "completed": False, "category": "team_leadership"},
+            {"id": "leadership_delegation", "name": "Team Leadership - Delegation", "completed": False, "category": "team_leadership"},
+            {"id": "leadership_conflict", "name": "Team Leadership - Conflict Resolution", "completed": False, "category": "team_leadership"},
+            {"id": "leadership_vision", "name": "Team Leadership - Vision", "completed": False, "category": "team_leadership"}
+        ])
+    
+    return migrated_goals
+
+def update_user_goals_performance(db: Session, user_id: str, goals: list) -> bool:
+    """Update user goals in the new user_goals table"""
+    try:
+        for goal_data in goals:
+            goal_id = goal_data.get('id')
+            goal_name = goal_data.get('name')
+            category = goal_data.get('category')
+            completed = goal_data.get('completed', False)
+            
+            # Check if goal exists
+            existing_goal = db.query(UserGoal).filter(
+                UserGoal.user_id == user_id,
+                UserGoal.goal_id == goal_id
+            ).first()
+            
+            if existing_goal:
+                # Update existing goal
+                existing_goal.completed = completed
+                existing_goal.updated_at = datetime.utcnow()
+            else:
+                # Create new goal
+                new_goal = UserGoal(
+                    user_id=user_id,
+                    goal_id=goal_id,
+                    goal_name=goal_name,
+                    category=category,
+                    completed=completed
+                )
+                db.add(new_goal)
+            
+            # Log the change in history
+            history_entry = GoalProgressHistory(
+                user_id=user_id,
+                goal_id=goal_id,
+                action='completed' if completed else 'uncompleted',
+                extra_data={'goal_name': goal_name, 'category': category}
+            )
+            db.add(history_entry)
+        
+        db.commit()
+        return True
+    except Exception as e:
+        db.rollback()
+        print(f"Error updating user goals: {str(e)}")
+        return False
+
+def get_default_learning_track_goals() -> list:
+    """Get default learning track goals in new format"""
+    return [
+        # Onboarding Track
+        {"id": "onboarding_node1", "name": "Node 1: Welcome & Company Overview", "completed": False, "category": "onboarding"},
+        {"id": "onboarding_node2", "name": "Node 2: Personal Information & Legal Forms", "completed": False, "category": "onboarding"},
+        {"id": "onboarding_node3", "name": "Node 3: Account Setup", "completed": False, "category": "onboarding"},
+        
+        # React Development Track
+        {"id": "react_basics", "name": "React Development - Basics", "completed": False, "category": "react"},
+        {"id": "react_hooks", "name": "React Development - Hooks", "completed": False, "category": "react"},
+        {"id": "react_state", "name": "React Development - State Management", "completed": False, "category": "react"},
+        {"id": "react_advanced", "name": "React Development - Advanced Patterns", "completed": False, "category": "react"},
+        
+        # Project Management Track
+        {"id": "pm_planning", "name": "Project Management - Planning", "completed": False, "category": "project_management"},
+        {"id": "pm_execution", "name": "Project Management - Execution", "completed": False, "category": "project_management"},
+        {"id": "pm_monitoring", "name": "Project Management - Monitoring", "completed": False, "category": "project_management"},
+        {"id": "pm_closure", "name": "Project Management - Closure", "completed": False, "category": "project_management"},
+        
+        # Data Analysis Track
+        {"id": "data_statistics", "name": "Data Analysis - Statistics", "completed": False, "category": "data_analysis"},
+        {"id": "data_tools", "name": "Data Analysis - Tools", "completed": False, "category": "data_analysis"},
+        {"id": "data_visualization", "name": "Data Analysis - Visualization", "completed": False, "category": "data_analysis"},
+        {"id": "data_ml", "name": "Data Analysis - Machine Learning", "completed": False, "category": "data_analysis"},
+        
+        # Team Leadership Track
+        {"id": "leadership_communication", "name": "Team Leadership - Communication", "completed": False, "category": "team_leadership"},
+        {"id": "leadership_delegation", "name": "Team Leadership - Delegation", "completed": False, "category": "team_leadership"},
+        {"id": "leadership_conflict", "name": "Team Leadership - Conflict Resolution", "completed": False, "category": "team_leadership"},
+        {"id": "leadership_vision", "name": "Team Leadership - Vision", "completed": False, "category": "team_leadership"}
         ]
 
 def get_progress_history_performance(db: Session, user_id: str, limit: int = 10) -> List[ProgressUpdate]:

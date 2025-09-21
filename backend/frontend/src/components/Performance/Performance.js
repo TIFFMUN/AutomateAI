@@ -36,43 +36,15 @@ function Performance() {
   const [aiModelInfo, setAiModelInfo] = useState({ model: 'GPT-4', version: '2024-01-01' });
   const [aiStatus, setAiStatus] = useState('ready');
   const [currentFeedbackIndex, setCurrentFeedbackIndex] = useState(0);
+  const [insight, setInsight] = useState('');
   const [chartData, setChartData] = useState(null);
   const [goals, setGoals] = useState([
-    // Onboarding Track
-    { id: 'onboarding_node1', name: 'Node 1: Welcome & Company Overview', completed: false, category: 'onboarding' },
-    { id: 'onboarding_node2', name: 'Node 2: Personal Information & Legal Forms', completed: false, category: 'onboarding' },
-    { id: 'onboarding_node3', name: 'Node 3: Account Setup', completed: false, category: 'onboarding' },
-    
-    // React Development Track
-    { id: 'react_basics', name: 'React Development - Basics', completed: false, category: 'react' },
-    { id: 'react_hooks', name: 'React Development - Hooks', completed: false, category: 'react' },
-    { id: 'react_state', name: 'React Development - State Management', completed: false, category: 'react' },
-    { id: 'react_advanced', name: 'React Development - Advanced Patterns', completed: false, category: 'react' },
-    
-    // Project Management Track
-    { id: 'pm_planning', name: 'Project Management - Planning', completed: false, category: 'project_management' },
-    { id: 'pm_execution', name: 'Project Management - Execution', completed: false, category: 'project_management' },
-    { id: 'pm_monitoring', name: 'Project Management - Monitoring', completed: false, category: 'project_management' },
-    { id: 'pm_closure', name: 'Project Management - Closure', completed: false, category: 'project_management' },
-    
-    // Data Analysis Track
-    { id: 'data_statistics', name: 'Data Analysis - Statistics', completed: false, category: 'data_analysis' },
-    { id: 'data_tools', name: 'Data Analysis - Tools', completed: false, category: 'data_analysis' },
-    { id: 'data_visualization', name: 'Data Analysis - Visualization', completed: false, category: 'data_analysis' },
-    { id: 'data_ml', name: 'Data Analysis - Machine Learning', completed: false, category: 'data_analysis' },
-    
-    // Team Leadership Track
-    { id: 'leadership_communication', name: 'Team Leadership - Communication', completed: false, category: 'team_leadership' },
-    { id: 'leadership_delegation', name: 'Team Leadership - Delegation', completed: false, category: 'team_leadership' },
-    { id: 'leadership_conflict', name: 'Team Leadership - Conflict Resolution', completed: false, category: 'team_leadership' },
-    { id: 'leadership_vision', name: 'Team Leadership - Vision', completed: false, category: 'team_leadership' }
+    { id: 1, name: 'Training', progress: 0, target: 100 },
+    { id: 2, name: 'Onboarding', progress: 0, target: 100 }
   ]);
   const [loadingGoals, setLoadingGoals] = useState(true);
   const [lastFeedbackCount, setLastFeedbackCount] = useState(0);
   const [pollingInterval, setPollingInterval] = useState(null);
-  const [isGeneratingSuggestion, setIsGeneratingSuggestion] = useState(false);
-  const [suggestionText, setSuggestionText] = useState('');
-  const [editorMessage, setEditorMessage] = useState('');
 
   // Available users from performance testing database
   const availableUsers = [
@@ -84,6 +56,7 @@ function Performance() {
 
   useEffect(() => {
     if (currentUserId && hasSelectedRole) {
+      loadLatestInsight();
       loadGoalsFromBackend();
       if (isManagerView) {
         loadDirectReports();
@@ -125,6 +98,7 @@ function Performance() {
       const response = await fetch(buildApiUrl(`/api/performance/users/${currentUserId}/direct-reports`));
       if (response.ok) {
         const reports = await response.json();
+        console.log('Direct reports loaded:', reports);
         setDirectReports(Array.isArray(reports) ? reports : []);
       } else {
         console.error('Failed to load direct reports, status:', response.status);
@@ -188,6 +162,23 @@ function Performance() {
     }
   };
 
+  const loadLatestInsight = async () => {
+    try {
+      const response = await fetch(buildApiUrl(`/api/performance/users/${currentUserId}/latest-insight`));
+      if (response.ok) {
+        const data = await response.json();
+        if (data.insight) {
+          setInsight(data.insight);
+        } else {
+          setInsight(''); // Clear insight if none available
+        }
+      } else {
+        console.error('Failed to load AI insight from backend');
+      }
+    } catch (err) {
+      console.error('Error loading AI insight:', err);
+    }
+  };
 
   const loadGoalsFromBackend = async () => {
     try {
@@ -198,37 +189,14 @@ function Performance() {
         if (data.goals) {
           setGoals(data.goals);
           
-          // Update chart data when goals are loaded - group by category
-          const categoryStats = data.goals.reduce((acc, goal) => {
-            const category = goal.category;
-            if (!acc[category]) {
-              acc[category] = { total: 0, completed: 0, name: category };
-            }
-            acc[category].total += 1;
-            if (goal.completed) {
-              acc[category].completed += 1;
-            }
-            return acc;
-          }, {});
-
+          // Update chart data when goals are loaded
           const chartData = {
             type: "bar",
-            labels: Object.values(categoryStats).map(cat => {
-              const displayNames = {
-                'onboarding': 'Onboarding',
-                'react': 'React Development',
-                'project_management': 'Project Management',
-                'data_analysis': 'Data Analysis',
-                'team_leadership': 'Team Leadership'
-              };
-              return displayNames[cat.name] || cat.name;
-            }),
+            labels: data.goals.map(goal => goal.name),
             datasets: [{
-              label: "Completion %",
-              data: Object.values(categoryStats).map(cat => 
-                Math.round((cat.completed / cat.total) * 100)
-              ),
-              backgroundColor: ['#4caf50', '#2196f3', '#ff9800', '#9c27b0', '#f44336']
+              label: "Progress %",
+              data: data.goals.map(goal => goal.progress),
+              backgroundColor: ["#3498db", "#2980b9"]
             }]
           };
           setChartData(chartData);
@@ -272,6 +240,7 @@ function Performance() {
       
       // Check if feedback count has changed
       if (currentFeedbacks.length !== lastFeedbackCount) {
+        console.log(`New feedback detected! Count changed from ${lastFeedbackCount} to ${currentFeedbacks.length}`);
       }
     } catch (err) {
       console.error('Error checking for new feedback:', err);
@@ -289,6 +258,7 @@ function Performance() {
     setHasSelectedRole(true); // Mark that user has selected a role
     
     // Clear user-specific data when switching users
+    setInsight('');
     setChartData(null);
     setGoals([
       { id: 1, name: 'Training', progress: 0, target: 100 },
@@ -335,124 +305,6 @@ function Performance() {
       setError('Network error. Please try again.');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleGetSuggestion = async () => {
-    if (!selectedEmployee || !feedbackText.trim()) {
-      setError('Please select an employee and enter feedback text');
-      return;
-    }
-
-    setIsGeneratingSuggestion(true);
-    setError(null);
-
-    // Generate AI tips from current analysis
-    const generateAITips = () => {
-      if (!aiAnalysis) return "Focus on teamwork and leadership examples. Keep tone encouraging but concise.";
-      
-      let tips = [];
-      
-      if (aiAnalysis.specificity_suggestions && aiAnalysis.specificity_suggestions.length > 0) {
-        tips.push(`Be specific: ${aiAnalysis.specificity_suggestions.slice(0, 2).join(', ')}`);
-      }
-      
-      if (aiAnalysis.missing_areas && aiAnalysis.missing_areas.length > 0) {
-        tips.push(`Include areas: ${aiAnalysis.missing_areas.slice(0, 2).join(', ')}`);
-      }
-      
-      if (aiAnalysis.actionability_suggestions && aiAnalysis.actionability_suggestions.length > 0) {
-        tips.push(`Make actionable: ${aiAnalysis.actionability_suggestions.slice(0, 1).join(', ')}`);
-      }
-      
-      if (aiAnalysis.overall_recommendations) {
-        tips.push(aiAnalysis.overall_recommendations);
-      }
-      
-      return tips.length > 0 ? tips.join('. ') : "Focus on teamwork and leadership examples. Keep tone encouraging but concise.";
-    };
-
-    try {
-      const aiTips = generateAITips();
-      
-      const response = await fetch(buildApiUrl('/api/feedback/generate-draft'), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          employee_name: selectedEmployee.name,
-          performance_notes: feedbackText,
-          ai_tips: aiTips,
-        }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.error) {
-          setError(data.error);
-        } else {
-          setSuggestionText(data.draft_feedback);
-          // Don't auto-populate the feedback text - let manager decide
-        }
-      } else {
-        const errorData = await response.json();
-        setError(errorData.error || 'Failed to generate suggestion');
-      }
-    } catch (err) {
-      setError('Network error. Please try again.');
-    } finally {
-      setIsGeneratingSuggestion(false);
-    }
-  };
-
-  const handleEditorMessage = async () => {
-    if (!selectedEmployee || !editorMessage.trim() || !suggestionText.trim()) {
-      setError('Please select an employee, ensure suggestion exists, and enter your message');
-      return;
-    }
-
-    setIsGeneratingSuggestion(true);
-    setError(null);
-
-    try {
-      // Create a refined prompt that includes the manager's specific request
-      const refinedPrompt = `You are helping a manager refine their performance feedback. 
-
-Current feedback draft: "${suggestionText}"
-
-Manager's request: "${editorMessage}"
-
-Please update the feedback according to the manager's request. Keep it professional, constructive, and encouraging. Return ONLY the updated feedback text.`;
-
-      const response = await fetch(buildApiUrl('/api/feedback/generate-draft'), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          employee_name: selectedEmployee.name,
-          performance_notes: refinedPrompt,
-          ai_tips: "Follow the manager's specific instructions exactly. Maintain professional tone.",
-        }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.error) {
-          setError(data.error);
-        } else {
-          setSuggestionText(data.draft_feedback);
-          setEditorMessage(''); // Clear the message after successful update
-        }
-      } else {
-        const errorData = await response.json();
-        setError(errorData.error || 'Failed to update suggestion');
-      }
-    } catch (err) {
-      setError('Network error. Please try again.');
-    } finally {
-      setIsGeneratingSuggestion(false);
     }
   };
 
@@ -530,6 +382,12 @@ Please update the feedback according to the manager's request. Keep it professio
     navigate('/main');
   };
 
+  // Handle AI-generated draft feedback
+  const handleDraftGenerated = (draftText) => {
+    setFeedbackText(draftText);
+    // Optionally show a success message or notification
+    console.log('Draft feedback applied to form');
+  };
 
   // AI Analysis Functions
   const analyzeFeedback = async (text) => {
@@ -743,13 +601,7 @@ Please update the feedback according to the manager's request. Keep it professio
               aiStatus={aiStatus}
               currentFeedbackIndex={currentFeedbackIndex}
               setCurrentFeedbackIndex={setCurrentFeedbackIndex}
-              onGetSuggestion={handleGetSuggestion}
-              onEditorMessage={handleEditorMessage}
-              isGeneratingSuggestion={isGeneratingSuggestion}
-              suggestionText={suggestionText}
-              setSuggestionText={setSuggestionText}
-              editorMessage={editorMessage}
-              setEditorMessage={setEditorMessage}
+              onDraftGenerated={handleDraftGenerated}
             />
           ) : (
             <EmployeeView
@@ -759,6 +611,8 @@ Please update the feedback according to the manager's request. Keep it professio
               setShowAIAnalysis={setShowAIAnalysis}
               onGenerateAISummary={handleGenerateAISummary}
               currentUserId={currentUserId}
+              insight={insight}
+              setInsight={setInsight}
               chartData={chartData}
               setChartData={setChartData}
               goals={goals}
@@ -797,18 +651,16 @@ function ManagerView({
   aiStatus,
   currentFeedbackIndex,
   setCurrentFeedbackIndex,
-  onGetSuggestion,
-  onEditorMessage,
-  isGeneratingSuggestion,
-  suggestionText,
-  setSuggestionText,
-  editorMessage,
-  setEditorMessage
+  onDraftGenerated
 }) {
   // Ensure arrays are always arrays
   const safeFeedbacks = Array.isArray(feedbacks) ? feedbacks : [];
   const safeDirectReports = Array.isArray(directReports) ? directReports : [];
   
+  // Debug logging
+  console.log('ManagerView - directReports:', directReports);
+  console.log('ManagerView - safeDirectReports:', safeDirectReports);
+  console.log('ManagerView - selectedEmployee:', selectedEmployee);
   
   // Carousel functions
   const nextFeedback = () => {
@@ -839,7 +691,9 @@ function ManagerView({
               <select 
                 value={selectedEmployee?.id || ''} 
                 onChange={(e) => {
+                  console.log('Employee selection changed:', e.target.value);
                   const employee = safeDirectReports.find(emp => emp.id === parseInt(e.target.value));
+                  console.log('Found employee:', employee);
                   setSelectedEmployee(employee);
                 }}
                 disabled={!!editingFeedback}
@@ -901,7 +755,6 @@ function ManagerView({
                   </button>
                 </>
               ) : (
-                <>
                 <button 
                   className="btn btn-primary" 
                   onClick={onCreateFeedback}
@@ -909,18 +762,16 @@ function ManagerView({
                 >
                   {loading ? 'Creating...' : 'Create Feedback'}
                 </button>
-                  <button 
-                    className="btn btn-orange" 
-                    onClick={onGetSuggestion}
-                    disabled={loading || !selectedEmployee || !feedbackText.trim() || isGeneratingSuggestion}
-                  >
-                    {isGeneratingSuggestion ? 'Generating...' : 'Get Suggestion'}
-                  </button>
-                </>
               )}
             </div>
           </div>
         </div>
+
+        {/* AI Feedback Drafting Assistant */}
+        <AIFeedbackDrafting 
+          selectedEmployee={selectedEmployee}
+          onDraftGenerated={onDraftGenerated}
+        />
 
         {/* AI Feedback Assistant */}
         {aiAssistantEnabled && (
@@ -1103,66 +954,6 @@ function ManagerView({
         )}
       </div>
 
-      {/* AI Suggestion Display */}
-      {suggestionText && (
-        <div className="ai-suggestion-display">
-          <div className="suggestion-header">
-            <h3 className="suggestion-title">AI Feedback Suggestion</h3>
-            <button 
-              className="suggestion-copy-btn"
-              onClick={() => {
-                navigator.clipboard.writeText(suggestionText);
-                // Optional: show a brief success message
-              }}
-            >
-              📋 Copy
-            </button>
-          </div>
-          <div className="suggestion-content">
-            <p className="suggestion-text">{suggestionText}</p>
-          </div>
-          
-          {/* Editor integrated into suggestion box */}
-          <div className="suggestion-editor">
-            <div className="editor-input-group">
-              <input
-                type="text"
-                className="editor-input"
-                value={editorMessage}
-                onChange={(e) => setEditorMessage(e.target.value)}
-                placeholder="Ask AI to make changes..."
-                disabled={isGeneratingSuggestion}
-              />
-              <button
-                className="editor-send-btn"
-                onClick={onEditorMessage}
-                disabled={isGeneratingSuggestion || !editorMessage.trim()}
-              >
-                {isGeneratingSuggestion ? 'Updating...' : 'Send'}
-              </button>
-            </div>
-          </div>
-          
-          <div className="suggestion-actions">
-            <button 
-              className="btn btn-orange"
-              onClick={() => {
-                setFeedbackText(suggestionText);
-                setSuggestionText('');
-              }}
-            >
-              Use This Suggestion
-            </button>
-            <button 
-              className="btn btn-secondary"
-              onClick={() => setSuggestionText('')}
-            >
-              Dismiss
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* Previous Feedback - Full Width Bottom Section */}
       <div className="previous-feedback-section">
         <h2>Previous Feedback</h2>
@@ -1238,13 +1029,12 @@ function ManagerView({
           </div>
         )}
       </div>
-      
     </div>
   );
 }
 
 // Employee View Component
-function EmployeeView({ feedbacks, loading, showAIAnalysis, setShowAIAnalysis, onGenerateAISummary, currentUserId, chartData, setChartData, goals, setGoals, loadingGoals }) {
+function EmployeeView({ feedbacks, loading, showAIAnalysis, setShowAIAnalysis, onGenerateAISummary, currentUserId, insight, setInsight, chartData, setChartData, goals, setGoals, loadingGoals }) {
   // Ensure feedbacks is always an array
   const safeFeedbacks = Array.isArray(feedbacks) ? feedbacks : [];
   
@@ -1254,6 +1044,8 @@ function EmployeeView({ feedbacks, loading, showAIAnalysis, setShowAIAnalysis, o
         {/* Personal Goals Section - Left Sidebar */}
         <PersonalGoalsSection 
           currentUserId={currentUserId} 
+          insight={insight}
+          setInsight={setInsight}
           chartData={chartData}
           setChartData={setChartData}
           goals={goals}
@@ -1390,85 +1182,81 @@ function EmployeeView({ feedbacks, loading, showAIAnalysis, setShowAIAnalysis, o
 }
 
 // Personal Goals Section Component
-function PersonalGoalsSection({ currentUserId, chartData, setChartData, goals, setGoals, loadingGoals }) {
+function PersonalGoalsSection({ currentUserId, insight, setInsight, chartData, setChartData, goals, setGoals, loadingGoals }) {
+  const [progressUpdate, setProgressUpdate] = useState('');
+  const [isUpdating, setIsUpdating] = useState(false);
 
-  // Update chart data when goals change - group by category
+  // Update chart data when goals change
   useEffect(() => {
     if (goals && goals.length > 0) {
-      const categoryStats = goals.reduce((acc, goal) => {
-        const category = goal.category;
-        if (!acc[category]) {
-          acc[category] = { total: 0, completed: 0, name: category };
-        }
-        acc[category].total += 1;
-        if (goal.completed) {
-          acc[category].completed += 1;
-        }
-        return acc;
-      }, {});
-
       const chartData = {
         type: "bar",
-        labels: Object.values(categoryStats).map(cat => {
-          const displayNames = {
-            'onboarding': 'Onboarding',
-            'react': 'React Development',
-            'project_management': 'Project Management',
-            'data_analysis': 'Data Analysis',
-            'team_leadership': 'Team Leadership'
-          };
-          return displayNames[cat.name] || cat.name;
-        }),
+        labels: goals.map(goal => goal.name),
         datasets: [{
-          label: "Completion %",
-          data: Object.values(categoryStats).map(cat => 
-            Math.round((cat.completed / cat.total) * 100)
-          ),
-          backgroundColor: ['#4caf50', '#2196f3', '#ff9800', '#9c27b0', '#f44336']
+          label: "Progress %",
+          data: goals.map(goal => goal.progress),
+          backgroundColor: ["#3498db", "#2980b9"]
         }]
       };
       setChartData(chartData);
     }
   }, [goals]);
 
-  // Handle checkbox toggle
-  const handleGoalToggle = async (goalId) => {
-    const updatedGoals = goals.map(goal => 
-      goal.id === goalId 
-        ? { ...goal, completed: !goal.completed }
-        : goal
-    );
+
+
+  const handleProgressUpdate = async () => {
+    if (!progressUpdate.trim()) return;
     
-    setGoals(updatedGoals);
+    setIsUpdating(true);
     
-    // Update backend
     try {
-      const response = await fetch(buildApiUrl(`/api/performance/users/${currentUserId}/goals`), {
-        method: 'PUT',
+      const response = await fetch(buildApiUrl(`/api/progress/update/${currentUserId}`), {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ goals: updatedGoals }),
+        body: JSON.stringify({
+          progress_text: progressUpdate,
+          current_goals: goals
+        }),
       });
-      
-      if (!response.ok) {
-        console.error('Failed to update goals in backend');
-        // Revert the change if backend update failed
-        setGoals(goals);
-        alert('Failed to save goal changes. Please try again.');
+
+      if (response.ok) {
+        const result = await response.json();
+        
+        // Update goals with new progress
+        if (result.goals) {
+          setGoals(result.goals);
+        }
+        
+        // Update insight
+        if (result.insight) {
+          setInsight(result.insight);
+        }
+        
+        // Update chart data
+        if (result.chart_data) {
+          setChartData(result.chart_data);
+        }
+        
+        // Clear input
+        setProgressUpdate('');
       } else {
-        console.log('Goals successfully saved to database');
+        console.error('Failed to update progress');
       }
     } catch (err) {
-      console.error('Error updating goals:', err);
-      // Revert the change if backend update failed
-      setGoals(goals);
-      alert('Network error while saving goals. Please check your connection and try again.');
+      console.error('Error updating progress:', err);
+    } finally {
+      setIsUpdating(false);
     }
   };
 
-
-
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleProgressUpdate();
+    }
+  };
 
   return (
     <div className="personal-goals-section">
@@ -1476,7 +1264,6 @@ function PersonalGoalsSection({ currentUserId, chartData, setChartData, goals, s
         <h2>Personal Goals</h2>
         <div className="goals-subtitle">Track your progress and achievements</div>
       </div>
-
 
       {/* Progress Chart */}
       <div className="progress-chart-container">
@@ -1492,108 +1279,70 @@ function PersonalGoalsSection({ currentUserId, chartData, setChartData, goals, s
         </div>
       </div>
 
-      {/* Learning Tracks */}
-      <div className="learning-tracks">
-        <h3>Learning Tracks</h3>
-        
-        {/* Onboarding Track */}
-        <div className="track-section">
-          <h4 className="track-title">🚀 Onboarding</h4>
-          <div className="track-items">
-            {goals.filter(goal => goal.category === 'onboarding').map(goal => (
-              <div key={goal.id} className="track-item">
-                <label className="checkbox-label">
-                  <input
-                    type="checkbox"
-                    checked={goal.completed}
-                    onChange={() => handleGoalToggle(goal.id)}
-                    className="track-checkbox"
-                  />
-                  <span className="checkbox-text">{goal.name}</span>
-                </label>
+      {/* AI Insight */}
+      {insight && (
+        <div className="insight-container">
+          <div className="insight-header">
+            <span className="insight-icon">💡</span>
+            <h4>AI Insight</h4>
           </div>
-            ))}
+          <p className="insight-text">{insight}</p>
         </div>
-        </div>
+      )}
 
-        {/* React Development Track */}
-        <div className="track-section">
-          <h4 className="track-title">⚛️ React Development</h4>
-          <div className="track-items">
-            {goals.filter(goal => goal.category === 'react').map(goal => (
-              <div key={goal.id} className="track-item">
-                <label className="checkbox-label">
-                  <input
-                    type="checkbox"
-                    checked={goal.completed}
-                    onChange={() => handleGoalToggle(goal.id)}
-                    className="track-checkbox"
-                  />
-                  <span className="checkbox-text">{goal.name}</span>
-                </label>
-              </div>
-            ))}
-          </div>
+      {/* Progress Update Input */}
+      <div className="progress-update-section">
+        <label htmlFor="progress-update" className="update-label">
+          Update your progress
+        </label>
+        <div className="update-input-container">
+          <textarea
+            id="progress-update"
+            value={progressUpdate}
+            onChange={(e) => setProgressUpdate(e.target.value)}
+            onKeyPress={handleKeyPress}
+            placeholder="I finished my first training course..."
+            className="progress-update-input"
+            rows={3}
+            disabled={isUpdating}
+          />
+          <button
+            onClick={handleProgressUpdate}
+            disabled={isUpdating || !progressUpdate.trim()}
+            className="update-btn"
+          >
+            {isUpdating ? 'Updating...' : 'Update'}
+          </button>
         </div>
         
-        {/* Project Management Track */}
-        <div className="track-section">
-          <h4 className="track-title">📋 Project Management</h4>
-          <div className="track-items">
-            {goals.filter(goal => goal.category === 'project_management').map(goal => (
-              <div key={goal.id} className="track-item">
-                <label className="checkbox-label">
-                  <input
-                    type="checkbox"
-                    checked={goal.completed}
-                    onChange={() => handleGoalToggle(goal.id)}
-                    className="track-checkbox"
-                  />
-                  <span className="checkbox-text">{goal.name}</span>
-                </label>
+        {/* Loading State Overlay */}
+        {isUpdating && (
+          <div className="progress-loading-overlay">
+            <div className="spinner"></div>
+            <p>Processing your progress update...</p>
           </div>
-            ))}
-          </div>
+        )}
       </div>
 
-        {/* Data Analysis Track */}
-        <div className="track-section">
-          <h4 className="track-title">📊 Data Analysis</h4>
-          <div className="track-items">
-            {goals.filter(goal => goal.category === 'data_analysis').map(goal => (
-              <div key={goal.id} className="track-item">
-                <label className="checkbox-label">
-                  <input
-                    type="checkbox"
-                    checked={goal.completed}
-                    onChange={() => handleGoalToggle(goal.id)}
-                    className="track-checkbox"
-                  />
-                  <span className="checkbox-text">{goal.name}</span>
-                </label>
+      {/* Goals List */}
+      <div className="goals-list">
+        <h3>Current Goals</h3>
+        <div className="goals-grid">
+          {goals.map(goal => (
+            <div key={goal.id} className="goal-card">
+              <div className="goal-header">
+                <h4>{goal.name}</h4>
+                <span className="goal-progress">{goal.progress}%</span>
               </div>
-            ))}
+              <div className="goal-progress-bar">
+                <div 
+                  className="goal-progress-fill" 
+                  style={{ width: `${goal.progress}%` }}
+                ></div>
               </div>
-        </div>
-
-        {/* Team Leadership Track */}
-        <div className="track-section">
-          <h4 className="track-title">👥 Team Leadership</h4>
-          <div className="track-items">
-            {goals.filter(goal => goal.category === 'team_leadership').map(goal => (
-              <div key={goal.id} className="track-item">
-                <label className="checkbox-label">
-                  <input
-                    type="checkbox"
-                    checked={goal.completed}
-                    onChange={() => handleGoalToggle(goal.id)}
-                    className="track-checkbox"
-                  />
-                  <span className="checkbox-text">{goal.name}</span>
-                </label>
+              <div className="goal-target">Target: {goal.target}%</div>
             </div>
           ))}
-          </div>
         </div>
       </div>
     </div>
@@ -1618,58 +1367,26 @@ function ProgressChart({ data }) {
     maintainAspectRatio: false,
     plugins: {
       legend: {
-        display: false
+        position: 'top',
       },
       title: {
-        display: false
+        display: true,
+        text: 'Goal Progress Overview',
+        font: {
+          size: 16,
+          weight: 'bold'
+        }
       },
     },
     scales: {
-      x: {
-        ticks: {
-          font: {
-            size: 11
-          },
-          maxRotation: 90,
-          padding: 12,
-          display: true,
-          autoSkip: false
-        },
-        grid: {
-          display: false
-        }
-      },
       y: {
         beginAtZero: true,
         max: 100,
         ticks: {
-          stepSize: 20,
           callback: function(value) {
             return value + '%';
-          },
-          font: {
-            size: 11
-          },
-          padding: 10
-        },
-        grid: {
-          color: 'rgba(0,0,0,0.1)',
-          drawBorder: false
+          }
         }
-      }
-    },
-    layout: {
-      padding: {
-        top: 15,
-        bottom: 30,
-        left: 15,
-        right: 15
-      }
-    },
-    elements: {
-      bar: {
-        borderRadius: 4,
-        borderSkipped: false,
       }
     }
   };
@@ -1685,42 +1402,25 @@ function ProgressChart({ data }) {
 
 // Default Progress Chart Component
 function DefaultProgressChart({ goals }) {
-  // Group goals by category and calculate completion percentages
-  const categoryStats = goals.reduce((acc, goal) => {
-    const category = goal.category;
-    if (!acc[category]) {
-      acc[category] = { total: 0, completed: 0, name: category };
-    }
-    acc[category].total += 1;
-    if (goal.completed) {
-      acc[category].completed += 1;
-    }
-    return acc;
-  }, {});
-
-  // Create chart data for categories
+  // Create chart data from goals
   const chartData = {
-    labels: Object.values(categoryStats).map(cat => {
-      // Convert category names to display names
-      const displayNames = {
-        'onboarding': 'Onboarding',
-        'react': 'React Development',
-        'project_management': 'Project Management',
-        'data_analysis': 'Data Analysis',
-        'team_leadership': 'Team Leadership'
-      };
-      return displayNames[cat.name] || cat.name;
-    }),
+    labels: goals.map(goal => goal.name),
     datasets: [{
-      label: 'Completion %',
-      data: Object.values(categoryStats).map(cat => 
-        Math.round((cat.completed / cat.total) * 100)
-      ),
+      label: 'Progress %',
+      data: goals.map(goal => goal.progress),
       backgroundColor: [
-        '#4caf50', '#2196f3', '#ff9800', '#9c27b0', '#f44336'
+        'var(--primary-blue)',
+        'var(--secondary-blue)', 
+        'var(--dark-blue)',
+        'var(--dark-gray)',
+        'var(--darker-gray)'
       ],
       borderColor: [
-        '#45a049', '#1976d2', '#f57c00', '#8e24aa', '#d32f2f'
+        'var(--secondary-blue)',
+        'var(--dark-blue)',
+        'var(--dark-gray)',
+        'var(--darker-gray)',
+        'var(--darkest-gray)'
       ],
       borderWidth: 2
     }]
@@ -1731,58 +1431,26 @@ function DefaultProgressChart({ goals }) {
     maintainAspectRatio: false,
     plugins: {
       legend: {
-        display: false
+        position: 'top',
       },
       title: {
-        display: false
+        display: true,
+        text: 'Goal Progress Overview',
+        font: {
+          size: 16,
+          weight: 'bold'
+        }
       },
     },
     scales: {
-      x: {
-        ticks: {
-          font: {
-            size: 11
-          },
-          maxRotation: 45,
-          padding: 12,
-          display: true,
-          autoSkip: false
-        },
-        grid: {
-          display: false
-        }
-      },
       y: {
         beginAtZero: true,
         max: 100,
         ticks: {
-          stepSize: 20,
           callback: function(value) {
             return value + '%';
-          },
-          font: {
-            size: 11
-          },
-          padding: 10
-        },
-        grid: {
-          color: 'rgba(0,0,0,0.1)',
-          drawBorder: false
+          }
         }
-      }
-    },
-    layout: {
-      padding: {
-        top: 15,
-        bottom: 30,
-        left: 15,
-        right: 15
-      }
-    },
-    elements: {
-      bar: {
-        borderRadius: 4,
-        borderSkipped: false,
       }
     }
   };

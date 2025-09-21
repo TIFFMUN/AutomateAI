@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException, HTTPException 
+from fastapi import FastAPI, Depends, HTTPException, Body 
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Dict, Any, List, Optional
@@ -34,7 +34,8 @@ from db import (
     get_performance_db, create_performance_tables, PerformanceUser, PerformanceGoal, ProgressUpdate,
     create_performance_user, create_performance_goal, get_performance_user_by_id,
     get_performance_summary, get_performance_direct_reports, get_performance_goals_by_employee,
-    save_progress_update_performance, get_latest_progress_goals_performance, get_progress_history_performance
+    save_progress_update_performance, get_latest_progress_goals_performance, get_progress_history_performance,
+    update_user_goals_performance
 )
 from routers.auth import router as auth_router
 from routers.skills import router as skills_router
@@ -316,6 +317,9 @@ class UserRankResponse(BaseModel):
     user_id: str
     total_points: int
     rank: int
+
+class GoalsUpdateRequest(BaseModel):
+    goals: List[dict]
 
 # All database functions are now in db.py
 
@@ -1296,6 +1300,41 @@ CRITICAL: Output ONLY the JSON response, no additional text or explanations.
             }
         except Exception as fallback_error:
             return {"error": f"Failed to update progress: {str(fallback_error)}"}
+
+@app.put("/api/performance/users/{user_id}/goals")
+def update_performance_user_goals(user_id: str, request: GoalsUpdateRequest, db: Session = Depends(get_performance_db)):
+    """Update progress goals for a performance user"""
+    try:
+        print(f"Updating goals for user {user_id}: {len(request.goals)} goals")
+        
+        if not request.goals or not isinstance(request.goals, list):
+            raise ValueError("Invalid goals data provided")
+        
+        # Try to update using new user_goals table first
+        success = update_user_goals_performance(db, user_id, request.goals)
+        
+        if success:
+            print(f"Successfully updated goals using new user_goals table")
+            return {"message": "Goals updated successfully", "goals": request.goals, "method": "new_table"}
+        
+        # Fallback to old progress_updates table
+        progress_update = ProgressUpdate(
+            user_id=user_id,
+            progress_text=f"Goal states updated via checkbox interaction",
+            updated_goals=request.goals,
+            ai_insight=None  # No AI insight for checkbox updates
+        )
+        
+        db.add(progress_update)
+        db.commit()
+        db.refresh(progress_update)
+        
+        print(f"Successfully saved goals update with ID: {progress_update.id} (fallback method)")
+        return {"message": "Goals updated successfully", "goals": request.goals, "update_id": progress_update.id, "method": "fallback"}
+    except Exception as e:
+        print(f"Error updating goals for user {user_id}: {str(e)}")
+        db.rollback()
+        return {"error": f"Failed to update goals: {str(e)}"}
 
 @app.get("/api/performance/users/{user_id}/goals")
 def get_performance_user_goals(user_id: str, db: Session = Depends(get_performance_db)):
