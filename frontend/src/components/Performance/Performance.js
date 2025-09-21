@@ -45,6 +45,9 @@ function Performance() {
   const [loadingGoals, setLoadingGoals] = useState(true);
   const [lastFeedbackCount, setLastFeedbackCount] = useState(0);
   const [pollingInterval, setPollingInterval] = useState(null);
+  const [isGeneratingSuggestion, setIsGeneratingSuggestion] = useState(false);
+  const [suggestionText, setSuggestionText] = useState('');
+  const [editorMessage, setEditorMessage] = useState('');
 
   // Available users from performance testing database
   const availableUsers = [
@@ -98,7 +101,6 @@ function Performance() {
       const response = await fetch(buildApiUrl(`/api/performance/users/${currentUserId}/direct-reports`));
       if (response.ok) {
         const reports = await response.json();
-        console.log('Direct reports loaded:', reports);
         setDirectReports(Array.isArray(reports) ? reports : []);
       } else {
         console.error('Failed to load direct reports, status:', response.status);
@@ -240,7 +242,6 @@ function Performance() {
       
       // Check if feedback count has changed
       if (currentFeedbacks.length !== lastFeedbackCount) {
-        console.log(`New feedback detected! Count changed from ${lastFeedbackCount} to ${currentFeedbacks.length}`);
       }
     } catch (err) {
       console.error('Error checking for new feedback:', err);
@@ -305,6 +306,124 @@ function Performance() {
       setError('Network error. Please try again.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGetSuggestion = async () => {
+    if (!selectedEmployee || !feedbackText.trim()) {
+      setError('Please select an employee and enter feedback text');
+      return;
+    }
+
+    setIsGeneratingSuggestion(true);
+    setError(null);
+
+    // Generate AI tips from current analysis
+    const generateAITips = () => {
+      if (!aiAnalysis) return "Focus on teamwork and leadership examples. Keep tone encouraging but concise.";
+      
+      let tips = [];
+      
+      if (aiAnalysis.specificity_suggestions && aiAnalysis.specificity_suggestions.length > 0) {
+        tips.push(`Be specific: ${aiAnalysis.specificity_suggestions.slice(0, 2).join(', ')}`);
+      }
+      
+      if (aiAnalysis.missing_areas && aiAnalysis.missing_areas.length > 0) {
+        tips.push(`Include areas: ${aiAnalysis.missing_areas.slice(0, 2).join(', ')}`);
+      }
+      
+      if (aiAnalysis.actionability_suggestions && aiAnalysis.actionability_suggestions.length > 0) {
+        tips.push(`Make actionable: ${aiAnalysis.actionability_suggestions.slice(0, 1).join(', ')}`);
+      }
+      
+      if (aiAnalysis.overall_recommendations) {
+        tips.push(aiAnalysis.overall_recommendations);
+      }
+      
+      return tips.length > 0 ? tips.join('. ') : "Focus on teamwork and leadership examples. Keep tone encouraging but concise.";
+    };
+
+    try {
+      const aiTips = generateAITips();
+      
+      const response = await fetch(buildApiUrl('/api/feedback/generate-draft'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          employee_name: selectedEmployee.name,
+          performance_notes: feedbackText,
+          ai_tips: aiTips,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.error) {
+          setError(data.error);
+        } else {
+          setSuggestionText(data.draft_feedback);
+          // Don't auto-populate the feedback text - let manager decide
+        }
+      } else {
+        const errorData = await response.json();
+        setError(errorData.error || 'Failed to generate suggestion');
+      }
+    } catch (err) {
+      setError('Network error. Please try again.');
+    } finally {
+      setIsGeneratingSuggestion(false);
+    }
+  };
+
+  const handleEditorMessage = async () => {
+    if (!selectedEmployee || !editorMessage.trim() || !suggestionText.trim()) {
+      setError('Please select an employee, ensure suggestion exists, and enter your message');
+      return;
+    }
+
+    setIsGeneratingSuggestion(true);
+    setError(null);
+
+    try {
+      // Create a refined prompt that includes the manager's specific request
+      const refinedPrompt = `You are helping a manager refine their performance feedback. 
+
+Current feedback draft: "${suggestionText}"
+
+Manager's request: "${editorMessage}"
+
+Please update the feedback according to the manager's request. Keep it professional, constructive, and encouraging. Return ONLY the updated feedback text.`;
+
+      const response = await fetch(buildApiUrl('/api/feedback/generate-draft'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          employee_name: selectedEmployee.name,
+          performance_notes: refinedPrompt,
+          ai_tips: "Follow the manager's specific instructions exactly. Maintain professional tone.",
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.error) {
+          setError(data.error);
+        } else {
+          setSuggestionText(data.draft_feedback);
+          setEditorMessage(''); // Clear the message after successful update
+        }
+      } else {
+        const errorData = await response.json();
+        setError(errorData.error || 'Failed to update suggestion');
+      }
+    } catch (err) {
+      setError('Network error. Please try again.');
+    } finally {
+      setIsGeneratingSuggestion(false);
     }
   };
 
@@ -381,6 +500,7 @@ function Performance() {
   const handleBack = () => {
     navigate('/main');
   };
+
 
   // AI Analysis Functions
   const analyzeFeedback = async (text) => {
@@ -594,6 +714,13 @@ function Performance() {
               aiStatus={aiStatus}
               currentFeedbackIndex={currentFeedbackIndex}
               setCurrentFeedbackIndex={setCurrentFeedbackIndex}
+              onGetSuggestion={handleGetSuggestion}
+              onEditorMessage={handleEditorMessage}
+              isGeneratingSuggestion={isGeneratingSuggestion}
+              suggestionText={suggestionText}
+              setSuggestionText={setSuggestionText}
+              editorMessage={editorMessage}
+              setEditorMessage={setEditorMessage}
             />
           ) : (
             <EmployeeView
@@ -642,16 +769,19 @@ function ManagerView({
   aiModelInfo,
   aiStatus,
   currentFeedbackIndex,
-  setCurrentFeedbackIndex
+  setCurrentFeedbackIndex,
+  onGetSuggestion,
+  onEditorMessage,
+  isGeneratingSuggestion,
+  suggestionText,
+  setSuggestionText,
+  editorMessage,
+  setEditorMessage
 }) {
   // Ensure arrays are always arrays
   const safeFeedbacks = Array.isArray(feedbacks) ? feedbacks : [];
   const safeDirectReports = Array.isArray(directReports) ? directReports : [];
   
-  // Debug logging
-  console.log('ManagerView - directReports:', directReports);
-  console.log('ManagerView - safeDirectReports:', safeDirectReports);
-  console.log('ManagerView - selectedEmployee:', selectedEmployee);
   
   // Carousel functions
   const nextFeedback = () => {
@@ -682,9 +812,7 @@ function ManagerView({
               <select 
                 value={selectedEmployee?.id || ''} 
                 onChange={(e) => {
-                  console.log('Employee selection changed:', e.target.value);
                   const employee = safeDirectReports.find(emp => emp.id === parseInt(e.target.value));
-                  console.log('Found employee:', employee);
                   setSelectedEmployee(employee);
                 }}
                 disabled={!!editingFeedback}
@@ -746,13 +874,22 @@ function ManagerView({
                   </button>
                 </>
               ) : (
-                <button 
-                  className="btn btn-primary" 
-                  onClick={onCreateFeedback}
-                  disabled={loading || !selectedEmployee || !feedbackText.trim()}
-                >
-                  {loading ? 'Creating...' : 'Create Feedback'}
-                </button>
+                <>
+                  <button 
+                    className="btn btn-primary" 
+                    onClick={onCreateFeedback}
+                    disabled={loading || !selectedEmployee || !feedbackText.trim()}
+                  >
+                    {loading ? 'Creating...' : 'Create Feedback'}
+                  </button>
+                  <button 
+                    className="btn btn-orange" 
+                    onClick={onGetSuggestion}
+                    disabled={loading || !selectedEmployee || !feedbackText.trim() || isGeneratingSuggestion}
+                  >
+                    {isGeneratingSuggestion ? 'Generating...' : 'Get Suggestion'}
+                  </button>
+                </>
               )}
             </div>
           </div>
@@ -938,6 +1075,66 @@ function ManagerView({
           </div>
         )}
       </div>
+
+      {/* AI Suggestion Display */}
+      {suggestionText && (
+        <div className="ai-suggestion-display">
+          <div className="suggestion-header">
+            <h3 className="suggestion-title">AI Feedback Suggestion</h3>
+            <button 
+              className="suggestion-copy-btn"
+              onClick={() => {
+                navigator.clipboard.writeText(suggestionText);
+                // Optional: show a brief success message
+              }}
+            >
+              📋 Copy
+            </button>
+          </div>
+          <div className="suggestion-content">
+            <p className="suggestion-text">{suggestionText}</p>
+          </div>
+          
+          {/* Editor integrated into suggestion box */}
+          <div className="suggestion-editor">
+            <div className="editor-input-group">
+              <input
+                type="text"
+                className="editor-input"
+                value={editorMessage}
+                onChange={(e) => setEditorMessage(e.target.value)}
+                placeholder="Ask AI to make changes..."
+                disabled={isGeneratingSuggestion}
+              />
+              <button
+                className="editor-send-btn"
+                onClick={onEditorMessage}
+                disabled={isGeneratingSuggestion || !editorMessage.trim()}
+              >
+                {isGeneratingSuggestion ? 'Updating...' : 'Send'}
+              </button>
+            </div>
+          </div>
+          
+          <div className="suggestion-actions">
+            <button 
+              className="btn btn-orange"
+              onClick={() => {
+                setFeedbackText(suggestionText);
+                setSuggestionText('');
+              }}
+            >
+              Use This Suggestion
+            </button>
+            <button 
+              className="btn btn-secondary"
+              onClick={() => setSuggestionText('')}
+            >
+              Dismiss
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Previous Feedback - Full Width Bottom Section */}
       <div className="previous-feedback-section">

@@ -19,7 +19,7 @@ def validate_user_id(user_id: str, db: Session) -> int:
         raise HTTPException(status_code=400, detail="Invalid user_id format. Must be an integer.")
 from config import settings
 from langgraph_connection import LangGraphConnection
-from prompts import PERFORMANCE_FEEDBACK_ANALYSIS, PERFORMANCE_FEEDBACK_ANALYSIS_PROMPT, REAL_TIME_FEEDBACK_SUGGESTIONS_PROMPT
+from prompts import PERFORMANCE_FEEDBACK_ANALYSIS, PERFORMANCE_FEEDBACK_ANALYSIS_PROMPT, REAL_TIME_FEEDBACK_SUGGESTIONS_PROMPT, FEEDBACK_DRAFT_GENERATION_PROMPT
 from langchain_core.messages import HumanMessage
 from db import (
     get_db, create_tables, UserState, ChatMessage, User, PerformanceFeedback,
@@ -250,6 +250,11 @@ class FeedbackAnalysisRequest(BaseModel):
 
 class RealTimeFeedbackRequest(BaseModel):
     feedback_text: str
+
+class DraftFeedbackRequest(BaseModel):
+    employee_name: str
+    performance_notes: str
+    ai_tips: str = ""  # Tips from AI feedback generator
 
 class ProgressUpdateRequest(BaseModel):
     progress_text: str
@@ -1022,7 +1027,6 @@ def get_realtime_suggestions(request: RealTimeFeedbackRequest, db: Session = Dep
         response = hr_agent.llm.invoke([HumanMessage(content=suggestions_prompt)])
         ai_response = response.content.strip()
        
-        # Try to parse JSON response
         try:
             # First try direct JSON parsing
             suggestions_data = json.loads(ai_response)
@@ -1050,7 +1054,6 @@ def get_realtime_suggestions(request: RealTimeFeedbackRequest, db: Session = Dep
             except json.JSONDecodeError:
                 pass
            
-            # If JSON parsing fails, return default suggestions
             return {
                 "live_suggestions": [
                     "Consider adding specific examples",
@@ -1073,6 +1076,42 @@ def get_realtime_suggestions(request: RealTimeFeedbackRequest, db: Session = Dep
        
     except Exception as e:
         return {"error": f"Failed to get suggestions: {str(e)}"}
+
+@app.post("/api/feedback/generate-draft")
+def generate_draft_feedback(request: DraftFeedbackRequest, db: Session = Depends(get_performance_db)):
+    """Generate AI-drafted feedback text for managers to copy and use"""
+    try:
+        print(f"Generating draft feedback for {request.employee_name}...")
+        print(f"AI Tips received: {request.ai_tips}")
+        
+        # Use direct LLM call for draft generation
+        draft_prompt = FEEDBACK_DRAFT_GENERATION_PROMPT.format(
+            employee_name=request.employee_name,
+            performance_notes=request.performance_notes,
+            ai_tips=request.ai_tips or "Focus on teamwork and leadership examples. Keep tone encouraging but concise."
+        )
+        
+        print(f"Sending draft prompt to LLM...")
+        # Call LLM directly
+        if hr_agent.llm is None:
+            raise Exception("LLM not initialized - check API key configuration")
+        
+        from langchain_core.messages import HumanMessage
+        response = hr_agent.llm.invoke([HumanMessage(content=draft_prompt)])
+        draft_text = response.content.strip()
+        
+        print(f"Generated draft feedback: {draft_text[:100]}...")
+        
+        return {
+            "draft_feedback": draft_text,
+            "employee_name": request.employee_name,
+            "ai_tips": request.ai_tips,
+            "generated_at": datetime.now().isoformat()
+        }
+        
+    except Exception as e:
+        print(f"Error generating draft feedback: {str(e)}")
+        return {"error": f"Failed to generate draft feedback: {str(e)}"}
 
 @app.post("/api/progress/update/{user_id}")
 def update_progress(user_id: str, request: ProgressUpdateRequest, db: Session = Depends(get_performance_db)):
