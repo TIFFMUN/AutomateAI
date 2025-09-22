@@ -1,12 +1,12 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
-import Login from './components/Login';
-import MainPage from './components/MainPage';
-import Onboarding from './components/Onboarding';
-import Skills from './components/Skills';
-import Performance from './components/Performance';
-import Career from './components/Career';
+import Login from './components/Login/Login';
+import MainPage from './components/MainPage/MainPage';
+import Onboarding from './components/Onboarding/Onboarding';
+import Skills from './components/Skills/Skills';
+import Performance from './components/Performance/Performance';
+import Career from './components/Career/Career';
 import ProtectedRoute from './components/ProtectedRoute';
 import './styles/global.css';
 

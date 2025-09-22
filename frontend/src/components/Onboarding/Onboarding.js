@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
+import axios from 'axios';
+import API_CONFIG from '../../utils/apiConfig';
 import './Onboarding.css';
 
 function Onboarding() {
@@ -33,6 +35,7 @@ function Onboarding() {
   const [showQuizPopup, setShowQuizPopup] = useState(false);
   const [showEmployeePerksPopup, setShowEmployeePerksPopup] = useState(false);
   const [showPersonalInfoFormPopup, setShowPersonalInfoFormPopup] = useState(false);
+  const [showViewPersonalInfoFormPopup, setShowViewPersonalInfoFormPopup] = useState(false);
   
   // Form state
   const [personalInfoForm, setPersonalInfoForm] = useState({
@@ -71,13 +74,13 @@ function Onboarding() {
   // Initialize chat with state loading
   useEffect(() => {
     console.log('User object in Onboarding:', user);
-    const userId = user?.id || user?.username;
+    const userId = user?.id;
     if (userId) {
       loadUserState();
     } else {
       console.log('No user ID or username found, user object:', user);
     }
-  }, [user?.id, user?.username]);
+  }, [user?.id]);
 
   // Auto-scroll to bottom when new messages are added
   useEffect(() => {
@@ -137,7 +140,7 @@ function Onboarding() {
 
   const loadUserState = async () => {
     // Use user.id if available, otherwise fall back to username
-    const userId = user?.id || user?.username;
+    const userId = user?.id;
     if (!userId) {
       console.log('No user ID or username found');
       return;
@@ -145,9 +148,8 @@ function Onboarding() {
     
     try {
       // Load user state from backend using authenticated user's ID
-      const apiBase = process.env.REACT_APP_API_URL || 'http://localhost:8000';
-      const response = await fetch(`${apiBase}/api/user/${userId}/state`);
-      const data = await response.json();
+      const response = await axios.get(API_CONFIG.buildUrl(`/api/user/${userId}/state`));
+      const data = response.data;
       
       if (data.chat_messages && data.chat_messages.length > 0) {
         // Convert backend messages to frontend format
@@ -179,12 +181,12 @@ function Onboarding() {
     } catch (error) {
       console.error('Error loading user state:', error);
       // Fallback to welcome message
-        const welcomeMessage = {
-          id: Date.now(),
-          type: 'agent',
-          text: "Welcome to SAP! Let's get you set up.\n\n1. Watch Welcome Video\n2. Review Company Policies\n3. Set up accounts\n\nI'll guide you step by step!\n\nAny questions about SAP or the onboarding process before we begin?",
-          timestamp: new Date()
-        };
+      const welcomeMessage = {
+        id: Date.now(),
+        type: 'agent',
+        text: "Welcome to SAP! Let's get you set up.\n\n1. Watch Welcome Video\n2. Review Company Policies\n3. Set up accounts\n\nI'll guide you step by step!\n\nAny questions about SAP or the onboarding process before we begin?",
+        timestamp: new Date()
+      };
       setChatMessages([welcomeMessage]);
     }
   };
@@ -194,7 +196,46 @@ function Onboarding() {
     setShowVideoPopup(true);
   };
 
-  const handleCloseVideo = () => {
+  const handleCloseVideo = async () => {
+    // Award points for completing the welcome video
+    try {
+      const userId = user?.id;
+      if (userId) {
+        const awardRes = await fetch(API_CONFIG.buildUrl(`/api/user/${userId}/points`), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ task_name: 'welcome_video' })
+        });
+        if (awardRes.ok) {
+          const awardData = await awardRes.json();
+          const gained = awardData.awarded_points || 300;
+          setPointsEarned(gained);
+          // Update total points
+          try {
+            const stateRes = await fetch(API_CONFIG.buildUrl(`/api/user/${userId}/state`), { credentials: 'include' });
+            if (stateRes.ok) {
+              const stateData = await stateRes.json();
+              if (typeof stateData.total_points === 'number') {
+                setTotalPoints(stateData.total_points);
+              } else {
+                setTotalPoints((prev) => prev + gained);
+              }
+            } else {
+              setTotalPoints((prev) => prev + gained);
+            }
+          } catch (_) {
+            setTotalPoints((prev) => prev + gained);
+          }
+          // Show animation
+          setShowPointsAnimation(true);
+          setTimeout(() => setShowPointsAnimation(false), 3000);
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to award points for video completion:', e);
+    }
+    
     // Show visual notification immediately with estimated points
     showVisualPoints(300, "Welcome Video Completed!");
     
@@ -212,7 +253,46 @@ function Onboarding() {
     setShowPolicyPopup(true);
   };
 
-  const handleClosePolicy = () => {
+  const handleClosePolicy = async () => {
+    // Award points for completing the company policies
+    try {
+      const userId = user?.id;
+      if (userId) {
+        const awardRes = await fetch(API_CONFIG.buildUrl(`/api/user/${userId}/points`), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ task_name: 'company_policies' })
+        });
+        if (awardRes.ok) {
+          const awardData = await awardRes.json();
+          const gained = awardData.awarded_points || 200;
+          setPointsEarned(gained);
+          // Update total points
+          try {
+            const stateRes = await fetch(API_CONFIG.buildUrl(`/api/user/${userId}/state`), { credentials: 'include' });
+            if (stateRes.ok) {
+              const stateData = await stateRes.json();
+              if (typeof stateData.total_points === 'number') {
+                setTotalPoints(stateData.total_points);
+              } else {
+                setTotalPoints((prev) => prev + gained);
+              }
+            } else {
+              setTotalPoints((prev) => prev + gained);
+            }
+          } catch (_) {
+            setTotalPoints((prev) => prev + gained);
+          }
+          // Show animation
+          setShowPointsAnimation(true);
+          setTimeout(() => setShowPointsAnimation(false), 3000);
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to award points for policy completion:', e);
+    }
+    
     // Show visual notification immediately with estimated points
     showVisualPoints(200, "Company Policies Reviewed!");
     
@@ -243,7 +323,46 @@ function Onboarding() {
     setShowQuizPopup(true);
   };
 
-  const handleCloseQuiz = () => {
+  const handleCloseQuiz = async () => {
+    // Award points for completing the culture quiz
+    try {
+      const userId = user?.id;
+      if (userId) {
+        const awardRes = await fetch(API_CONFIG.buildUrl(`/api/user/${userId}/points`), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ task_name: 'culture_quiz' })
+        });
+        if (awardRes.ok) {
+          const awardData = await awardRes.json();
+          const gained = awardData.awarded_points || 250;
+          setPointsEarned(gained);
+          // Update total points
+          try {
+            const stateRes = await fetch(API_CONFIG.buildUrl(`/api/user/${userId}/state`), { credentials: 'include' });
+            if (stateRes.ok) {
+              const stateData = await stateRes.json();
+              if (typeof stateData.total_points === 'number') {
+                setTotalPoints(stateData.total_points);
+              } else {
+                setTotalPoints((prev) => prev + gained);
+              }
+            } else {
+              setTotalPoints((prev) => prev + gained);
+            }
+          } catch (_) {
+            setTotalPoints((prev) => prev + gained);
+          }
+          // Show animation
+          setShowPointsAnimation(true);
+          setTimeout(() => setShowPointsAnimation(false), 3000);
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to award points for quiz completion:', e);
+    }
+    
     // Show visual notification immediately with estimated points
     showVisualPoints(250, "Culture Quiz Completed!");
     
@@ -266,7 +385,46 @@ function Onboarding() {
     setShowEmployeePerksPopup(true);
   };
 
-  const handleCloseEmployeePerks = () => {
+  const handleCloseEmployeePerks = async () => {
+    // Award points for completing the employee perks review
+    try {
+      const userId = user?.id;
+      if (userId) {
+        const awardRes = await fetch(API_CONFIG.buildUrl(`/api/user/${userId}/points`), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ task_name: 'employee_perks' })
+        });
+        if (awardRes.ok) {
+          const awardData = await awardRes.json();
+          const gained = awardData.awarded_points || 150;
+          setPointsEarned(gained);
+          // Update total points
+          try {
+            const stateRes = await fetch(API_CONFIG.buildUrl(`/api/user/${userId}/state`), { credentials: 'include' });
+            if (stateRes.ok) {
+              const stateData = await stateRes.json();
+              if (typeof stateData.total_points === 'number') {
+                setTotalPoints(stateData.total_points);
+              } else {
+                setTotalPoints((prev) => prev + gained);
+              }
+            } else {
+              setTotalPoints((prev) => prev + gained);
+            }
+          } catch (_) {
+            setTotalPoints((prev) => prev + gained);
+          }
+          // Show animation
+          setShowPointsAnimation(true);
+          setTimeout(() => setShowPointsAnimation(false), 3000);
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to award points for perks completion:', e);
+    }
+    
     // Show visual notification immediately with estimated points
     showVisualPoints(150, "Employee Perks Reviewed!");
     
@@ -283,7 +441,46 @@ function Onboarding() {
     setShowPersonalInfoFormPopup(true);
   };
 
-  const handleClosePersonalInfoForm = () => {
+  const handleClosePersonalInfoForm = async () => {
+    // Award points for completing the personal info form
+    try {
+      const userId = user?.id;
+      if (userId) {
+        const awardRes = await fetch(API_CONFIG.buildUrl(`/api/user/${userId}/points`), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ task_name: 'personal_info_form' })
+        });
+        if (awardRes.ok) {
+          const awardData = await awardRes.json();
+          const gained = awardData.awarded_points || 400;
+          setPointsEarned(gained);
+          // Update total points
+          try {
+            const stateRes = await fetch(API_CONFIG.buildUrl(`/api/user/${userId}/state`), { credentials: 'include' });
+            if (stateRes.ok) {
+              const stateData = await stateRes.json();
+              if (typeof stateData.total_points === 'number') {
+                setTotalPoints(stateData.total_points);
+              } else {
+                setTotalPoints((prev) => prev + gained);
+              }
+            } else {
+              setTotalPoints((prev) => prev + gained);
+            }
+          } catch (_) {
+            setTotalPoints((prev) => prev + gained);
+          }
+          // Show animation
+          setShowPointsAnimation(true);
+          setTimeout(() => setShowPointsAnimation(false), 3000);
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to award points for personal info form completion:', e);
+    }
+    
     // Show visual notification immediately with estimated points
     showVisualPoints(400, "Personal Info Form Submitted!");
     
@@ -305,8 +502,10 @@ function Onboarding() {
         taxWithholding: personalInfoForm.taxWithholding
       };
       
-      // Send detailed form data to agent
-      handleUserMessage(`I've submitted the personal information form with the following details: ${JSON.stringify(formData)}`);
+      // Send form data to agent without displaying raw JSON to user
+      // The backend will parse this structured data silently
+      const formSubmissionMessage = `I've submitted the personal information form with the following details: ${JSON.stringify(formData)}`;
+      handleUserMessage(formSubmissionMessage);
     }, 2000);
   };
 
@@ -323,10 +522,99 @@ function Onboarding() {
     handleUserMessage("I skipped the personal information form");
   };
 
+  // Handle view personal info form popup
+  const handleShowViewPersonalInfoForm = () => {
+    setShowViewPersonalInfoFormPopup(true);
+  };
+
+  const handleCloseViewPersonalInfoForm = () => {
+    setShowViewPersonalInfoFormPopup(false);
+  };
+
+  // Function to update form data based on user input
+  const updateFormDataFromUserInput = (userMessage, currentNode) => {
+    if (currentNode === 'personal_info') {
+      const message = userMessage.toLowerCase().trim();
+      
+      // Check for relationship information
+      const relationshipWords = ['mother', 'father', 'spouse', 'sibling', 'parent', 'child', 'friend', 'cousin', 'uncle', 'aunt', 'brother', 'sister', 'wife', 'husband', 'partner', 'mom', 'dad'];
+      const foundRelationship = relationshipWords.find(rel => message.includes(rel));
+      if (foundRelationship) {
+        setPersonalInfoForm(prev => ({
+          ...prev,
+          relationship: foundRelationship
+        }));
+        console.log('Updated relationship to:', foundRelationship);
+        return;
+      }
+      
+      // Check for legal agreement confirmations
+      if (message.includes('yup') || message.includes('yes') || message.includes('agree') || message.includes('confirm') || message.includes('ok') || message.includes('sure')) {
+        // Check if this is in response to legal agreements
+        setPersonalInfoForm(prev => ({
+          ...prev,
+          employmentContract: true,
+          nda: true,
+          taxWithholding: true
+        }));
+        console.log('Updated legal agreements to true');
+        return;
+      }
+      
+      // Check for email pattern
+      const emailMatch = userMessage.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
+      if (emailMatch) {
+        setPersonalInfoForm(prev => ({
+          ...prev,
+          email: emailMatch[1]
+        }));
+        console.log('Updated email to:', emailMatch[1]);
+        return;
+      }
+      
+      // Check for phone pattern (8+ digits)
+      const phoneMatch = userMessage.match(/(\d{8,})/);
+      if (phoneMatch) {
+        setPersonalInfoForm(prev => ({
+          ...prev,
+          phone: phoneMatch[1]
+        }));
+        console.log('Updated phone to:', phoneMatch[1]);
+        return;
+      }
+      
+      // Check for name patterns
+      if (message.includes('my name is') || message.includes('i am')) {
+        const nameMatch = userMessage.match(/(?:my name is|i am)\s+([a-zA-Z\s]+)/i);
+        if (nameMatch) {
+          setPersonalInfoForm(prev => ({
+            ...prev,
+            fullName: nameMatch[1].trim()
+          }));
+          console.log('Updated full name to:', nameMatch[1].trim());
+          return;
+        }
+      }
+      
+      // Check for address patterns
+      if (message.includes('address') || message.includes('live at') || message.includes('live in')) {
+        const addressMatch = userMessage.match(/(?:address|live at|live in)\s+(.+)/i);
+        if (addressMatch) {
+          setPersonalInfoForm(prev => ({
+            ...prev,
+            address: addressMatch[1].trim()
+          }));
+          console.log('Updated address to:', addressMatch[1].trim());
+          return;
+        }
+      }
+    }
+  };
+
   // Handle user message
   const handleUserMessage = async (message) => {
     // Use user.id if available, otherwise fall back to username
-    const userId = user?.id || user?.username;
+    const userId = user?.id;
     if (!message.trim() || !userId) {
       console.log('Cannot send message - user not authenticated or message empty:', { user, message, userId });
       return;
@@ -334,37 +622,43 @@ function Onboarding() {
     
     console.log('Sending message:', message, 'for user:', userId);
     
-    // Add user message immediately
-    const userMessage = {
-      id: Date.now(),
-      type: 'user',
-      text: message,
-      timestamp: new Date()
-    };
-    setChatMessages(prev => [...prev, userMessage]);
+    // Update form data if user is providing missing information
+    updateFormDataFromUserInput(message, currentNode);
+    
+    // Add user message immediately, but handle form submissions specially
+    const isFormSubmission = message.includes('I\'ve submitted the personal information form with the following details:');
+    
+    if (!isFormSubmission) {
+      // Add regular user message to chat
+      const userMessage = {
+        id: Date.now(),
+        type: 'user',
+        text: message,
+        timestamp: new Date()
+      };
+      setChatMessages(prev => [...prev, userMessage]);
+    } else {
+      // For form submissions, add a clean message instead of raw JSON
+      const cleanUserMessage = {
+        id: Date.now(),
+        type: 'user',
+        text: 'I\'ve submitted the personal information form',
+        timestamp: new Date()
+      };
+      setChatMessages(prev => [...prev, cleanUserMessage]);
+    }
     setUserInput('');
     
     setIsProcessing(true);
     try {
-      const apiBase = process.env.REACT_APP_API_URL || 'http://localhost:8000';
-      console.log('Making request to:', `${apiBase}/api/user/${userId}/chat`);
-      const response = await fetch(`${apiBase}/api/user/${userId}/chat`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          user_id: userId,
-          message: message
-        })
+      console.log('Making request to:', API_CONFIG.buildUrl(`/api/user/${userId}/chat`));
+      const response = await axios.post(API_CONFIG.buildUrl(`/api/user/${userId}/chat`), {
+        user_id: userId,
+        message: message
       });
       
       console.log('Response status:', response.status);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const data = await response.json();
+      const data = response.data;
       console.log('Response data:', data);
       
       // Handle restart case first
@@ -486,6 +780,18 @@ function Onboarding() {
               showEmployeePerksButton: true
             };
             setChatMessages(prev => [...prev, aiResponse]);
+          } else if (messageText.includes('SHOW_VIEW_PERSONAL_INFO_FORM_BUTTON')) {
+            // Remove the trigger text and add view personal info form button
+            const cleanResponse = messageText.replace('SHOW_VIEW_PERSONAL_INFO_FORM_BUTTON', '');
+            const aiResponse = {
+              id: Date.now() + index + 1,
+              type: 'agent',
+              text: cleanResponse,
+              timestamp: new Date(),
+              current_node: data.current_node,
+              showViewPersonalInfoFormButton: true
+            };
+            setChatMessages(prev => [...prev, aiResponse]);
           } else {
             // Add regular AI response
             const aiResponse = {
@@ -502,10 +808,26 @@ function Onboarding() {
       
     } catch (error) {
       console.error('Error calling backend:', error);
+      let errorMessage = "Sorry, I'm having trouble connecting. Please try again.";
+      
+      if (error.response) {
+        // Server responded with error status
+        if (error.response.status === 401) {
+          errorMessage = "Authentication failed. Please log in again.";
+        } else if (error.response.status === 500) {
+          errorMessage = "Server error. Please try again in a moment.";
+        } else if (error.response.status === 404) {
+          errorMessage = "Service not found. Please refresh the page.";
+        }
+      } else if (error.request) {
+        // Network error
+        errorMessage = "Network error. Please check your connection and try again.";
+      }
+      
       const errorResponse = {
         id: Date.now() + 1,
         type: 'agent',
-        text: "Sorry, I'm having trouble connecting. Please try again.",
+        text: errorMessage,
         timestamp: new Date()
       };
       setChatMessages(prev => [...prev, errorResponse]);
@@ -540,10 +862,10 @@ function Onboarding() {
           </div>
         </div>
         <div className="header-buttons">
-          <button className="restart-btn" onClick={() => handleUserMessage('restart')}>
+          <button className="btn btn-danger" onClick={() => handleUserMessage('restart')}>
             Restart
           </button>
-        <button className="back-btn" onClick={() => navigate('/main')}>
+        <button className="btn btn-primary" onClick={() => navigate('/main')}>
           Back to Main
         </button>
         </div>
@@ -631,6 +953,14 @@ function Onboarding() {
                     onClick={handleShowEmployeePerks}
                   >
                     🎁 Employee Perks
+                  </button>
+                )}
+                {message.showViewPersonalInfoFormButton && (
+                  <button 
+                    className="video-button"
+                    onClick={handleShowViewPersonalInfoForm}
+                  >
+                    👁️ View Personal Information Form
                   </button>
                 )}
               </div>
@@ -955,6 +1285,91 @@ function Onboarding() {
             <div className="video-popup-footer">
               <button className="btn-primary" onClick={handleClosePersonalInfoForm}>
                 Submit Information
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* View Personal Information Form Popup */}
+      {showViewPersonalInfoFormPopup && (
+        <div className="video-popup-overlay">
+          <div className="video-popup personal-info-popup">
+            <div className="video-popup-header">
+              <h3>Personal Information Form - Completed</h3>
+              <button className="close-btn" onClick={handleCloseViewPersonalInfoForm}>×</button>
+            </div>
+            <div className="video-content">
+              <div className="personal-info-form">
+                <div className="form-section">
+                  <h4>👤 Personal Information</h4>
+                  <div className="form-group">
+                    <label>Full Name:</label>
+                    <div className="form-display">{personalInfoForm.fullName || 'Not provided'}</div>
+                  </div>
+                  <div className="form-group">
+                    <label>Preferred Name:</label>
+                    <div className="form-display">{personalInfoForm.preferredName || 'Not provided'}</div>
+                  </div>
+                  <div className="form-group">
+                    <label>Email Address:</label>
+                    <div className="form-display">{personalInfoForm.email || 'Not provided'}</div>
+                  </div>
+                  <div className="form-group">
+                    <label>Phone Number:</label>
+                    <div className="form-display">{personalInfoForm.phone || 'Not provided'}</div>
+                  </div>
+                  <div className="form-group">
+                    <label>Home Address:</label>
+                    <div className="form-display">{personalInfoForm.address || 'Not provided'}</div>
+                  </div>
+                </div>
+                
+                <div className="form-section">
+                  <h4>🚨 Emergency Contact</h4>
+                  <div className="form-group">
+                    <label>Emergency Contact Name:</label>
+                    <div className="form-display">{personalInfoForm.emergencyContactName || 'Not provided'}</div>
+                  </div>
+                  <div className="form-group">
+                    <label>Emergency Contact Phone:</label>
+                    <div className="form-display">{personalInfoForm.emergencyContactPhone || 'Not provided'}</div>
+                  </div>
+                  <div className="form-group">
+                    <label>Relationship:</label>
+                    <div className="form-display">{personalInfoForm.relationship || 'Not provided'}</div>
+                  </div>
+                </div>
+                
+                <div className="form-section">
+                  <h4>📋 Legal/Compliance Forms</h4>
+                  <div className="form-group checkbox-group">
+                    <div className="form-display">
+                      <span className={`status ${personalInfoForm.employmentContract ? 'completed' : 'not-completed'}`}>
+                        {personalInfoForm.employmentContract ? '✅' : '❌'} Employment Contract
+                      </span>
+                    </div>
+                  </div>
+                  <div className="form-group checkbox-group">
+                    <div className="form-display">
+                      <span className={`status ${personalInfoForm.nda ? 'completed' : 'not-completed'}`}>
+                        {personalInfoForm.nda ? '✅' : '❌'} Non-Disclosure Agreement
+                      </span>
+                    </div>
+                  </div>
+                  <div className="form-group checkbox-group">
+                    <div className="form-display">
+                      <span className={`status ${personalInfoForm.taxWithholding ? 'completed' : 'not-completed'}`}>
+                        {personalInfoForm.taxWithholding ? '✅' : '❌'} Tax Withholding Requirements
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="video-popup-footer">
+              <button className="btn-primary" onClick={handleCloseViewPersonalInfoForm}>
+                Close
               </button>
             </div>
           </div>

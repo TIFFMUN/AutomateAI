@@ -23,7 +23,7 @@ const extractErrorMessage = (errorDetail) => {
 
 // Configure axios defaults
 axios.defaults.baseURL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
-axios.defaults.withCredentials = true; // Important for cookies
+axios.defaults.withCredentials = true; // Keep for fallback, but we'll use headers primarily
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
@@ -38,14 +38,46 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
+  // Helper function to get stored token
+  const getStoredToken = () => {
+    return localStorage.getItem('access_token');
+  };
+
+  // Helper function to set token in axios headers
+  const setAuthHeader = (token) => {
+    if (token) {
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    } else {
+      delete axios.defaults.headers.common['Authorization'];
+    }
+  };
+
+  // Helper function to store token
+  const storeToken = (token) => {
+    localStorage.setItem('access_token', token);
+    setAuthHeader(token);
+  };
+
+  // Helper function to clear token
+  const clearToken = () => {
+    localStorage.removeItem('access_token');
+    delete axios.defaults.headers.common['Authorization'];
+  };
+
   // Check if user is authenticated on app load
   useEffect(() => {
+    // Set up auth header from stored token
+    const token = getStoredToken();
+    if (token) {
+      setAuthHeader(token);
+    }
     checkAuthStatus();
   }, []);
 
   const checkAuthStatus = async () => {
     try {
       const response = await axios.get('/api/auth/me');
+      console.log('Auth check response:', response.data);
       setUser(response.data);
       setIsAuthenticated(true);
     } catch (error) {
@@ -62,8 +94,24 @@ export const AuthProvider = ({ children }) => {
       setLoading(true);
       const response = await axios.post('/api/auth/login', credentials);
       
-      // Cookies are automatically set by the server
-      setUser(response.data.user || { username: credentials.username });
+      // Store the access token and set auth header
+      console.log('Login response data:', response.data);
+      if (response.data.access_token) {
+        storeToken(response.data.access_token);
+        console.log('Token stored and auth header set');
+      }
+      
+      // Use the user data from response, or fetch it from /me endpoint
+      if (response.data.user) {
+        console.log('Using user data from login response:', response.data.user);
+        setUser(response.data.user);
+      } else {
+        // If user data not in response, fetch it from /me endpoint
+        console.log('Fetching user data from /me endpoint');
+        const meResponse = await axios.get('/api/auth/me');
+        console.log('Me endpoint response:', meResponse.data);
+        setUser(meResponse.data);
+      }
       setIsAuthenticated(true);
       
       return { success: true, data: response.data };
@@ -109,6 +157,8 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
+      // Clear token and auth header
+      clearToken();
       setUser(null);
       setIsAuthenticated(false);
     }
@@ -119,6 +169,12 @@ export const AuthProvider = ({ children }) => {
       const response = await axios.post('/api/auth/refresh', {
         refresh_token: 'dummy' // Server will get refresh token from cookies
       });
+      
+      // Update stored token if new one is provided
+      if (response.data.access_token) {
+        storeToken(response.data.access_token);
+      }
+      
       return response.data;
     } catch (error) {
       console.error('Token refresh error:', error);

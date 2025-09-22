@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import './Login/Login.css';
+import { useAuth } from '../../contexts/AuthContext';
+import LoadingSpinner from '../LoadingSpinner';
+import './Login.css';
 
 // Icons (using Unicode symbols for simplicity)
 const UserIcon = () => <span style={{ fontSize: '20px', marginRight: '8px' }}>👤</span>;
@@ -161,10 +162,7 @@ function Login() {
   if (loading) {
     return (
       <div className="login-container">
-        <div className="loading-spinner">
-          <div className="spinner"></div>
-          <p>Loading...</p>
-        </div>
+        <LoadingSpinner text="please be patient with me as i load" size="large" className="full-page" />
       </div>
     );
   }
@@ -248,7 +246,9 @@ function Login() {
               style={{ width: '100%' }}
               disabled={isSubmitting}
             >
-              {isSubmitting ? 'Signing In...' : 'Sign In'}
+              {isSubmitting ? (
+                <LoadingSpinner text="please be patient with me as i load" size="small" />
+              ) : 'Sign In'}
             </button>
           </form>
         ) : (
@@ -341,7 +341,9 @@ function Login() {
               style={{ width: '100%' }}
               disabled={isSubmitting}
             >
-              {isSubmitting ? 'Creating Account...' : 'Create Account'}
+              {isSubmitting ? (
+                <LoadingSpinner text="Creating Account..." size="small" />
+              ) : 'Create Account'}
             </button>
           </form>
         )}

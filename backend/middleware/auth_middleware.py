@@ -1,25 +1,27 @@
 from fastapi import Request, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
-from database import get_db
+from database import get_db, SessionLocal
 from auth.auth_utils import verify_token
 from services.auth_service import AuthService
 
-security = HTTPBearer()
-
-async def get_current_user(
-    request: Request,
-    credentials: HTTPAuthorizationCredentials = None
-):
+async def get_current_user(request: Request):
     """Get current authenticated user from token."""
+    print(f"Auth middleware called for URL: {request.url}")
+    print(f"Request headers: {dict(request.headers)}")
+    print(f"Request cookies: {dict(request.cookies)}")
+    
     # Try to get token from Authorization header first
-    if credentials:
-        token = credentials.credentials
+    authorization = request.headers.get("Authorization")
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization.split(" ")[1]
+        print(f"Token from Authorization header: {token[:10]}...")
     else:
         # Try to get token from cookies
         token = request.cookies.get("access_token")
+        print(f"Token from cookies: {token[:10] if token else 'None'}...")
     
     if not token:
+        print("No token found, raising 401")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Not authenticated",
@@ -28,13 +30,20 @@ async def get_current_user(
     
     try:
         username = verify_token(token, "access")
-        db = next(get_db())
-        auth_service = AuthService(db)
-        user = auth_service.get_user_by_username(username)
-        return user
-    except HTTPException:
+        print(f"Token verified for username: {username}")
+        db = SessionLocal()
+        try:
+            auth_service = AuthService(db)
+            user = auth_service.get_user_by_username(username)
+            print(f"User found: {user}")
+            return user
+        finally:
+            db.close()
+    except HTTPException as e:
+        print(f"HTTPException in auth middleware: {e.detail}")
         raise
     except Exception as e:
+        print(f"Exception in auth middleware: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Could not validate credentials",

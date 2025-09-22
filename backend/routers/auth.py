@@ -1,5 +1,4 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Response, Request
-from fastapi.security import HTTPBearer
 from sqlalchemy.orm import Session
 from database import get_db
 from schemas.auth import UserCreate, UserLogin, UserResponse, Token, RefreshTokenRequest
@@ -9,7 +8,6 @@ from models.user import User
 from datetime import timedelta
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
-security = HTTPBearer()
 
 @router.post("/register", response_model=UserResponse)
 async def register(user: UserCreate, db: Session = Depends(get_db)):
@@ -42,8 +40,8 @@ async def login(
             key="access_token",
             value=access_token,
             httponly=True,
-            secure=False,  # Set to True in production with HTTPS
-            samesite="lax",
+            secure=True,
+            samesite="none",
             max_age=30 * 60  # 30 minutes
         )
         
@@ -51,15 +49,21 @@ async def login(
             key="refresh_token", 
             value=refresh_token,
             httponly=True,
-            secure=False,  # Set to True in production with HTTPS
-            samesite="lax",
+            secure=True,
+            samesite="none",
             max_age=7 * 24 * 60 * 60  # 7 days
         )
         
         return {
             "access_token": access_token,
             "refresh_token": refresh_token,
-            "token_type": "bearer"
+            "token_type": "bearer",
+            "user": {
+                "id": user.id,
+                "username": user.username,
+                "email": user.email,
+                "full_name": user.full_name
+            }
         }
     except HTTPException:
         raise
@@ -73,20 +77,26 @@ async def login(
 async def refresh_token(
     refresh_request: RefreshTokenRequest,
     response: Response,
+    request: Request,
     db: Session = Depends(get_db)
 ):
     """Refresh access token using refresh token."""
     auth_service = AuthService(db)
     try:
-        access_token, refresh_token = auth_service.refresh_access_token(refresh_request.refresh_token)
+        # Prefer token from body, else from cookie
+        token_from_body = getattr(refresh_request, "refresh_token", None)
+        token = token_from_body or request.cookies.get("refresh_token")
+        if not token:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing refresh token")
+        access_token, refresh_token = auth_service.refresh_access_token(token)
         
         # Update cookies
         response.set_cookie(
             key="access_token",
             value=access_token,
             httponly=True,
-            secure=False,
-            samesite="lax",
+            secure=True,
+            samesite="none",
             max_age=30 * 60
         )
         
@@ -94,8 +104,8 @@ async def refresh_token(
             key="refresh_token",
             value=refresh_token,
             httponly=True,
-            secure=False,
-            samesite="lax",
+            secure=True,
+            samesite="none",
             max_age=7 * 24 * 60 * 60
         )
         
