@@ -61,3 +61,4 @@ def create_tables():
     except Exception as e:
         print(f"Failed to create database tables: {e}")
         raise
+

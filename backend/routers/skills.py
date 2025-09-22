@@ -6,11 +6,14 @@ from pydantic import BaseModel
 from typing import List
 import json
 import traceback
+from serpapi import GoogleSearch
 
-# Assumes you have your OpenAI API key in config.py
+# Assumes you have your OpenAI API key and SerpAPI key in config.py
 from config import settings
 
 router = APIRouter()
+
+# ----------- MODELS -----------
 
 class SkillRecommendationRequest(BaseModel):
     current_skills: str
@@ -30,6 +33,43 @@ class SkillRecommendation(BaseModel):
 class SkillRecommendationResponse(BaseModel):
     recommendations: List[SkillRecommendation]
 
+# ----------- SEARCH HELPER (SerpAPI) -----------
+
+def search_courses(skill_name: str, max_results: int = 4) -> List[Resource]:
+    """
+    Search for real online courses using SerpAPI (Google Search API).
+    Returns up to `max_results` Resource objects.
+    """
+    query = f"{skill_name} online course site:coursera.org OR site:udemy.com OR site:edx.org OR site:pluralsight.com"
+
+    params = {
+        "q": query,
+        "hl": "en",
+        "gl": "us",
+        "api_key": settings.SERPAPI_KEY
+    }
+
+    try:
+        search = GoogleSearch(params)
+        results = search.get_dict()
+    except Exception as e:
+        print(f"Search error for {skill_name}: {e}")
+        return []
+
+    resources = []
+    # First check "organic_results"
+    for item in results.get("organic_results", []):
+        title = item.get("title")
+        link = item.get("link")
+        if title and link:
+            resources.append(Resource(title=title, link=link))
+        if len(resources) >= max_results:
+            break
+
+    return resources
+
+# ----------- ROUTE -----------
+
 @router.post("/api/skills/recommendations", response_model=SkillRecommendationResponse)
 async def get_skill_recommendations(request: SkillRecommendationRequest):
     try:
@@ -47,9 +87,11 @@ async def get_skill_recommendations(request: SkillRecommendationRequest):
         3. Difficulty level (Beginner, Intermediate, Advanced)
         4. Estimated time to learn (e.g., '1-2 weeks', '2-3 months', '6 months')
         
-        Format the response strictly as a JSON object with a single key "recommendations". The value of this key should be an array of objects, where each object has the keys: skill, reason, difficulty, and estimatedTime.
+        Format the response strictly as a JSON object with a single key "recommendations". 
+        The value of this key should be an array of objects, where each object has the keys: 
+        skill, reason, difficulty, and estimatedTime.
         """
-        
+
         skill_response = await client.chat.completions.create(
             model="gpt-4o",
             messages=[
@@ -58,9 +100,9 @@ async def get_skill_recommendations(request: SkillRecommendationRequest):
             ],
             temperature=0.7,
             max_tokens=800,
-            response_format={"type": "json_object"} # Use this for better JSON formatting
+            response_format={"type": "json_object"}
         )
-        
+
         skills_json = skill_response.choices[0].message.content.strip()
         skills_data = json.loads(skills_json)
         recommendations_list = skills_data.get("recommendations", [])
@@ -74,29 +116,8 @@ async def get_skill_recommendations(request: SkillRecommendationRequest):
             if not skill_name:
                 continue
 
-            resource_prompt = f"""
-            Search for 3-4 real, popular online courses for learning '{skill_name}'.
-            For each course, provide the title and a direct link to the course page.
-            Format strictly as a JSON object with a single key "resources", where the value is an array of objects. Each object should have keys "title" and "link".
-            Example: {{"resources": [{{"title": "Coursera: Python for Everybody", "link": "https://www.coursera.org/learn/python"}}]}}
-            """
-
-            resource_response = await client.chat.completions.create(
-                model="gpt-4o",
-                messages=[
-                    {"role": "system", "content": "You are a helpful assistant that finds real online courses. Always provide direct links to the course pages. Your output must be a valid JSON object."},
-                    {"role": "user", "content": resource_prompt}
-                ],
-                temperature=0.6,
-                max_tokens=500,
-                response_format={"type": "json_object"}
-            )
-            
-            try:
-                resources_dict = json.loads(resource_response.choices[0].message.content.strip())
-                resources = [Resource(**res) for res in resources_dict.get("resources", [])]
-            except (json.JSONDecodeError, KeyError, TypeError):
-                resources = [] # On error, return an empty list of resources
+            # 🔍 Fetch real resources using SerpAPI (Google)
+            resources = search_courses(skill_name)
 
             recommendations.append(SkillRecommendation(
                 skill=skill_name,
