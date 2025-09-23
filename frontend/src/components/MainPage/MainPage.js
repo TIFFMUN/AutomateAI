@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import axios from 'axios';
 import API_CONFIG from '../../utils/apiConfig';
 import './MainPage.css';
+import { Player } from '@lottiefiles/react-lottie-player';
 
 function MainPage() {
   const navigate = useNavigate();
@@ -33,7 +34,6 @@ function MainPage() {
         }
       } catch (error) {
         console.error('Error loading user stats:', error);
-        // Set default values if API calls fail
         setTotalPoints(0);
         setRank(0);
       }
@@ -123,6 +123,9 @@ function MainPage() {
     }
   ];
 
+  const topThree = (leaderboardData || []).slice(0, 3);
+  const podiumOrder = [topThree[1], topThree[0], topThree[2]].filter(Boolean);
+
   return (
     <div className="main-page">
       <div className="container">
@@ -193,6 +196,29 @@ function MainPage() {
               <button className="close-btn" onClick={closeLeaderboard}>×</button>
             </div>
             <div className="leaderboard-content">
+              <div className="trophy-anim-container">
+                <Player autoplay loop={false} keepLastFrame src="/animations/Trophy.json" style={{ width: 140, height: 140 }} />
+              </div>
+
+              {podiumOrder.length > 0 && (
+                <div className="podium">
+                  {podiumOrder.map((entry, idx) => {
+                    const place = idx === 0 ? 2 : idx === 1 ? 1 : 3; // 2nd, 1st, 3rd
+                    const label = entry?.username || `User ${entry?.user_id}`;
+                    const color = place === 1 ? '#FFD700' : place === 2 ? '#C0C0C0' : '#CD7F32';
+                    return (
+                      <div key={`${entry?.user_id}-${place}`} className={`podium-col place-${place}`}>
+                        <div className="podium-bar" style={{ background: color }}>
+                          <div className="podium-rank">{place === 1 ? '🥇' : place === 2 ? '🥈' : '🥉'}</div>
+                          <div className="podium-points">{entry?.total_points || 0}</div>
+                        </div>
+                        <div className="podium-label" title={label}>{label}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
               {leaderboardData.length > 0 ? (
                 <div className="leaderboard-list">
                   {leaderboardData.map((entry, index) => {

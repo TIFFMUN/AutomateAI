@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import LoadingSpinner from '../LoadingSpinner';
 import './Login.css';
+import { Player } from '@lottiefiles/react-lottie-player';
 
 // Icons (using Unicode symbols for simplicity)
 const UserIcon = () => <span style={{ fontSize: '20px', marginRight: '8px' }}>👤</span>;
@@ -170,6 +171,9 @@ function Login() {
   return (
     <div className="login-container">
       <div className={`login-card ${isLogin ? 'sign-in' : 'sign-up'}`}>
+        <div className="card-pigeon" aria-hidden="true">
+          <Player autoplay loop src="/animations/WaitingPigeon.json" style={{ width: 120, height: 120 }} />
+        </div>
         <h1 className="login-title">
           {isLogin ? 'Welcome Back' : 'Join AutomateAI'}
         </h1>
