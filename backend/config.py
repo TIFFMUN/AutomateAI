@@ -32,9 +32,7 @@ class Settings:
     OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o")
     PERFORMANCE_OPENAI_MODEL = os.getenv("PERFORMANCE_OPENAI_MODEL", "gpt-4")
     
-    # Gemini Configuration (fallback)
-    GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
-    GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
+    # Gemini Configuration removed (no longer used)
     
     # SeaLion Configuration (for career coaching)
     SEA_LION_KEY = os.getenv("SEA_LION_KEY", "")
@@ -57,5 +55,8 @@ class Settings:
     PERFORMANCE_ALLOWED_ORIGINS = os.getenv("PERFORMANCE_ALLOWED_ORIGINS", "http://localhost:3002,http://localhost:3001").split(",")
 
     ZHIPUAI_API_KEY = os.getenv("ZHIPUAI_API_KEY", "e441b270d5824d2dabb6b0a4666fa68a.4eOvea0pcz08e2Js")
+    
+    # SerpAPI Configuration
+    SERPAPI_KEY = os.getenv("SERPAPI_KEY", "")
     
 settings = Settings()

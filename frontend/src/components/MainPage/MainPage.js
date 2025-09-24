@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import axios from 'axios';
 import API_CONFIG from '../../utils/apiConfig';
 import './MainPage.css';
+import ChatBot from '../ChatBot/ChatBot';
 import { Player } from '@lottiefiles/react-lottie-player';
 import TrophyAnimation from '../../animations/Trophy.json';
 
@@ -251,6 +252,7 @@ function MainPage() {
           </div>
         </div>
       )}
+      <ChatBot />
     </div>
   );
 }

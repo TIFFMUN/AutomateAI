@@ -1,4 +1,5 @@
-from typing import Dict, Any, List, TypedDict, Annotated
+from typing import Dict, Any, List, Annotated
+from typing_extensions import TypedDict
 from langchain_core.messages import HumanMessage, AIMessage, BaseMessage
 from datetime import datetime
 import uuid

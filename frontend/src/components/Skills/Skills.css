@@ -1,5 +1,136 @@
 /* ===== SKILLS COMPONENT STYLES ===== */
 
+/* ===== ROLE SELECTION STYLES ===== */
+.empty-state {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 60vh;
+  padding: 3rem 2rem;
+}
+
+.empty-state-content {
+  text-align: center;
+  max-width: 600px;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 3rem;
+  border-radius: 20px;
+  border: 1px solid var(--sap-blue-light);
+  backdrop-filter: blur(10px);
+}
+
+.empty-state-icon {
+  font-size: 4rem;
+  margin-bottom: 1.5rem;
+  opacity: 0.8;
+  color: var(--sap-blue);
+  transition: all 0.3s ease;
+}
+
+.empty-state-content:hover .empty-state-icon {
+  transform: scale(1.1);
+  color: var(--sap-blue-dark);
+}
+
+.empty-state-content h2 {
+  color: var(--sap-blue);
+  margin: 0 0 1rem 0;
+  font-size: 2rem;
+  font-weight: 600;
+}
+
+.empty-state-content p {
+  color: #6c757d;
+  margin: 0 0 2.5rem 0;
+  font-size: 1.1rem;
+  line-height: 1.6;
+}
+
+.role-selection {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.role-btn {
+  background: #ffffff;
+  border: 2px solid var(--sap-blue-light);
+  border-radius: 16px;
+  padding: 2rem 1.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.role-btn::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(
+    90deg,
+    var(--sap-blue) 0%,
+    var(--sap-blue-dark) 100%
+  );
+  transform: scaleX(0);
+  transition: transform 0.3s ease;
+}
+
+.role-btn:hover::before {
+  transform: scaleX(1);
+}
+
+.role-btn:hover {
+  border-color: var(--sap-blue);
+  transform: translateY(-4px);
+  background: #ffffff;
+}
+
+.employee-btn:hover {
+  border-color: var(--sap-blue);
+}
+
+.manager-btn:hover {
+  border-color: var(--sap-blue);
+}
+
+.role-icon {
+  font-size: 3rem;
+  margin-bottom: 0.5rem;
+  opacity: 0.9;
+  color: var(--sap-blue);
+  transition: all 0.3s ease;
+}
+
+.role-btn:hover .role-icon {
+  color: var(--sap-blue-dark);
+  transform: scale(1.1);
+}
+
+.role-title {
+  color: #2c3e50;
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.role-description {
+  color: #6c757d;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
 /* ===== POINTS SYSTEM ===== */
 .points-display {
   position: fixed;
@@ -432,6 +563,283 @@
   margin-top: 3rem;
 }
 
+/* ===== MANAGER VIEW - ADD COURSE FORM ===== */
+.add-course-form {
+  background: white;
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  overflow: visible;
+  position: relative;
+}
+
+.form-container {
+  max-width: 600px;
+  margin: 0 auto;
+  overflow: visible;
+  position: relative;
+}
+
+.form-container h4 {
+  color: #2c3e50;
+  margin-bottom: 2rem;
+  font-size: 1.5rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.course-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  overflow: visible;
+  position: relative;
+}
+
+.course-form .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.course-form .form-group label {
+  font-weight: 600;
+  color: #2c3e50;
+  font-size: 0.9rem;
+}
+
+/* Required field styling */
+.course-form .form-group label {
+  position: relative;
+}
+
+.course-form .form-group input,
+.course-form .form-group select,
+.course-form .form-group textarea {
+  padding: 12px 16px;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  font-family: inherit;
+  background: white;
+  color: #2c3e50;
+}
+
+.course-form .form-group input:focus,
+.course-form .form-group select:focus,
+.course-form .form-group textarea:focus {
+  outline: none;
+  border-color: #0070f3;
+  box-shadow: 0 0 0 3px rgba(0, 112, 243, 0.1);
+  background: white;
+  color: #2c3e50;
+}
+
+.course-form .form-group input::placeholder,
+.course-form .form-group textarea::placeholder {
+  color: #adb5bd;
+  opacity: 1;
+}
+
+.course-form .form-group textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+/* Enhanced Dropdown Styling */
+.course-form .form-group select {
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236c757d' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px;
+  padding-right: 40px;
+  cursor: pointer;
+  z-index: 10;
+  position: relative;
+}
+
+.course-form .form-group select:hover {
+  border-color: #0070f3;
+}
+
+.course-form .form-group select:focus {
+  z-index: 1000;
+}
+
+.course-form .form-group select option {
+  background: white;
+  color: #2c3e50;
+  padding: 12px 16px;
+  border: none;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+/* Ensure dropdown container has proper z-index */
+.course-form .form-group {
+  position: relative;
+  z-index: 1;
+}
+
+.course-form .form-group:has(select:focus) {
+  z-index: 1000;
+}
+
+/* Specific fix for dropdown overflow */
+.course-form .form-group select {
+  position: relative;
+  z-index: 10;
+}
+
+.course-form .form-group select:focus {
+  z-index: 1001;
+}
+
+/* Ensure parent containers don't clip dropdown */
+.courses-section,
+.add-course-form,
+.form-container,
+.course-form {
+  overflow: visible !important;
+}
+
+/* Additional dropdown visibility fixes */
+.course-form .form-group select option {
+  position: relative;
+  z-index: 1002;
+  display: block;
+  width: 100%;
+}
+
+/* Image Upload Styling */
+.image-upload-container {
+  border: 2px dashed #e9ecef;
+  border-radius: 8px;
+  padding: 2rem;
+  text-align: center;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  background: #f8f9fa;
+}
+
+.image-upload-container:hover {
+  border-color: #0070f3;
+  background: #f0f8ff;
+}
+
+.image-upload-container.dragover {
+  border-color: #0070f3;
+  background: #e6f3ff;
+  transform: scale(1.02);
+}
+
+.image-upload-icon {
+  font-size: 3rem;
+  color: #6c757d;
+  margin-bottom: 1rem;
+  transition: color 0.3s ease;
+}
+
+.image-upload-container:hover .image-upload-icon {
+  color: #0070f3;
+}
+
+.image-upload-text {
+  color: #6c757d;
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.image-upload-subtext {
+  color: #adb5bd;
+  font-size: 0.9rem;
+}
+
+.image-upload-input {
+  display: none;
+}
+
+.image-preview {
+  max-width: 200px;
+  max-height: 150px;
+  border-radius: 8px;
+  margin-top: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.uploaded-image-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.remove-image-btn {
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.remove-image-btn:hover {
+  background: #c82333;
+  transform: translateY(-1px);
+}
+
+.form-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e9ecef;
+}
+
+.form-actions .btn {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 1rem;
+}
+
+.form-actions .btn-secondary {
+  background: #6c757d;
+  color: white;
+}
+
+.form-actions .btn-secondary:hover {
+  background: #5a6268;
+  transform: translateY(-1px);
+}
+
+.form-actions .btn-primary {
+  background: linear-gradient(135deg, #0070f3 0%, #0056d3 100%);
+  color: white;
+  box-shadow: 0 4px 15px rgba(0, 112, 243, 0.3);
+}
+
+.form-actions .btn-primary:hover {
+  background: linear-gradient(135deg, #0056d3 0%, #0044a8 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(0, 112, 243, 0.4);
+}
+
 .courses-header {
   text-align: center;
   margin-bottom: 2rem;
@@ -468,6 +876,8 @@
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
   border: 1px solid rgba(0, 0, 0, 0.05);
+  position: relative;
+  z-index: 1;
 }
 
 .course-card:hover {
@@ -483,6 +893,9 @@
   justify-content: center;
   color: white;
   font-size: 3rem;
+  position: relative;
+  overflow: hidden;
+  z-index: 2;
 }
 
 .course-image img {
@@ -495,12 +908,23 @@
   position: absolute;
   top: 1rem;
   right: 1rem;
-  background: rgba(0, 0, 0, 0.7);
+  background: linear-gradient(
+    135deg,
+    var(--sap-blue) 0%,
+    var(--sap-blue-dark) 100%
+  );
   color: white;
-  padding: 4px 8px;
-  border-radius: 4px;
+  padding: 6px 12px;
+  border-radius: 20px;
   font-size: 0.8rem;
   font-weight: 600;
+  box-shadow: 0 2px 8px rgba(0, 112, 243, 0.3);
+  text-transform: capitalize;
+  z-index: 3;
+  max-width: calc(100% - 2rem);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .course-content {
@@ -1069,6 +1493,86 @@
 
   .visual-points-value {
     font-size: 1.5rem;
+  }
+
+  /* Role Selection Mobile */
+  .empty-state {
+    min-height: 50vh;
+    padding: 2rem 1rem;
+  }
+
+  .empty-state-content {
+    padding: 2rem;
+  }
+
+  .empty-state-icon {
+    font-size: 3rem;
+  }
+
+  .empty-state-content h2 {
+    font-size: 1.5rem;
+  }
+
+  .empty-state-content p {
+    font-size: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .role-selection {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    max-width: 100%;
+  }
+
+  .role-btn {
+    padding: 1.5rem 1rem;
+  }
+
+  .role-icon {
+    font-size: 2.5rem;
+  }
+
+  .role-title {
+    font-size: 1.1rem;
+  }
+
+  .role-description {
+    font-size: 0.85rem;
+  }
+
+  /* Manager Form Mobile */
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .form-actions {
+    flex-direction: column;
+  }
+
+  .form-actions .btn {
+    width: 100%;
+  }
+
+  /* Image Upload Mobile */
+  .image-upload-container {
+    padding: 1.5rem;
+  }
+
+  .image-upload-icon {
+    font-size: 2.5rem;
+  }
+
+  .image-upload-text {
+    font-size: 0.9rem;
+  }
+
+  .image-upload-subtext {
+    font-size: 0.8rem;
+  }
+
+  .image-preview {
+    max-width: 150px;
+    max-height: 120px;
   }
 }
 

@@ -40,7 +40,7 @@ A comprehensive AI-powered employee development platform featuring React fronten
 
 - **Frontend**: React 18 with modern UI components
 - **Backend**: FastAPI with Python 3.11+
-- **AI Integration**: LangChain, LangGraph, Google Gemini AI
+ - **AI Integration**: LangChain, LangGraph, OpenAI, SerpAPI
 - **Database**: PostgreSQL with dual database setup
 - **Authentication**: JWT-based secure authentication
 - **Deployment**: Docker containerization
@@ -156,8 +156,8 @@ AutomateAI/
 
 - **LangChain** - Framework for developing LLM applications
 - **LangGraph** - Stateful, multi-actor applications with LLMs
-- **Google Gemini AI** - Advanced AI model integration
 - **OpenAI** - GPT model integration
+- **SerpAPI** - Search API integration for retrieval and augmentation
 
 ### Database & Storage
 
