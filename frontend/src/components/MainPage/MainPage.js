@@ -5,6 +5,7 @@ import axios from 'axios';
 import API_CONFIG from '../../utils/apiConfig';
 import './MainPage.css';
 import { Player } from '@lottiefiles/react-lottie-player';
+import TrophyAnimation from '../../animations/Trophy.json';
 
 function MainPage() {
   const navigate = useNavigate();
@@ -197,7 +198,7 @@ function MainPage() {
             </div>
             <div className="leaderboard-content">
               <div className="trophy-anim-container">
-                <Player autoplay loop={false} keepLastFrame src={`${process.env.PUBLIC_URL}/animations/Trophy.json`} style={{ width: 140, height: 140 }} />
+                <Player autoplay loop={false} keepLastFrame src={TrophyAnimation} style={{ width: 140, height: 140 }} />
               </div>
 
               {podiumOrder.length > 0 && (
