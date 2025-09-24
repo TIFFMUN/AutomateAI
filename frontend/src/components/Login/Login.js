@@ -172,7 +172,7 @@ function Login() {
     <div className="login-container">
       <div className={`login-card ${isLogin ? 'sign-in' : 'sign-up'}`}>
         <div className="card-pigeon" aria-hidden="true">
-          <Player autoplay loop src="/animations/WaitingPigeon.json" style={{ width: 120, height: 120 }} />
+          <Player autoplay loop src={`${process.env.PUBLIC_URL}/animations/WaitingPigeon.json`} style={{ width: 120, height: 120 }} />
         </div>
         <h1 className="login-title">
           {isLogin ? 'Welcome Back' : 'Join AutomateAI'}

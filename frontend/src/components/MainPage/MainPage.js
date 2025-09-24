@@ -197,7 +197,7 @@ function MainPage() {
             </div>
             <div className="leaderboard-content">
               <div className="trophy-anim-container">
-                <Player autoplay loop={false} keepLastFrame src="/animations/Trophy.json" style={{ width: 140, height: 140 }} />
+                <Player autoplay loop={false} keepLastFrame src={`${process.env.PUBLIC_URL}/animations/Trophy.json`} style={{ width: 140, height: 140 }} />
               </div>
 
               {podiumOrder.length > 0 && (
