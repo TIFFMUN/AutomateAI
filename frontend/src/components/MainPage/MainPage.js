@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import axios from 'axios';
 import API_CONFIG from '../../utils/apiConfig';
+import ChatBot from '../ChatBot/ChatBot';
 import './MainPage.css';
 
 function MainPage() {
@@ -224,6 +225,9 @@ function MainPage() {
           </div>
         </div>
       )}
+      
+      {/* ChatBot Component */}
+      <ChatBot />
     </div>
   );
 }

@@ -5,6 +5,7 @@ from typing import Dict, Any, List, Optional
 from sqlalchemy.orm import Session
 from datetime import datetime
 import json
+import os
 
 def validate_user_id(user_id: str, db: Session) -> int:
     """Validate that user_id is a valid integer and user exists"""
@@ -17,6 +18,26 @@ def validate_user_id(user_id: str, db: Session) -> int:
         return user_id_int
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid user_id format. Must be an integer.")
+
+def _format_response(response: str) -> str:
+    """Format response for better readability with proper spacing"""
+    if not response:
+        return response
+        
+    # Split response into sentences
+    sentences = response.split('. ')
+    
+    # Add line breaks between sentences for better readability
+    formatted_response = '.\n\n'.join(sentences)
+    
+    # Clean up any double line breaks
+    formatted_response = formatted_response.replace('\n\n\n', '\n\n')
+    
+    # Ensure it ends with a period
+    if not formatted_response.endswith('.'):
+        formatted_response += '.'
+        
+    return formatted_response
 from config import settings
 from langgraph_connection import LangGraphConnection
 from prompts import PERFORMANCE_FEEDBACK_ANALYSIS, PERFORMANCE_FEEDBACK_ANALYSIS_PROMPT, REAL_TIME_FEEDBACK_SUGGESTIONS_PROMPT, FEEDBACK_DRAFT_GENERATION_PROMPT
@@ -197,6 +218,10 @@ class ChatRequest(BaseModel):
 
     class Config:
         extra = "ignore"  # Ignore extra fields like user_id if sent by frontend
+
+class StandaloneChatRequest(BaseModel):
+    message: str
+    user_id: str = "anonymous"
 
 class ChatMessageResponse(BaseModel):
     role: str
@@ -689,9 +714,307 @@ def award_points(user_id: str, request: AwardPointsRequest, db: Session = Depend
         "already_completed": already_completed
     }
 
-@app.get("/api/health")
-def api_health_check():
-    return {"status": "healthy", "service": "AutomateAI API"}
+@app.get("/api/rag/stats")
+def get_rag_stats():
+    """Get RAG service statistics"""
+    try:
+        from services.rag_service import get_rag_service
+        rag_service = get_rag_service()
+        
+        if not rag_service.initialized:
+            return {
+                "status": "not_initialized",
+                "error": "RAG service not initialized - check API keys"
+            }
+        
+        stats = rag_service.get_index_stats()
+        return {
+            "status": "active",
+            "index_stats": stats,
+            "service_initialized": rag_service.initialized
+        }
+        
+    except Exception as e:
+        return {
+            "status": "error",
+            "error": str(e)
+        }
+
+@app.post("/api/rag/reinitialize")
+def reinitialize_rag():
+    """Reinitialize RAG service with sample data"""
+    try:
+        from services.rag_service import get_rag_service
+        rag_service = get_rag_service()
+        
+        if not rag_service.initialized:
+            return {
+                "status": "error",
+                "error": "RAG service not initialized - check API keys"
+            }
+        
+        success = rag_service.initialize_with_sample_data()
+        if success:
+            stats = rag_service.get_index_stats()
+            return {
+                "status": "success",
+                "message": "RAG service reinitialized with sample data",
+                "index_stats": stats
+            }
+        else:
+            return {
+                "status": "error",
+                "error": "Failed to initialize with sample data"
+            }
+        
+    except Exception as e:
+        return {
+            "status": "error",
+            "error": str(e)
+        }
+
+@app.get("/api/rag/status")
+def rag_status():
+    """Check RAG service status and all components"""
+    try:
+        import os
+        from services.rag_service import get_rag_service, RAG_DEPENDENCIES_AVAILABLE
+        
+        # Check environment variables
+        env_check = {
+            "PINECONE_API_KEY": bool(os.getenv('PINECONE_API_KEY')),
+            "OPENAI_API_KEY": bool(os.getenv('OPENAI_API_KEY')),
+        }
+        
+        # Check dependencies
+        deps_check = {
+            "RAG_DEPENDENCIES_AVAILABLE": RAG_DEPENDENCIES_AVAILABLE,
+            "langchain_pinecone": "langchain_pinecone" in str(globals()),
+            "langchain_openai": "langchain_openai" in str(globals()),
+            "pinecone": "pinecone" in str(globals())
+        }
+        
+        # Get RAG service
+        rag_service = get_rag_service()
+        
+        # Check initialization
+        init_status = {
+            "initialized": rag_service.initialized,
+            "index_name": rag_service.index_name if hasattr(rag_service, 'index_name') else None
+        }
+        
+        # Test Pinecone connection if available
+        pinecone_status = {}
+        if rag_service.initialized:
+            try:
+                stats = rag_service.get_index_stats()
+                # Convert stats to simple dict to avoid serialization issues
+                simple_stats = {}
+                if isinstance(stats, dict):
+                    for key, value in stats.items():
+                        if isinstance(value, (str, int, float, bool)):
+                            simple_stats[key] = value
+                        else:
+                            simple_stats[key] = str(value)
+                else:
+                    simple_stats = {"raw": str(stats)}
+                
+                pinecone_status = {
+                    "connection": "success",
+                    "stats": simple_stats
+                }
+            except Exception as e:
+                pinecone_status = {
+                    "connection": "failed",
+                    "error": str(e)
+                }
+        else:
+            pinecone_status = {"connection": "not_initialized"}
+        
+        # Test a simple query if everything is working
+        query_test = {}
+        if rag_service.initialized and "connection" in pinecone_status and pinecone_status["connection"] == "success":
+            try:
+                test_result = rag_service.query("test connection")
+                query_test = {
+                    "status": "success",
+                    "has_response": bool(test_result.get("response")),
+                    "has_error": "error" in test_result
+                }
+            except Exception as e:
+                query_test = {
+                    "status": "failed",
+                    "error": str(e)
+                }
+        else:
+            query_test = {"status": "skipped", "reason": "service_not_ready"}
+        
+        return {
+            "status": "success",
+            "timestamp": datetime.now().isoformat(),
+            "environment": env_check,
+            "dependencies": deps_check,
+            "initialization": init_status,
+            "pinecone": pinecone_status,
+            "query_test": query_test
+        }
+        
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": str(e),
+            "timestamp": datetime.now().isoformat()
+        }
+
+@app.post("/api/rag/test")
+def test_rag_query(request: StandaloneChatRequest):
+    """Test RAG query directly"""
+    try:
+        from services.rag_service import get_rag_service
+        rag_service = get_rag_service()
+        
+        if not rag_service.initialized:
+            return {
+                "status": "error",
+                "message": "RAG service not initialized",
+                "details": "Check API keys and dependencies"
+            }
+        
+        # Test the query
+        result = rag_service.query(request.message)
+        
+        return {
+            "status": "success",
+            "query": request.message,
+            "result": result,
+            "timestamp": datetime.now().isoformat()
+        }
+        
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": str(e),
+            "timestamp": datetime.now().isoformat()
+        }
+
+@app.post("/api/chat/fallback-test")
+def test_fallback_response(request: StandaloneChatRequest):
+    """Test fallback response by simulating RAG failure"""
+    try:
+        # Simulate RAG failure to trigger fallback
+        # hr_agent is defined in this file (main.py)
+        
+        simple_prompt = f"""
+You are a helpful SAP assistant. The user asked: "{request.message}"
+
+Instructions:
+- Give a direct, concise answer in 1-2 short sentences
+- Use simple, clear language
+- Focus only on what they asked
+- Don't add extra explanations unless necessary
+
+Answer:
+"""
+        
+        # Use direct LLM call instead of onboarding agent
+        if hr_agent.llm is None:
+            raise Exception("LLM not initialized - check API key configuration")
+        
+        # Create a simple LLM call without onboarding context
+        messages = [HumanMessage(content=simple_prompt)]
+        response = hr_agent.llm.invoke(messages)
+        fallback_response = response.content
+        
+        # Format response for better readability
+        fallback_response = _format_response(fallback_response)
+        
+        return {
+            "response": fallback_response,
+            "user_id": request.user_id,
+            "timestamp": datetime.now().isoformat(),
+            "rag_enabled": False,
+            "fallback": True,
+            "context_docs": 0,
+            "sources": []
+        }
+        
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": str(e),
+            "timestamp": datetime.now().isoformat()
+        }
+
+@app.post("/api/chat/debug")
+def debug_chat_request(request_data: dict):
+    """Debug endpoint to see what the frontend is sending"""
+    return {
+        "received_data": request_data,
+        "timestamp": datetime.now().isoformat()
+    }
+
+@app.post("/api/chat")
+def standalone_chat(request: StandaloneChatRequest):
+    """Standalone chat endpoint with RAG - not connected to onboarding system"""
+    try:
+        print(f"RAG chat request from {request.user_id}: {request.message}")
+        print(f"Request data: {request.dict()}")
+        
+        # Import RAG service
+        from services.rag_service import get_rag_service
+        
+        # Get RAG service and query with score threshold
+        rag_service = get_rag_service()
+        rag_result = rag_service.query(request.message, k=3, score_threshold=1.3)
+        
+        if "error" in rag_result:
+            # Enhanced fallback prompt for better responses
+            simple_prompt = f"""
+You are a helpful SAP assistant. The user asked: "{request.message}"
+
+Instructions:
+- Give a direct, concise answer in 1-2 short sentences
+- Use simple, clear language
+- Focus only on what they asked
+- Don't add extra explanations unless necessary
+
+Answer:
+"""
+            
+            # Format response for better readability
+            fallback_response = _format_response(fallback_response)
+            
+            return {
+                "response": fallback_response,
+                "user_id": request.user_id,
+                "timestamp": datetime.now().isoformat(),
+                "rag_enabled": False,
+                "fallback": True,
+                "context_docs": 0,
+                "sources": []
+            }
+        
+        # Add clear RAG indicator to the response
+        rag_response = rag_result['response']
+        
+        return {
+            "response": rag_response,
+            "user_id": request.user_id,
+            "timestamp": datetime.now().isoformat(),
+            "rag_enabled": True,
+            "sources": rag_result.get("sources", []),
+            "context_docs": rag_result.get("context_docs", 0)
+        }
+        
+    except Exception as e:
+        print(f"Error in RAG chat: {str(e)}")
+        return {
+            "response": "I'm here to help with SAP career development, skills assessment, and general questions. What would you like to know?",
+            "user_id": request.user_id,
+            "timestamp": datetime.now().isoformat(),
+            "error": "fallback_response",
+            "rag_enabled": False
+        }
 
 # Performance Feedback API Endpoints
 
