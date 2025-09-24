@@ -236,20 +236,22 @@ function ChatBot() {
         </div>
       )}
 
-      {/* Floating Chat Button */}
-      <button 
-        className={`chatbot-toggle ${isOpen ? 'open' : ''}`}
-        onClick={handleToggleChat}
-        aria-label={isOpen ? "Close AI Assistant" : "Open AI Assistant"}
-        title={isOpen ? "Close chat" : "Open AI Assistant"}
-      >
-        <span className="chatbot-icon">{isOpen ? '×' : '🤖'}</span>
-        {!isOpen && hasShownWelcome && (
-          <div className="chatbot-notification">
-            <span>!</span>
-          </div>
-        )}
-      </button>
+      {/* Floating Chat Button - Only show when closed */}
+      {!isOpen && (
+        <button 
+          className="chatbot-toggle"
+          onClick={handleToggleChat}
+          aria-label="Open AI Assistant"
+          title="Open AI Assistant"
+        >
+          <span className="chatbot-icon">🤖</span>
+          {hasShownWelcome && (
+            <div className="chatbot-notification">
+              <span>!</span>
+            </div>
+          )}
+        </button>
+      )}
     </div>
   );
 }

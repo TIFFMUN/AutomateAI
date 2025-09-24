@@ -35,15 +35,6 @@
   box-shadow: 0 12px 35px rgba(0, 112, 243, 0.4);
 }
 
-.chatbot-toggle.open {
-  background: linear-gradient(
-    135deg,
-    var(--sap-blue-dark) 0%,
-    var(--sap-blue-darker) 100%
-  );
-  transform: rotate(45deg);
-}
-
 .chatbot-toggle::before {
   content: "";
   position: absolute;
@@ -96,9 +87,9 @@
 
 /* Chat Window */
 .chatbot-window {
-  position: absolute;
-  bottom: 80px;
-  right: 0;
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
   width: 380px;
   height: 500px;
   background: rgba(255, 255, 255, 0.95);
@@ -110,6 +101,7 @@
   flex-direction: column;
   overflow: hidden;
   animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 1001;
 }
 
 @keyframes slideUp {
@@ -508,9 +500,8 @@
     width: calc(100vw - 30px);
     max-width: 380px;
     height: calc(100vh - 100px);
-    bottom: 75px;
+    bottom: 15px;
     right: 15px;
-    left: 15px;
     border-radius: 15px;
   }
 
@@ -556,9 +547,8 @@
   .chatbot-window {
     width: calc(100vw - 20px);
     height: calc(100vh - 80px);
-    bottom: 65px;
+    bottom: 10px;
     right: 10px;
-    left: 10px;
     border-radius: 12px;
   }
 
@@ -623,8 +613,8 @@
   .chatbot-window {
     width: calc(100vw - 10px);
     height: calc(100vh - 70px);
+    bottom: 5px;
     right: 5px;
-    left: 5px;
   }
 
   .chatbot-header {
@@ -663,7 +653,7 @@
 @media (max-width: 768px) and (orientation: landscape) {
   .chatbot-window {
     height: calc(100vh - 60px);
-    bottom: 60px;
+    bottom: 15px;
   }
 
   .chatbot-messages {
