@@ -15,6 +15,23 @@ function Skills() {
   const [isLoadingRecommendations, setIsLoadingRecommendations] = useState(false);
   const [userSkillsInput, setUserSkillsInput] = useState('');
   
+  // Role selection state
+  const [isManagerView, setIsManagerView] = useState(false);
+  const [hasSelectedRole, setHasSelectedRole] = useState(false);
+  
+  // Course form state
+  const [courseImage, setCourseImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [courseForm, setCourseForm] = useState({
+    title: '',
+    instructor: '',
+    description: '',
+    duration: '',
+    level: '',
+    skills: '',
+    url: ''
+  });
+  
   // Points state
   const [totalPoints, setTotalPoints] = useState(0);
   const [pointsEarned, setPointsEarned] = useState(0);
@@ -80,7 +97,18 @@ function Skills() {
     }
   ];
 
-  const courses = [
+  // Load courses from localStorage or use default courses
+  const getInitialCourses = () => {
+    try {
+      const savedCourses = localStorage.getItem('automateAI_courses');
+      if (savedCourses) {
+        return JSON.parse(savedCourses);
+      }
+    } catch (error) {
+      console.warn('Failed to load courses from localStorage:', error);
+    }
+    // Return default courses if no saved data
+    return [
     {
       id: 1,
       title: 'Introduction to JavaScript',
@@ -193,7 +221,26 @@ function Skills() {
       skills: ['SEO', 'Social Media', 'Content Marketing', 'Analytics'],
       category: 'soft'
     }
-  ];
+    ];
+  };
+
+  const [courses, setCourses] = useState(getInitialCourses);
+
+  // Function to save courses to localStorage
+  const saveCoursesToStorage = (coursesToSave) => {
+    try {
+      localStorage.setItem('automateAI_courses', JSON.stringify(coursesToSave));
+    } catch (error) {
+      console.warn('Failed to save courses to localStorage:', error);
+    }
+  };
+
+  // Function to reset courses to default (useful for testing)
+  const resetCoursesToDefault = () => {
+    const defaultCourses = getInitialCourses();
+    setCourses(defaultCourses);
+    saveCoursesToStorage(defaultCourses);
+  };
 
   // Function to get LLM skill recommendations
   const getSkillRecommendations = useCallback(async () => {
@@ -371,6 +418,132 @@ function Skills() {
     return false;
   };
 
+  // Handle role selection
+  const handleRoleSelection = (isManager) => {
+    setIsManagerView(isManager);
+    setHasSelectedRole(true);
+    // Reset tab to appropriate default
+    setActiveTab(isManager ? 'courses' : 'skills');
+  };
+
+  // Image upload handlers
+  const handleImageUpload = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      setCourseImage(file);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreview(e.target.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleImageRemove = () => {
+    setCourseImage(null);
+    setImagePreview(null);
+  };
+
+  const handleDragOver = (event) => {
+    event.preventDefault();
+    event.currentTarget.classList.add('dragover');
+  };
+
+  const handleDragLeave = (event) => {
+    event.preventDefault();
+    event.currentTarget.classList.remove('dragover');
+  };
+
+  const handleDrop = (event) => {
+    event.preventDefault();
+    event.currentTarget.classList.remove('dragover');
+    const files = event.dataTransfer.files;
+    if (files.length > 0) {
+      const file = files[0];
+      if (file.type.startsWith('image/')) {
+        setCourseImage(file);
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          setImagePreview(e.target.result);
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+  };
+
+  // Form input handlers
+  const handleFormInputChange = (field, value) => {
+    setCourseForm(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  // Course submission handler
+  const handleAddCourse = (event) => {
+    event.preventDefault();
+    
+    // Validate required fields
+    if (!courseForm.title || !courseForm.instructor || !courseForm.description) {
+      alert('Please fill in all required fields (Title, Instructor, Description)');
+      return;
+    }
+
+    // Create new course object
+    const newCourse = {
+      id: Date.now(), // Simple ID generation
+      title: courseForm.title,
+      instructor: courseForm.instructor,
+      description: courseForm.description,
+      duration: courseForm.duration || 'TBD',
+      level: courseForm.level || 'All Levels',
+      skills: courseForm.skills ? courseForm.skills.split(',').map(s => s.trim()) : [],
+      url: courseForm.url || '#',
+      image: imagePreview || '/api/placeholder/300/200', // Default placeholder if no image
+      rating: 0,
+      students: 0,
+      price: 'Free',
+      category: 'Management Added'
+    };
+
+    // Add to courses array and save to localStorage
+    const updatedCourses = [newCourse, ...courses];
+    setCourses(updatedCourses);
+    saveCoursesToStorage(updatedCourses);
+
+    // Reset form
+    setCourseForm({
+      title: '',
+      instructor: '',
+      description: '',
+      duration: '',
+      level: '',
+      skills: '',
+      url: ''
+    });
+    setCourseImage(null);
+    setImagePreview(null);
+
+    // Show success message and switch to courses tab
+    alert('Course added successfully! You can now see it in the "View All Courses" tab.');
+    setActiveTab('courses');
+  };
+
+  // Reset form handler
+  const handleResetForm = () => {
+    setCourseForm({
+      title: '',
+      instructor: '',
+      description: '',
+      duration: '',
+      level: '',
+      skills: '',
+      url: ''
+    });
+    setCourseImage(null);
+    setImagePreview(null);
+  };
+
   // Handle incoming data from Career Oracle
   useEffect(() => {
     if (location.state?.fromCareerOracle && location.state?.skillsToDevelop) {
@@ -409,289 +582,475 @@ function Skills() {
         </div>
         
         <div className="main-content">
-          {/* Header Section */}
-          <div className="skills-header">
-            <h2>Develop Your Professional Skills</h2>
-            <p>Track your progress, discover learning opportunities, and advance your career</p>
-          </div>
-
-          {/* Tab Navigation */}
-          <div className="tab-navigation">
-            <button 
-              className={`tab-btn ${activeTab === 'skills' ? 'active' : ''}`}
-              onClick={() => setActiveTab('skills')}
-            >
-              My Skills
-            </button>
-            <button 
-              className={`tab-btn ${activeTab === 'courses' ? 'active' : ''}`}
-              onClick={() => setActiveTab('courses')}
-            >
-              Explore New Courses
-            </button>
-            <button 
-              className={`tab-btn ${activeTab === 'recommendations' ? 'active' : ''}`}
-              onClick={() => setActiveTab('recommendations')}
-            >
-              AI Recommendations
-            </button>
-          </div>
-
-          {/* Skills Tab Content */}
-          {activeTab === 'skills' && (
-            <>
-              {/* Search and Filter */}
-              <div className="skills-controls">
-                <div className="search-box">
-                  <input
-                    type="text"
-                    placeholder="Search skills..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="search-input"
-                  />
+          {!hasSelectedRole ? (
+            <div className="empty-state">
+              <div className="empty-state-content">
+                <div className="empty-state-icon">👤</div>
+                <h2>Select Your Role</h2>
+                <p>Choose how you'd like to view the Skills Development section:</p>
+                <div className="role-selection">
+                  <button 
+                    className="role-btn employee-btn"
+                    onClick={() => handleRoleSelection(false)}
+                  >
+                    <span className="role-icon">👨‍💼</span>
+                    <span className="role-title">View as Employee</span>
+                    <span className="role-description">Track your skills and discover new learning opportunities</span>
+                  </button>
+                  <button 
+                    className="role-btn manager-btn"
+                    onClick={() => handleRoleSelection(true)}
+                  >
+                    <span className="role-icon">👩‍💼</span>
+                    <span className="role-title">View as Manager</span>
+                    <span className="role-description">Add new courses and get AI recommendations for your team</span>
+                  </button>
                 </div>
-                <div className="category-filters">
-                  {skillCategories.map(category => (
-                    <button
-                      key={category.id}
-                      className={`category-btn ${selectedCategory === category.id ? 'active' : ''}`}
-                      onClick={() => setSelectedCategory(category.id)}
-                      style={{ '--category-color': category.color }}
-                    >
-                      {category.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Skills Grid */}
-              <div className="skills-grid">
-                {filteredSkills.map(skill => (
-                  <div key={skill.id} className="skill-card">
-                    <div className="skill-header">
-                      <h3>{skill.name}</h3>
-                      <span className={`skill-level ${skill.level.toLowerCase()}`}>
-                        {skill.level}
-                      </span>
-                    </div>
-                    
-                    <p className="skill-description">{skill.description}</p>
-                    
-                    <div className="skill-progress">
-                      <div className="progress-info">
-                        <span>Progress</span>
-                        <span>{skill.progress}%</span>
-                      </div>
-                      <div className="progress-bar">
-                        <div 
-                          className="progress-fill" 
-                          style={{ 
-                            width: `${skill.progress}%`,
-                            backgroundColor: getProgressColor(skill.progress)
-                          }}
-                        ></div>
-                      </div>
-                    </div>
-
-                    <div className="skill-details">
-                      <div className="detail-item">
-                        <span className="detail-label">Learning Path:</span>
-                        <div className="learning-path">
-                          {skill.learningPath.map((step, index) => (
-                            <span key={index} className="path-step">
-                              {step}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                      
-                      <div className="detail-item">
-                        <span className="detail-label">Estimated Time:</span>
-                        <span className="detail-value">{skill.estimatedTime}</span>
-                      </div>
-                      
-                      <div className="detail-item">
-                        <span className="detail-label">Resources:</span>
-                        <div className="resources">
-                          {skill.resources.map((resource, index) => (
-                            <span key={index} className="resource-tag">
-                              {resource}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="skill-actions">
-                      {skill.progress === 100 ? (
-                        completedSkills.has(skill.id) ? (
-                          <button className="btn btn-success" disabled>
-                            Completed
-                          </button>
-                        ) : (
-                          <button 
-                            className="btn btn-success"
-                            onClick={() => awardSkillCompletionPoints(skill.id, skill.name)}
-                          >
-                            Complete Course
-                          </button>
-                        )
-                      ) : (
-                        <button className="btn btn-primary">Continue Learning</button>
-                      )}
-                      <button className="btn btn-secondary">View Details</button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-            </>
-          )}
-
-          {/* Courses Tab Content */}
-          {activeTab === 'courses' && (
-            <div className="courses-section">
-              <div className="courses-header">
-                <h3>Featured Courses</h3>
-                <p>Discover top-rated courses to enhance your skills</p>
-              </div>
-              
-              <div className="courses-grid">
-                {courses.map(course => (
-                  <div key={course.id} className="course-card">
-                    <div className="course-image">
-                      <img src={course.image} alt={course.title} />
-                      <div className="course-level">{course.level}</div>
-                    </div>
-                    
-                    <div className="course-content">
-                      <h4>{course.title}</h4>
-                      <p className="course-instructor">by {course.instructor}</p>
-                      <p className="course-description">{course.description}</p>
-                      
-                      <div className="course-stats">
-                        <div className="stat">
-                          <span className="stat-icon">⭐</span>
-                          <span>{course.rating}</span>
-                        </div>
-                        <div className="stat">
-                          <span className="stat-icon">👥</span>
-                          <span>{course.students.toLocaleString()}</span>
-                        </div>
-                        <div className="stat">
-                          <span className="stat-icon">⏱️</span>
-                          <span>{course.duration}</span>
-                        </div>
-                      </div>
-                      
-                      <div className="course-skills">
-                        {course.skills.map((skill, index) => (
-                          <span key={index} className="skill-tag">{skill}</span>
-                        ))}
-                      </div>
-                      
-                      <div className="course-footer">
-                        <span className="course-price">{course.price}</span>
-                        <button className="btn btn-primary">Enroll Now</button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
               </div>
             </div>
-          )}
-
-          {/* AI Recommendations Tab Content */}
-          {activeTab === 'recommendations' && (
-            <div className="recommendations-section">
-              <div className="recommendations-header">
-                <h3>AI-Powered Skill Recommendations</h3>
-                <p>Get personalized skill recommendations based on your current abilities</p>
+          ) : (
+            <>
+              {/* Header Section */}
+              <div className="skills-header">
+                <h2>{isManagerView ? 'Manage Team Skills Development' : 'Develop Your Professional Skills'}</h2>
+                <p>{isManagerView ? 'Add new courses and get AI recommendations for your team' : 'Track your progress, discover learning opportunities, and advance your career'}</p>
               </div>
-              
-              <div className="recommendations-input">
-                {location.state?.fromCareerOracle && (
-                  <div className="career-oracle-notice">
-                    <div className="notice-icon">🎯</div>
-                    <div className="notice-content">
-                      <h4>Skills from Career Oracle</h4>
-                      <p>These skills were automatically populated from your Career Oracle results. You can modify them below or get AI recommendations.</p>
-                    </div>
-                  </div>
-                )}
-                {isLoadingRecommendations ? (
-                  <div className="loading-state">
-                    <div className="spinner"></div>
-                    <p>Getting your personalized skill recommendations...</p>
-                  </div>
+
+              {/* Tab Navigation */}
+              <div className="tab-navigation">
+                {isManagerView ? (
+                  <>
+                    <button 
+                      className={`tab-btn ${activeTab === 'skills' ? 'active' : ''}`}
+                      onClick={() => setActiveTab('skills')}
+                    >
+                      Add New Course
+                    </button>
+                    <button 
+                      className={`tab-btn ${activeTab === 'courses' ? 'active' : ''}`}
+                      onClick={() => setActiveTab('courses')}
+                    >
+                      View All Courses
+                    </button>
+                    <button 
+                      className={`tab-btn ${activeTab === 'recommendations' ? 'active' : ''}`}
+                      onClick={() => setActiveTab('recommendations')}
+                    >
+                      AI Recommendations
+                    </button>
+                  </>
                 ) : (
                   <>
-                     <textarea
-                       placeholder="Tell us about your current skills, experience, and career goals..."
-                       value={userSkillsInput}
-                       onChange={(e) => setUserSkillsInput(e.target.value)}
-                       className="skills-input"
-                       rows="4"
-                     />
-                     <div className="recommendations-btn-container">
-                       <button 
-                         onClick={getSkillRecommendations}
-                         className="recommendations-btn"
-                         disabled={isLoadingRecommendations}
-                       >
-                         Get Recommendations
-                       </button>
-                     </div>
+                    <button 
+                      className={`tab-btn ${activeTab === 'skills' ? 'active' : ''}`}
+                      onClick={() => setActiveTab('skills')}
+                    >
+                      My Skills
+                    </button>
+                    <button 
+                      className={`tab-btn ${activeTab === 'courses' ? 'active' : ''}`}
+                      onClick={() => setActiveTab('courses')}
+                    >
+                      Explore New Courses
+                    </button>
+                    <button 
+                      className={`tab-btn ${activeTab === 'recommendations' ? 'active' : ''}`}
+                      onClick={() => setActiveTab('recommendations')}
+                    >
+                      AI Recommendations
+                    </button>
                   </>
                 )}
               </div>
-              
-              {recommendations.length > 0 ? (
-                <div className="recommendations-results">
-                  <h4>Recommended Skills for You</h4>
-                  <div className="recommendations-grid">
-                    {recommendations.map((rec, index) => (
-                      <div key={index} className="recommendation-card">
-                        <div className="recommendation-header">
-                          <h5>{rec.skill}</h5>
-                          <span className={`difficulty-badge ${rec.difficulty.toLowerCase()}`}>
-                            {rec.difficulty}
+
+              {/* Skills Tab Content */}
+              {activeTab === 'skills' && (
+                <>
+                  {isManagerView ? (
+                    /* Manager View - Add New Course Form */
+                    <div className="add-course-form">
+                      <div className="form-container">
+                        <h4>Add a New Course</h4>
+                        <form className="course-form" onSubmit={handleAddCourse}>
+                          <div className="form-group">
+                            <label>Course Image</label>
+                            <div 
+                              className="image-upload-container"
+                              onDragOver={handleDragOver}
+                              onDragLeave={handleDragLeave}
+                              onDrop={handleDrop}
+                              onClick={() => document.getElementById('course-image-upload').click()}
+                            >
+                              {imagePreview ? (
+                                <div className="uploaded-image-container">
+                                  <img src={imagePreview} alt="Course preview" className="image-preview" />
+                                  <button 
+                                    type="button" 
+                                    className="remove-image-btn"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleImageRemove();
+                                    }}
+                                  >
+                                    Remove Image
+                                  </button>
+                                </div>
+                              ) : (
+                                <>
+                                  <div className="image-upload-icon">📷</div>
+                                  <div className="image-upload-text">Click to upload or drag and drop</div>
+                                  <div className="image-upload-subtext">PNG, JPG, GIF up to 10MB</div>
+                                </>
+                              )}
+                              <input
+                                id="course-image-upload"
+                                type="file"
+                                accept="image/*"
+                                onChange={handleImageUpload}
+                                className="image-upload-input"
+                              />
+                            </div>
+                          </div>
+                          <div className="form-group">
+                            <label>Course Title *</label>
+                            <input 
+                              type="text" 
+                              placeholder="Enter course title..." 
+                              value={courseForm.title}
+                              onChange={(e) => handleFormInputChange('title', e.target.value)}
+                              required
+                            />
+                          </div>
+                          <div className="form-group">
+                            <label>Instructor *</label>
+                            <input 
+                              type="text" 
+                              placeholder="Enter instructor name..." 
+                              value={courseForm.instructor}
+                              onChange={(e) => handleFormInputChange('instructor', e.target.value)}
+                              required
+                            />
+                          </div>
+                          <div className="form-group">
+                            <label>Description *</label>
+                            <textarea 
+                              placeholder="Describe the course content..." 
+                              rows="4"
+                              value={courseForm.description}
+                              onChange={(e) => handleFormInputChange('description', e.target.value)}
+                              required
+                            ></textarea>
+                          </div>
+                          <div className="form-row">
+                            <div className="form-group">
+                              <label>Duration</label>
+                              <input 
+                                type="text" 
+                                placeholder="e.g., 10 hours" 
+                                value={courseForm.duration}
+                                onChange={(e) => handleFormInputChange('duration', e.target.value)}
+                              />
+                            </div>
+                            <div className="form-group">
+                              <label>Level</label>
+                              <select 
+                                value={courseForm.level}
+                                onChange={(e) => handleFormInputChange('level', e.target.value)}
+                              >
+                                <option value="">Select level...</option>
+                                <option value="Beginner">Beginner</option>
+                                <option value="Intermediate">Intermediate</option>
+                                <option value="Advanced">Advanced</option>
+                                <option value="All Levels">All Levels</option>
+                              </select>
+                            </div>
+                          </div>
+                          <div className="form-group">
+                            <label>Skills Covered</label>
+                            <input 
+                              type="text" 
+                              placeholder="Enter skills separated by commas..." 
+                              value={courseForm.skills}
+                              onChange={(e) => handleFormInputChange('skills', e.target.value)}
+                            />
+                          </div>
+                          <div className="form-group">
+                            <label>Course URL</label>
+                            <input 
+                              type="url" 
+                              placeholder="https://..." 
+                              value={courseForm.url}
+                              onChange={(e) => handleFormInputChange('url', e.target.value)}
+                            />
+                          </div>
+                          <div className="form-actions">
+                            <button type="button" className="btn btn-secondary" onClick={handleResetForm}>Reset Form</button>
+                            <button type="submit" className="btn btn-primary">Add Course</button>
+                          </div>
+                        </form>
+                      </div>
+                    </div>
+                  ) : (
+                    /* Employee View - My Skills */
+                    <>
+                      {/* Search and Filter */}
+                      <div className="skills-controls">
+                    <div className="search-box">
+                      <input
+                        type="text"
+                        placeholder="Search skills..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="search-input"
+                      />
+                    </div>
+                    <div className="category-filters">
+                      {skillCategories.map(category => (
+                        <button
+                          key={category.id}
+                          className={`category-btn ${selectedCategory === category.id ? 'active' : ''}`}
+                          onClick={() => setSelectedCategory(category.id)}
+                          style={{ '--category-color': category.color }}
+                        >
+                          {category.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Skills Grid */}
+                  <div className="skills-grid">
+                    {filteredSkills.map(skill => (
+                      <div key={skill.id} className="skill-card">
+                        <div className="skill-header">
+                          <h3>{skill.name}</h3>
+                          <span className={`skill-level ${skill.level.toLowerCase()}`}>
+                            {skill.level}
                           </span>
                         </div>
                         
-                        <p className="recommendation-reason">{rec.reason}</p>
+                        <p className="skill-description">{skill.description}</p>
                         
-                        <div className="recommendation-details">
-                          <div className="detail">
-                            <span className="detail-label">Time to Learn:</span>
-                            <span className="detail-value">{rec.estimatedTime}</span>
+                        <div className="skill-progress">
+                          <div className="progress-info">
+                            <span>Progress</span>
+                            <span>{skill.progress}%</span>
+                          </div>
+                          <div className="progress-bar">
+                            <div 
+                              className="progress-fill" 
+                              style={{ 
+                                width: `${skill.progress}%`,
+                                backgroundColor: getProgressColor(skill.progress)
+                              }}
+                            ></div>
                           </div>
                         </div>
-                        
-                       
-                        <div className="recommendation-resources">
-                          <span className="resources-label">Recommended Resources:</span>
-                          <div className="resources-list">
-                            {rec.resources.map((resource, idx) => (
-                              <a 
-                                key={idx} 
-                                href={typeof resource === 'string' ? '#' : resource.link} 
-                                target="_blank" 
-                                rel="noopener noreferrer" 
-                                className="resource-link"
-                              >
-                                {typeof resource === 'string' ? resource : resource.title}
-                              </a>
-                            ))}
+
+                        <div className="skill-details">
+                          <div className="detail-item">
+                            <span className="detail-label">Learning Path:</span>
+                            <div className="learning-path">
+                              {skill.learningPath.map((step, index) => (
+                                <span key={index} className="path-step">
+                                  {step}
+                                </span>
+                              ))}
+                            </div>
                           </div>
+                          
+                          <div className="detail-item">
+                            <span className="detail-label">Estimated Time:</span>
+                            <span className="detail-value">{skill.estimatedTime}</span>
+                          </div>
+                          
+                          <div className="detail-item">
+                            <span className="detail-label">Resources:</span>
+                            <div className="resources">
+                              {skill.resources.map((resource, index) => (
+                                <span key={index} className="resource-tag">
+                                  {resource}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="skill-actions">
+                          {skill.progress === 100 ? (
+                            completedSkills.has(skill.id) ? (
+                              <button className="btn btn-success" disabled>
+                                Completed
+                              </button>
+                            ) : (
+                              <button 
+                                className="btn btn-success"
+                                onClick={() => awardSkillCompletionPoints(skill.id, skill.name)}
+                              >
+                                Complete Course
+                              </button>
+                            )
+                          ) : (
+                            <button className="btn btn-primary">Continue Learning</button>
+                          )}
+                          <button className="btn btn-secondary">View Details</button>
                         </div>
                       </div>
                     ))}
                   </div>
+                    </>
+                  )}
+                </>
+              )}
+
+              {/* Courses Tab Content */}
+              {activeTab === 'courses' && (
+                <div className="courses-section">
+                  <div className="courses-header">
+                    <h3>{isManagerView ? 'View All Courses' : 'Featured Courses'}</h3>
+                    <p>{isManagerView ? 'Browse all available courses for your team' : 'Discover top-rated courses to enhance your skills'}</p>
+                  </div>
+                  
+                  <div className="courses-grid">
+                      {courses.map(course => (
+                        <div key={course.id} className="course-card">
+                          <div className="course-image">
+                            <img src={course.image} alt={course.title} />
+                            <div className="course-level">{course.level}</div>
+                          </div>
+                          
+                          <div className="course-content">
+                            <h4>{course.title}</h4>
+                            <p className="course-instructor">by {course.instructor}</p>
+                            <p className="course-description">{course.description}</p>
+                            
+                            <div className="course-stats">
+                              <div className="stat">
+                                <span className="stat-icon">⭐</span>
+                                <span>{course.rating}</span>
+                              </div>
+                              <div className="stat">
+                                <span className="stat-icon">👥</span>
+                                <span>{course.students.toLocaleString()}</span>
+                              </div>
+                              <div className="stat">
+                                <span className="stat-icon">⏱️</span>
+                                <span>{course.duration}</span>
+                              </div>
+                            </div>
+                            
+                            <div className="course-skills">
+                              {course.skills.slice(0, 3).map((skill, index) => (
+                                <span key={index} className="skill-tag">{skill}</span>
+                              ))}
+                              {course.skills.length > 3 && (
+                                <span className="skill-tag more">+{course.skills.length - 3}</span>
+                              )}
+                            </div>
+                            
+                            <div className="course-footer">
+                              <div className="course-price">{course.price}</div>
+                              <button className="btn btn-primary">Enroll Now</button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
                 </div>
-              ) : null}
-            </div>
+              )}
+
+              {/* AI Recommendations Tab Content */}
+              {activeTab === 'recommendations' && (
+                <div className="recommendations-section">
+                  <div className="recommendations-header">
+                    <h3>AI-Powered Skill Recommendations</h3>
+                    <p>{isManagerView ? 'Get AI recommendations for your team\'s skill development' : 'Get personalized skill recommendations based on your current abilities'}</p>
+                  </div>
+                  
+                  <div className="recommendations-input">
+                    {location.state?.fromCareerOracle && (
+                      <div className="career-oracle-notice">
+                        <div className="notice-icon">🎯</div>
+                        <div className="notice-content">
+                          <h4>Skills from Career Oracle</h4>
+                          <p>These skills were automatically populated from your Career Oracle results. You can modify them below or get AI recommendations.</p>
+                        </div>
+                      </div>
+                    )}
+                    {isLoadingRecommendations ? (
+                      <div className="loading-state">
+                        <div className="spinner"></div>
+                        <p>Getting your personalized skill recommendations...</p>
+                      </div>
+                    ) : (
+                      <>
+                         <textarea
+                           placeholder={isManagerView ? "Describe your team's current skills, project needs, and development goals..." : "Tell us about your current skills, experience, and career goals..."}
+                           value={userSkillsInput}
+                           onChange={(e) => setUserSkillsInput(e.target.value)}
+                           className="skills-input"
+                           rows="4"
+                         />
+                         <div className="recommendations-btn-container">
+                           <button 
+                             onClick={getSkillRecommendations}
+                             className="recommendations-btn"
+                             disabled={isLoadingRecommendations}
+                           >
+                             {isManagerView ? 'Get Team Recommendations' : 'Get Recommendations'}
+                           </button>
+                         </div>
+                      </>
+                    )}
+                  </div>
+                  
+                  {recommendations.length > 0 ? (
+                    <div className="recommendations-results">
+                      <h4>{isManagerView ? 'Recommended Skills for Your Team' : 'Recommended Skills for You'}</h4>
+                      <div className="recommendations-grid">
+                        {recommendations.map((rec, index) => (
+                          <div key={index} className="recommendation-card">
+                            <div className="recommendation-header">
+                              <h5>{rec.skill}</h5>
+                              <span className={`difficulty-badge ${rec.difficulty.toLowerCase()}`}>
+                                {rec.difficulty}
+                              </span>
+                            </div>
+                            
+                            <p className="recommendation-reason">{rec.reason}</p>
+                            
+                            <div className="recommendation-details">
+                              <div className="detail">
+                                <span className="detail-label">Time to Learn:</span>
+                                <span className="detail-value">{rec.estimatedTime}</span>
+                              </div>
+                            </div>
+                            
+                           
+                            <div className="recommendation-resources">
+                              <span className="resources-label">Recommended Resources:</span>
+                              <div className="resources-list">
+                                {rec.resources.map((resource, idx) => (
+                                  <a 
+                                    key={idx} 
+                                    href={typeof resource === 'string' ? '#' : resource.link} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer" 
+                                    className="resource-link"
+                                  >
+                                    {typeof resource === 'string' ? resource : resource.title}
+                                  </a>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
