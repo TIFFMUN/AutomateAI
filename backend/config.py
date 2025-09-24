@@ -58,4 +58,7 @@ class Settings:
 
     ZHIPUAI_API_KEY = os.getenv("ZHIPUAI_API_KEY", "e441b270d5824d2dabb6b0a4666fa68a.4eOvea0pcz08e2Js")
     
+    # SerpAPI Configuration
+    SERPAPI_KEY = os.getenv("SERPAPI_KEY", "")
+    
 settings = Settings()

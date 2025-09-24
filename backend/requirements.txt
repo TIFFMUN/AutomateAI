@@ -18,6 +18,8 @@ passlib[bcrypt]==1.7.4
 bcrypt==4.0.1
 email-validator==2.3.0
 zhipuai>=2.0.0
+google-search-results
+
 
 # RAG Dependencies (versions from working notebook)
 langchain_community>=0.3.29
