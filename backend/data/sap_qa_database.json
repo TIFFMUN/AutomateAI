@@ -1,0 +1,104 @@
+{
+  "sap_qa_database": [
+    {
+      "question": "What is SAP?",
+      "answer": "SAP (Systems, Applications & Products in Data Processing) is a German multinational software corporation that makes enterprise software to manage business operations and customer relations.",
+      "category": "general"
+    },
+    {
+      "question": "How do I access SAP Fiori?",
+      "answer": "SAP Fiori can be accessed through your web browser by navigating to the Fiori launchpad URL provided by your IT department. You'll need your SAP user credentials to log in.",
+      "category": "access"
+    },
+    {
+      "question": "What is SAP HANA?",
+      "answer": "SAP HANA is an in-memory database and application development platform that provides high-performance analytics and real-time data processing capabilities.",
+      "category": "technical"
+    },
+    {
+      "question": "How do I reset my SAP password?",
+      "answer": "To reset your SAP password, contact your IT helpdesk or use the self-service password reset portal if available. You may need to provide your user ID and answer security questions.",
+      "category": "access"
+    },
+    {
+      "question": "What is SAP SuccessFactors?",
+      "answer": "SAP SuccessFactors is a cloud-based human capital management (HCM) suite that includes modules for talent management, performance management, learning, and workforce analytics.",
+      "category": "hr"
+    },
+    {
+      "question": "How do I create a purchase order in SAP?",
+      "answer": "To create a purchase order in SAP, navigate to the Materials Management module, select 'Purchase Order' from the menu, enter the required details like vendor, materials, quantities, and pricing, then save the document.",
+      "category": "procurement"
+    },
+    {
+      "question": "What is SAP Analytics Cloud?",
+      "answer": "SAP Analytics Cloud is a cloud-based business intelligence and analytics platform that provides self-service analytics, planning, and predictive capabilities.",
+      "category": "analytics"
+    },
+    {
+      "question": "How do I approve workflows in SAP?",
+      "answer": "To approve workflows in SAP, go to your inbox in the SAP GUI or Fiori, select the workflow item that requires approval, review the details, and click 'Approve' or 'Reject' as appropriate.",
+      "category": "workflow"
+    },
+    {
+      "question": "What is SAP Concur?",
+      "answer": "SAP Concur is a travel and expense management solution that helps organizations manage employee travel bookings, expense reporting, and invoice processing.",
+      "category": "expense"
+    },
+    {
+      "question": "How do I run reports in SAP?",
+      "answer": "To run reports in SAP, navigate to the relevant module (like Finance, HR, or Materials Management), select 'Reports' or 'Information System', choose the specific report you need, enter the required parameters, and execute the report.",
+      "category": "reporting"
+    },
+    {
+      "question": "What is SAP S/4HANA?",
+      "answer": "SAP S/4HANA is SAP's next-generation enterprise resource planning (ERP) suite built on the SAP HANA platform, designed for digital transformation and real-time business processes.",
+      "category": "technical"
+    },
+    {
+      "question": "How do I create a vendor master record?",
+      "answer": "To create a vendor master record in SAP, go to Materials Management > Master Data > Vendor > Create, enter the vendor details including company code, purchasing organization, and payment terms, then save the record.",
+      "category": "procurement"
+    },
+    {
+      "question": "What is SAP Ariba?",
+      "answer": "SAP Ariba is a cloud-based procurement and supply chain management solution that helps organizations find, connect, and collaborate with suppliers globally.",
+      "category": "procurement"
+    },
+    {
+      "question": "How do I process invoices in SAP?",
+      "answer": "To process invoices in SAP, navigate to Financial Accounting > Accounts Payable > Document Entry > Invoice, enter the invoice details, match it with purchase orders if applicable, and post the invoice.",
+      "category": "finance"
+    },
+    {
+      "question": "What is SAP Fieldglass?",
+      "answer": "SAP Fieldglass is a vendor management system (VMS) that helps organizations manage their contingent workforce and services procurement.",
+      "category": "hr"
+    },
+    {
+      "question": "How do I create a material master?",
+      "answer": "To create a material master in SAP, go to Materials Management > Master Data > Material > Create, select the material type, enter basic data like description and unit of measure, then extend the material to relevant organizational levels.",
+      "category": "materials"
+    },
+    {
+      "question": "What is SAP Leonardo?",
+      "answer": "SAP Leonardo is SAP's digital innovation system that combines machine learning, IoT, analytics, and blockchain technologies to drive digital transformation.",
+      "category": "technical"
+    },
+    {
+      "question": "How do I create a sales order?",
+      "answer": "To create a sales order in SAP, navigate to Sales and Distribution > Sales > Order > Create, enter customer details, add line items with materials and quantities, specify pricing conditions, and save the order.",
+      "category": "sales"
+    },
+    {
+      "question": "What is SAP Hybris?",
+      "answer": "SAP Hybris (now called SAP Commerce) is an e-commerce platform that provides omnichannel commerce solutions for B2B and B2C businesses.",
+      "category": "technical"
+    },
+    {
+      "question": "How do I perform a goods receipt?",
+      "answer": "To perform a goods receipt in SAP, go to Materials Management > Inventory Management > Goods Movement > Goods Receipt, enter the purchase order number, confirm quantities received, and post the movement.",
+      "category": "materials"
+    }
+  ]
+}

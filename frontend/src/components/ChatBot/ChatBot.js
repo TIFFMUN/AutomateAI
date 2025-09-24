@@ -37,7 +37,7 @@ function ChatBot() {
       setMessages([{
         id: Date.now(),
         type: 'bot',
-        content: `Hi ${user?.username || 'there'}! I'm your AutomateAI assistant. What questions do you have?`,
+        content: `Hi ${user?.username || 'there'}! I'm your AutomateAI FAQ assistant. What questions do you have?`,
         timestamp: new Date()
       }]);
     }
@@ -150,7 +150,7 @@ function ChatBot() {
               <span className="chatbot-emoji">🤖</span>
             </div>
             <div className="chatbot-info">
-              <h3>AutomateAI Assistant</h3>
+              <h3>AutomateAI FAQ Assistant</h3>
               <span className="status">Online</span>
             </div>
             <button className="close-btn" onClick={handleToggleChat}>
@@ -179,11 +179,6 @@ function ChatBot() {
                     {message.ragEnabled && message.contextDocs > 0 && (
                       <div className="rag-indicator">
                         <span className="rag-badge">Knowledge Base</span>
-                      </div>
-                    )}
-                    {message.ragEnabled === false && (
-                      <div className="rag-indicator">
-                        <span className="rag-badge">Generic Response</span>
                       </div>
                     )}
                   </div>
