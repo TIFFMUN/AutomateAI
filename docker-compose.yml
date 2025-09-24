@@ -85,3 +85,5 @@ volumes:
 networks:
   automate-ai-network:
     driver: bridge
+
+

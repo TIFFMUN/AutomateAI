@@ -31,6 +31,7 @@ class Settings:
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
     OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o")
     PERFORMANCE_OPENAI_MODEL = os.getenv("PERFORMANCE_OPENAI_MODEL", "gpt-4")
+    SERPAPI_KEY = ""
     
     # Gemini Configuration (fallback)
     GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
