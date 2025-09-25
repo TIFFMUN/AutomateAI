@@ -550,6 +550,10 @@ function Skills() {
       // Auto-populate the skills input with data from Career Oracle
       setUserSkillsInput(location.state.skillsToDevelop);
       
+      // Bypass role selection and automatically set as employee view
+      setIsManagerView(false);
+      setHasSelectedRole(true);
+      
       // Switch to recommendations tab
       setActiveTab('recommendations');
       
